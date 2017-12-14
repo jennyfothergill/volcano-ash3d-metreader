@@ -93,7 +93,7 @@
 !! Large-scale_precipitation_non-convective_surface_0_Hour_Accumulation
 !
 !      index_file = adjustl(trim(grib2_file)) // ".index"
-!      write(*,*)"Generating index file: ",index_file
+!      write(MR_global_info,*)"Generating index file: ",index_file
 !
 !          ! create an index from a grib file using some keys
 !        call grib_index_create(idx,adjustl(trim(grib2_file)),&
@@ -143,17 +143,17 @@
 !                do while (iret /= GRIB_END_OF_INDEX)
 !                   count1=count1+1
 !                   !call grib_get(igrib,'shortName',sName)
-!                   !write(*,*)count1,sName
+!                   !write(MR_global_info,*)count1,sName
 !                   call grib_release(igrib)
 !                   call grib_new_from_index(idx,igrib, iret)
-!                end do
+!                enddo
 !                call grib_release(igrib)
 !      
-!                end do ! loop on forecastTime
-!              end do ! loop on level
-!            end do ! loop on parameterNumber
-!          end do ! loop on parameterCategory
-!        end do ! loop on discipline
+!                enddo ! loop on forecastTime
+!              enddo ! loop on level
+!            enddo ! loop on parameterNumber
+!          enddo ! loop on parameterCategory
+!        enddo ! loop on discipline
 !      
 !        call grib_index_write(idx,adjustl(trim(index_file)))
 !      
@@ -227,29 +227,29 @@
 !
 !      call grib_get(igrib,'shortName',sName)
 !      call grib_get(igrib,'level',lev)
-!      write(*,*)sName,lev
-!      IF(lev.eq.1000)THEN
+!      write(MR_global_info,*)sName,lev
+!      if(lev.eq.1000)then
 !        call grib_get(igrib,'values',values)
-!        DO m = 1,Nj
+!        do m = 1,Nj
 !          istrt = (m-1)*Ni + 1
 !          iend  = m*Ni
 !          slice(1:Ni,m) = values(istrt:iend)
-!        ENDDO
-!        write(*,*)slice(:,1)
+!        enddo
+!        write(MR_global_info,*)slice(:,1)
 !      endif
 !      deallocate(values)
 !      deallocate(slice)
 !    endif
 !             call grib_release(igrib)
 !             call grib_new_from_index(idx,igrib, iret)
-!          end do
+!          enddo
 !          call grib_release(igrib)
 !
-!          end do ! loop on forecastTime
-!        end do ! loop on level
-!      end do ! loop on parameterNumber
-!    end do ! loop on parameterCategory
-!  end do ! loop on discipline
+!          enddo ! loop on forecastTime
+!        enddo ! loop on level
+!      enddo ! loop on parameterNumber
+!    enddo ! loop on parameterCategory
+!  enddo ! loop on discipline
 !
 !  call grib_index_release(idx)
 
@@ -297,46 +297,46 @@
       real(kind=sp) :: xUR_fullmet
       real(kind=sp) :: yUR_fullmet
 
-      write(*,*)"--------------------------------------------------------------------------------"
-      write(*,*)"----------                MR_Read_Met_DimVars_GRIB                    ----------"
-      write(*,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"----------                MR_Read_Met_DimVars_GRIB                    ----------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
-      IF(MR_iwindformat.ne.0)THEN
+      if(MR_iwindformat.ne.0)then
         Met_dim_names = ""
         Met_var_names = ""
         Met_var_conversion_factor(:)  = 1.0_sp
-      ENDIF
+      endif
 
       ! Initialize dimension and variable names
-      IF(MR_iwindformat.eq.0)THEN
+      if(MR_iwindformat.eq.0)then
           ! This expects that MR_iwf_template has been filled by the calling program
         call MR_Read_Met_Template
-      ELSEIF(MR_iwindformat.eq.2)THEN
+      elseif(MR_iwindformat.eq.2)then
         ! This is reserved for reading Radiosonde data
-      ELSEIF(MR_iwindformat.eq.3)THEN
+      elseif(MR_iwindformat.eq.3)then
           ! NARR3D NAM221 50 km North America files
           ! Note that winds are "earth-relative" and must be rotated!
           ! See
           ! http://www.emc.ncep.noaa.gov/mmb/rreanl/faq.html#eta-winds
-      ELSEIF(MR_iwindformat.eq.4)THEN
+      elseif(MR_iwindformat.eq.4)then
           ! NARR3D NAM221 50 km North America files (RAW : assumes full set of
           ! variables)
           ! Note that winds are "earth-relative" and must be rotated!
           ! See
           ! http://www.emc.ncep.noaa.gov/mmb/rreanl/faq.html#eta-winds
-      ELSEIF(MR_iwindformat.eq.5)THEN
+      elseif(MR_iwindformat.eq.5)then
           ! NAM216 AK 45km
-      ELSEIF(MR_iwindformat.eq.6)THEN
+      elseif(MR_iwindformat.eq.6)then
           ! NAM Regional 90 km grid 104
-      ELSEIF(MR_iwindformat.eq.7)THEN
+      elseif(MR_iwindformat.eq.7)then
           ! CONUS 212 40km
-      ELSEIF(MR_iwindformat.eq.8)THEN
+      elseif(MR_iwindformat.eq.8)then
           ! CONUS 218 (12km)
           ! wget
           ! ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.20121231/nam.t00z.awphys${fh[$i]}.grb2.tm00
-      ELSEIF(MR_iwindformat.eq.9)THEN
+      elseif(MR_iwindformat.eq.9)then
          !Unassigned
-      ELSEIF(MR_iwindformat.eq.11)THEN
+      elseif(MR_iwindformat.eq.11)then
           ! NAM 196 2.5 km HI
 
         Met_dim_IsAvailable=.false.
@@ -441,7 +441,7 @@
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
         MR_ForecastInterval = 1.0_4
 
-      ELSEIF(MR_iwindformat.eq.12)THEN
+      elseif(MR_iwindformat.eq.12)then
           ! NAM 198 5.953 km AK
 
         Met_dim_IsAvailable=.false.
@@ -546,7 +546,7 @@
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
         MR_ForecastInterval = 1.0_4
 
-      ELSEIF(MR_iwindformat.eq.13)THEN
+      elseif(MR_iwindformat.eq.13)then
           ! NAM 91 2.976 km AK (nam198 at twice the resolution)
           !    all the variables below should be the same as iwf12=n198
 
@@ -652,7 +652,7 @@
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
         MR_ForecastInterval = 1.0_4
 
-      ELSEIF (MR_iwindformat.eq.20.or.MR_iwindformat.eq.22) THEN
+      elseif (MR_iwindformat.eq.20.or.MR_iwindformat.eq.22) then
            ! GFS 0.5 (or 0.25) deg from http://www.nco.ncep.noaa.gov/pmb/products/gfs/
            ! or
            ! http://motherlode.ucar.edu/native/conduit/data/nccf/com/gfs/prod/
@@ -718,23 +718,23 @@
         fill_value_sp(MR_iwindformat) = -9999.0_sp
         MR_ForecastInterval = 1.0_4
 
-      ELSEIF (MR_iwindformat.eq.21) THEN
+      elseif (MR_iwindformat.eq.21) then
            ! Old format GFS 0.5-degree
-       ELSEIF (MR_iwindformat.eq.23) THEN
-         ! NCEP / DOE reanalysis 2.5 degree files 
-       ELSEIF (MR_iwindformat.eq.24) THEN
+       elseif (MR_iwindformat.eq.23) then
+         ! NCEP / doE reanalysis 2.5 degree files 
+       elseif (MR_iwindformat.eq.24) then
          ! NASA-MERRA reanalysis 1.25 degree files 
-       ELSEIF (MR_iwindformat.eq.25) THEN
+       elseif (MR_iwindformat.eq.25) then
          ! NCEP/NCAR reanalysis 2.5 degree files 
-       ELSEIF (MR_iwindformat.eq.27) THEN
+       elseif (MR_iwindformat.eq.27) then
          ! NOAA-CIRES reanalysis 2.5 degree files 
-       ELSEIF (MR_iwindformat.eq.28) THEN
+       elseif (MR_iwindformat.eq.28) then
          ! ECMWF Interim Reanalysis (ERA-Interim)
-       ELSEIF (MR_iwindformat.eq.29) THEN
+       elseif (MR_iwindformat.eq.29) then
          ! JRA-55 reanalysis
-       ELSEIF (MR_iwindformat.eq.31) THEN
+       elseif (MR_iwindformat.eq.31) then
          ! Catania forecast
-       ELSEIF (MR_iwindformat.eq.32) THEN
+       elseif (MR_iwindformat.eq.32) then
          ! Air Force Weather Agency subcenter = 0
         Met_dim_IsAvailable=.false.
         Met_var_IsAvailable=.false.
@@ -836,30 +836,30 @@
         MR_ForecastInterval = 1.0_4
 
 
-       ELSEIF (MR_iwindformat.eq.40) THEN
+       elseif (MR_iwindformat.eq.40) then
          ! NASA-GEOS Cp
-       ELSEIF (MR_iwindformat.eq.41) THEN
+       elseif (MR_iwindformat.eq.41) then
          ! NASA-GEOS Np
-      ELSE
+      else
         ! Not a recognized MR_iwindformat
         ! call reading of custom windfile variable names
-        write(*,*)"windfile format not recognized."
+        write(MR_global_error,*)"MR ERROR : windfile format not recognized."
         stop 1
-      ENDIF
+      endif
 
-      IF(Met_var_IsAvailable(4)) Have_Vz = .true.
+      if(Met_var_IsAvailable(4)) Have_Vz = .true.
 
-      IF(MR_iwindformat.eq.0)THEN
+      if(MR_iwindformat.eq.0)then
         ! Custom windfile (example for nam198)
         !  Need to populate
         !call MR_Set_Met_Dims_Custom_GRIB
-        write(*,*)"Currently, grib reader only works for known grib2 files."
-        write(*,*)" Custom reader forthcoming"
+        write(MR_global_error,*)"MR ERROR : Currently, grib reader only works for known grib2 files."
+        write(MR_global_error,*)"           Custom reader forthcoming"
         stop 1
-      ELSEIF(MR_iwindformat.eq.2)THEN
-        write(*,*)"MR_iwindformat = 2: should not be here."
+      elseif(MR_iwindformat.eq.2)then
+        write(MR_global_error,*)"MR ERROR : MR_iwindformat = 2: should not be here."
         stop 1
-      ELSEIF(MR_iwindformat.eq.3.or.MR_iwindformat.eq.4)THEN
+      elseif(MR_iwindformat.eq.3.or.MR_iwindformat.eq.4)then
           ! 3 = NARR3D NAM221 32 km North America files
           ! 4 = RAW : assumes full set of variables
         call MR_Set_Met_NCEPGeoGrid(221)
@@ -890,7 +890,7 @@
         y_inverted = .false.
         z_inverted = .false.
 
-      ELSEIF(MR_iwindformat.eq.5)THEN
+      elseif(MR_iwindformat.eq.5)then
         ! NAM 45-km Polar Sterographic
         call MR_Set_Met_NCEPGeoGrid(216)
 
@@ -937,7 +937,7 @@
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
-      ELSEIF(MR_iwindformat.eq.6)THEN
+      elseif(MR_iwindformat.eq.6)then
           ! 104 converted automatically from grib2
           ! NAM 90-km Polar Sterographic
         call MR_Set_Met_NCEPGeoGrid(104)
@@ -971,7 +971,7 @@
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
-      ELSEIF(MR_iwindformat.eq.7)THEN
+      elseif(MR_iwindformat.eq.7)then
           ! 212 converted automatically from grib2
           ! CONUS 40-km Lambert Conformal
         call MR_Set_Met_NCEPGeoGrid(212)
@@ -1009,7 +1009,7 @@
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
-      ELSEIF(MR_iwindformat.eq.8)THEN
+      elseif(MR_iwindformat.eq.8)then
           !  12 KM CONUS)
         call MR_Set_Met_NCEPGeoGrid(218)
 
@@ -1038,7 +1038,7 @@
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
-      ELSEIF(MR_iwindformat.eq.9)THEN
+      elseif(MR_iwindformat.eq.9)then
           !  20 KM CONUS)
         call MR_Set_Met_NCEPGeoGrid(215)
 
@@ -1067,7 +1067,7 @@
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
-      ELSEIF(MR_iwindformat.eq.10)THEN
+      elseif(MR_iwindformat.eq.10)then
           ! NAM242 converted automatically from grib2
         call MR_Set_Met_NCEPGeoGrid(242)
 
@@ -1104,7 +1104,7 @@
         y_inverted = .false.
         z_inverted = .true.
 
-      ELSEIF(MR_iwindformat.eq.11)THEN
+      elseif(MR_iwindformat.eq.11)then
           ! NAM196 converted automatically from grib2
         call MR_Set_Met_NCEPGeoGrid(196)
 
@@ -1135,7 +1135,7 @@
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
-      ELSEIF(MR_iwindformat.eq.12)THEN
+      elseif(MR_iwindformat.eq.12)then
           ! NAM198 converted automatically from grib2
         call MR_Set_Met_NCEPGeoGrid(198)
 
@@ -1167,7 +1167,7 @@
         y_inverted = .false.
         z_inverted = .true.
 
-      ELSEIF(MR_iwindformat.eq.13)THEN
+      elseif(MR_iwindformat.eq.13)then
           ! NAM91 converted automatically from grib2
         call MR_Set_Met_NCEPGeoGrid(91)
 
@@ -1199,7 +1199,7 @@
         y_inverted = .false.
         z_inverted = .true.
 
-      ELSEIF(MR_iwindformat.eq.20)THEN
+      elseif(MR_iwindformat.eq.20)then
         ! GFS 0.5
         call MR_Set_Met_NCEPGeoGrid(4)
 
@@ -1237,7 +1237,7 @@
         y_inverted = .true.
         z_inverted = .true.
 
-      ELSEIF(MR_iwindformat.eq.21)THEN
+      elseif(MR_iwindformat.eq.21)then
         ! GFS 0.5 old style
         call MR_Set_Met_NCEPGeoGrid(4)
 
@@ -1275,7 +1275,7 @@
         y_inverted = .true.
         z_inverted = .false.
 
-      ELSEIF(MR_iwindformat.eq.22)THEN
+      elseif(MR_iwindformat.eq.22)then
         ! GFS 0.25
         call MR_Set_Met_NCEPGeoGrid(193)
 
@@ -1315,8 +1315,8 @@
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .true.
-      ELSEIF(MR_iwindformat.eq.23)THEN
-        ! NCEP DOE reanalysis
+      elseif(MR_iwindformat.eq.23)then
+        ! NCEP doE reanalysis
         call MR_Set_Met_NCEPGeoGrid(2)
 
         nt_fullmet = 1
@@ -1340,7 +1340,7 @@
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .false.
-      ELSEIF(MR_iwindformat.eq.24)THEN
+      elseif(MR_iwindformat.eq.24)then
         ! NASA MERRA reanalysis
         call MR_Set_Met_NCEPGeoGrid(1024)
 
@@ -1371,7 +1371,7 @@
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .false.
-      ELSEIF(MR_iwindformat.eq.25)THEN
+      elseif(MR_iwindformat.eq.25)then
         ! NCEP-1 1948 reanalysis
         call MR_Set_Met_NCEPGeoGrid(2)
         nt_fullmet = 1460 ! might need to add 4 for a leap year
@@ -1400,9 +1400,9 @@
         p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         ! These additional grids are needed since surface variables are on a
         ! different spatial grid.
-        DO i = 1,192
+        do i = 1,192
           x_in_iwf25_sp(i)=(i-1)*1.875_sp
-        ENDDO
+        enddo
         y_in_iwf25_sp(1:94) = (/ &
          88.542_sp,  86.6531_sp,  84.7532_sp,  82.8508_sp,  80.9473_sp,   79.0435_sp,  77.1394_sp, 75.2351_sp, &
         73.3307_sp,  71.4262_sp,  69.5217_sp,  67.6171_sp,  65.7125_sp,   63.8079_sp,  61.9033_sp, 59.9986_sp, &
@@ -1420,7 +1420,7 @@
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .false.
-      ELSEIF(MR_iwindformat.eq.26)THEN
+      elseif(MR_iwindformat.eq.26)then
         ! GFS 0.5
         call MR_Set_Met_NCEPGeoGrid(4)
 
@@ -1469,7 +1469,7 @@
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .false.
-      ELSEIF(MR_iwindformat.eq.27)THEN
+      elseif(MR_iwindformat.eq.27)then
         ! NOAA reanalysis
         call MR_Set_Met_NCEPGeoGrid(1027)
 
@@ -1501,7 +1501,7 @@
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .true.
-      ELSEIF(MR_iwindformat.eq.28)THEN
+      elseif(MR_iwindformat.eq.28)then
         ! ECMWF Global Gaussian Lat/Lon grid 170
           ! Note: grid is not regular
           !       pressure values are from low to high
@@ -1534,7 +1534,7 @@
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .true.
-      ELSEIF(MR_iwindformat.eq.29)THEN
+      elseif(MR_iwindformat.eq.29)then
         ! Japanese 25-year reanalysis
         call MR_Set_Met_NCEPGeoGrid(2)
 
@@ -1564,7 +1564,7 @@
         z_inverted = .false.
 
 
-      ELSEIF(MR_iwindformat.eq.31)THEN
+      elseif(MR_iwindformat.eq.31)then
           ! Catania forecasts
         call MR_Set_Met_NCEPGeoGrid(1031)
 
@@ -1589,7 +1589,7 @@
         y_inverted = .false.
         z_inverted = .false.
 
-      ELSEIF(MR_iwindformat.eq.32)THEN
+      elseif(MR_iwindformat.eq.32)then
           ! Air Force Weather Agency
         call MR_Set_Met_NCEPGeoGrid(1032)
 
@@ -1627,7 +1627,7 @@
         y_inverted = .false.
         z_inverted = .true.
 
-      ELSEIF(MR_iwindformat.eq.40)THEN
+      elseif(MR_iwindformat.eq.40)then
         ! NASA GEOS Cp
         call MR_Set_Met_NCEPGeoGrid(1040)
 
@@ -1658,7 +1658,7 @@
         y_inverted = .false.
         z_inverted = .false.
 
-      ELSEIF(MR_iwindformat.eq.41)THEN
+      elseif(MR_iwindformat.eq.41)then
         ! NASA GEOS Np
         call MR_Set_Met_NCEPGeoGrid(1041)
 
@@ -1690,48 +1690,48 @@
         y_inverted = .false.
         z_inverted = .false.
 
-      ELSE
+      else
         ! Not a recognized MR_iwindformat
         ! call reading of custom windfile pressure,grid values
-        write(*,*)"windfile format not recognized."
+        write(MR_global_error,*)"MR ERROR : windfile format not recognized."
         stop 1
-      ENDIF
+      endif
 
       allocate(z_approx(np_fullmet))
-      DO k=1,np_fullmet
+      do k=1,np_fullmet
         ! Calculate heights for US Std Atmos while pressures are still in mbars
         ! or hPa
         z_approx(k) = MR_Z_US_StdAtm(p_fullmet_sp(k))
-      ENDDO
+      enddo
 
-      write(6,*)"Dimension info:"
-      write(6,*)"  record (time): ",nt_fullmet
-      write(6,*)"  level  (z)   : ",np_fullmet
-      write(6,*)"  y            : ",ny_fullmet
-      write(6,*)"  x            : ",nx_fullmet
+      write(MR_global_info,*)"Dimension info:"
+      write(MR_global_info,*)"  record (time): ",nt_fullmet
+      write(MR_global_info,*)"  level  (z)   : ",np_fullmet
+      write(MR_global_info,*)"  y            : ",ny_fullmet
+      write(MR_global_info,*)"  x            : ",nx_fullmet
 
       !************************************************************************
       ! assign boundaries of mesoscale model
-      IF(x_inverted)THEN
+      if(x_inverted)then
           ! I know of no windfiles with x-coordinate reversed
         xLL_fullmet = x_fullmet_sp(nx_fullmet)
         xUR_fullmet = x_fullmet_sp(1)
-      ELSE
+      else
         xLL_fullmet = x_fullmet_sp(1)
         xUR_fullmet = x_fullmet_sp(nx_fullmet)
-      ENDIF
+      endif
 
-      IF(y_inverted)THEN
+      if(y_inverted)then
           ! Most lon/lat grids have y reversed
         yLL_fullmet = y_fullmet_sp(ny_fullmet)
         yUR_fullmet = y_fullmet_sp(1)
-      ELSE
+      else
           ! Projected grids have y not reversed
         yLL_fullmet = y_fullmet_sp(1)
         yUR_fullmet = y_fullmet_sp(ny_fullmet)
-      ENDIF
+      endif
 
-      write(*,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       end subroutine MR_Read_Met_DimVars_GRIB
 
@@ -1783,29 +1783,29 @@
       integer            :: iret
       integer            :: igrib
 
-      write(*,*)"--------------------------------------------------------------------------------"
-      write(*,*)"----------                MR_Read_Met_Times_GRIB                      ----------"
-      write(*,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"----------                MR_Read_Met_Times_GRIB                      ----------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
-      IF(.not.Met_dim_IsAvailable(1))THEN
-        write(*,*)"MR ERROR: Time dimension is required and not listed"
-        write(*,*)"          in custom windfile specification file."
+      if(.not.Met_dim_IsAvailable(1))then
+        write(MR_global_error,*)"MR ERROR: Time dimension is required and not listed"
+        write(MR_global_error,*)"          in custom windfile specification file."
         stop 1
-      ENDIF
+      endif
 
       allocate(MR_windfile_starthour(MR_iwindfiles))
-      IF(MR_iwindformat.eq.27)THEN
+      if(MR_iwindformat.eq.27)then
         ! GRIB1 reader not yet working!!
-        write(*,*)"MR ERROR: iwf=27 is a GRIB1 format."
-        write(*,*)"       The GRIB1 reader is not yet working"
+        write(MR_global_error,*)"MR ERROR: iwf=27 is a GRIB1 format."
+        write(MR_global_error,*)"       The GRIB1 reader is not yet working"
         stop 1
         ! Here the branch for when MR_iwindformat = 27
         ! First copy path read in to slot 2
-        IF(MR_runAsForecast)THEN
-          write(*,*)"MR ERROR: iwf=27 cannot be used for forecast runs."
-          write(*,*)"          These are reanalysis files."
+        if(MR_runAsForecast)then
+          write(MR_global_error,*)"MR ERROR: iwf=27 cannot be used for forecast runs."
+          write(MR_global_error,*)"          These are reanalysis files."
           stop 1
-        ENDIF
+        endif
         dumstr = MR_windfiles(1)
  110    format(a50,a1,i4,a1)
         write(MR_windfiles(1),110)trim(ADJUSTL(dumstr)),'/', &
@@ -1832,28 +1832,28 @@
 
           ! the interval for iwf27 is 6 hours
         MR_ForecastInterval = 6.0_4
-        DO iwstep = 1,nt_fullmet
+        do iwstep = 1,nt_fullmet
           MR_windfile_stephour(:,iwstep) = (iwstep-1)*MR_ForecastInterval
-        ENDDO
-      ELSE
+        enddo
+      else
         ! For all other formats, try to read the first grib message and get
         ! dataDate, dataTime and forecastTime
         ! Loop through all the windfiles
-        DO iw = 1,MR_iwindfiles
+        do iw = 1,MR_iwindfiles
 
           ! Each wind file needs a ref-time which in almost all cases is given
           ! in the 'units' attribute of the time variable
-          write(*,*)iw,trim(ADJUSTL(MR_windfiles(iw)))
+          write(MR_global_info,*)iw,trim(ADJUSTL(MR_windfiles(iw)))
 
-          IF(iw.eq.1)THEN
+          if(iw.eq.1)then
             ! For now, assume one time step per file
             nt_fullmet = 1
-            write(*,*)"  Assuming all NWP files have the same number of steps."
-            write(*,*)"   For grib2, assume one time step per file."
-            write(*,*)"   Allocating time arrays for ",MR_iwindfiles,"files"
-            write(*,*)"                              ",nt_fullmet,"step(s) each"
+            write(MR_global_info,*)"  Assuming all NWP files have the same number of steps."
+            write(MR_global_info,*)"   For grib2, assume one time step per file."
+            write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"files"
+            write(MR_global_info,*)"                              ",nt_fullmet,"step(s) each"
             allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
-          ENDIF
+          endif
 
           call grib_open_file(ifile,trim(ADJUSTL(MR_windfiles(iw))),'R')
           call grib_new_from_file(ifile,igrib,iret)
@@ -1868,7 +1868,7 @@
           itstart_min   = 0
           itstart_sec   = 0
 
-          write(*,2100)"Ref time = ",itstart_year,itstart_month,itstart_day, &
+          write(MR_global_info,2100)"Ref time = ",itstart_year,itstart_month,itstart_day, &
                                      itstart_hour,itstart_min,itstart_sec
 
           call grib_release(igrib)
@@ -1883,23 +1883,23 @@
                                          itstart_day,real(filestart_hour,kind=8),MR_BaseYear,MR_useLeap),kind=4)
           MR_windfile_stephour(iw,1) = real(forecastTime,kind=4)
 
-        ENDDO
-      ENDIF
+        enddo
+      endif
 2100  FORMAT(20x,a11,i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2)
 
       ! Finished setting up the start time of each wind file in HoursSince : MR_windfile_starthour(iw)
       !  and the forecast (offset from start of file) for each step        : MR_windfile_stephour(iw,iwstep)
 
-      write(*,*)"File, step, Ref, Offset, HoursSince"
-      DO iw = 1,MR_iwindfiles
-        DO iws = 1,nt_fullmet
-          write(*,*)iw,iws,real(MR_windfile_starthour(iw),kind=4),&
+      write(MR_global_info,*)"File, step, Ref, Offset, HoursSince"
+      do iw = 1,MR_iwindfiles
+        do iws = 1,nt_fullmet
+          write(MR_global_info,*)iw,iws,real(MR_windfile_starthour(iw),kind=4),&
                            real(MR_windfile_stephour(iw,iws),kind=4),&
                            real(MR_windfile_starthour(iw)+MR_windfile_stephour(iw,iws),kind=4)
-        ENDDO
-      ENDDO
+        enddo
+      enddo
 
-      write(*,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       end subroutine MR_Read_Met_Times_GRIB
 !##############################################################################
@@ -1924,7 +1924,8 @@
       integer, parameter :: sp        = 4 ! single precision
       integer, parameter :: dp        = 8 ! double precision
 
-      integer,intent(in) :: ivar,istep
+      integer,intent(in) :: ivar
+      integer,intent(in) :: istep
 
       integer :: iw,iwstep
       integer :: np_met_loc
@@ -1987,19 +1988,19 @@
 
       logical :: Use_GRIB2_Index = .false.
 
-      IF(.not.Met_var_IsAvailable(ivar))THEN
-        write(*,*)"MR ERROR:  Variable not available for this windfile"
-        write(*,*)"             ivar = ",ivar
-        write(*,*)"            vname = ",Met_var_names(ivar)
-        write(*,*)"             iwf  = ",MR_iwindformat
+      if(.not.Met_var_IsAvailable(ivar))then
+        write(MR_global_error,*)"MR ERROR:  Variable not available for this windfile"
+        write(MR_global_error,*)"             ivar = ",ivar
+        write(MR_global_error,*)"            vname = ",Met_var_names(ivar)
+        write(MR_global_error,*)"             iwf  = ",MR_iwindformat
         stop 1
-      ENDIF
+      endif
 
-      !IF(ivar.eq.3 .or. ivar.eq.12)THEN
+      !if(ivar.eq.3 .or. ivar.eq.12)then
       !  Use_GRIB2_Index = .false.
-      !ELSE
+      !else
       !  Use_GRIB2_Index = .true.
-      !ENDIF
+      !endif
 
       ! Get the variable discipline, Parameter Catagory, Parameter Number, and
       ! level type for this variable
@@ -2011,120 +2012,120 @@
       iw     = MR_MetStep_findex(istep)
       iwstep = MR_MetStep_tindex(istep)
 
-      IF(Met_var_names(ivar).eq."")THEN
-        write(*,*)"Variable ",ivar," not available for MR_iwindformat = ",&
+      if(Met_var_names(ivar).eq."")then
+        write(MR_global_error,*)"Variable ",ivar," not available for MR_iwindformat = ",&
                   MR_iwindformat
         stop 1
-      ENDIF
+      endif
 
       ! Get the dimension of the variable requested (either 2 or 3-D)
-      IF(ivar.eq.1 ) Dimension_of_Variable = 3 ! Geopotential Height
-      IF(ivar.eq.2 ) Dimension_of_Variable = 3 ! Vx
-      IF(ivar.eq.3 ) Dimension_of_Variable = 3 ! Vy
-      IF(ivar.eq.4 ) Dimension_of_Variable = 3 ! Vz
-      IF(ivar.eq.5 ) Dimension_of_Variable = 3 ! Temperature
-      IF(ivar.eq.6 ) Dimension_of_Variable = 3 ! Pressure (only for WRF or other eta-level files)
+      if(ivar.eq.1 ) Dimension_of_Variable = 3 ! Geopotential Height
+      if(ivar.eq.2 ) Dimension_of_Variable = 3 ! Vx
+      if(ivar.eq.3 ) Dimension_of_Variable = 3 ! Vy
+      if(ivar.eq.4 ) Dimension_of_Variable = 3 ! Vz
+      if(ivar.eq.5 ) Dimension_of_Variable = 3 ! Temperature
+      if(ivar.eq.6 ) Dimension_of_Variable = 3 ! Pressure (only for WRF or other eta-level files)
 
-      IF(ivar.eq.10) Dimension_of_Variable = 2 ! Planetary Boundary Layer Height
-      IF(ivar.eq.11) Dimension_of_Variable = 2 ! U @ 10m
-      IF(ivar.eq.12) Dimension_of_Variable = 2 ! V @ 10m
-      IF(ivar.eq.13) Dimension_of_Variable = 2 ! Friction velocity
-      IF(ivar.eq.14) Dimension_of_Variable = 2 ! Displacement Height
-      IF(ivar.eq.15) Dimension_of_Variable = 2 ! Snow cover
-      IF(ivar.eq.16) Dimension_of_Variable = 2 ! Soil moisture
-      IF(ivar.eq.17) Dimension_of_Variable = 2 ! Surface roughness
-      IF(ivar.eq.18) Dimension_of_Variable = 2 ! Wind_speed_gust_surface
+      if(ivar.eq.10) Dimension_of_Variable = 2 ! Planetary Boundary Layer Height
+      if(ivar.eq.11) Dimension_of_Variable = 2 ! U @ 10m
+      if(ivar.eq.12) Dimension_of_Variable = 2 ! V @ 10m
+      if(ivar.eq.13) Dimension_of_Variable = 2 ! Friction velocity
+      if(ivar.eq.14) Dimension_of_Variable = 2 ! Displacement Height
+      if(ivar.eq.15) Dimension_of_Variable = 2 ! Snow cover
+      if(ivar.eq.16) Dimension_of_Variable = 2 ! Soil moisture
+      if(ivar.eq.17) Dimension_of_Variable = 2 ! Surface roughness
+      if(ivar.eq.18) Dimension_of_Variable = 2 ! Wind_speed_gust_surface
 
-      IF(ivar.eq.20) Dimension_of_Variable = 2 ! pressure at lower cloud base
-      IF(ivar.eq.21) Dimension_of_Variable = 2 ! pressure at lower cloud top
-      IF(ivar.eq.22) Dimension_of_Variable = 2 ! temperature at lower cloud top
-      IF(ivar.eq.23) Dimension_of_Variable = 2 ! Total Cloud cover
-      IF(ivar.eq.24) Dimension_of_Variable = 2 ! Cloud cover (low)
-      IF(ivar.eq.25) Dimension_of_Variable = 2 ! Cloud cover (convective)
+      if(ivar.eq.20) Dimension_of_Variable = 2 ! pressure at lower cloud base
+      if(ivar.eq.21) Dimension_of_Variable = 2 ! pressure at lower cloud top
+      if(ivar.eq.22) Dimension_of_Variable = 2 ! temperature at lower cloud top
+      if(ivar.eq.23) Dimension_of_Variable = 2 ! Total Cloud cover
+      if(ivar.eq.24) Dimension_of_Variable = 2 ! Cloud cover (low)
+      if(ivar.eq.25) Dimension_of_Variable = 2 ! Cloud cover (convective)
 
-      IF(ivar.eq.30) Dimension_of_Variable = 3 ! Rel. Hum
-      IF(ivar.eq.31) Dimension_of_Variable = 3 ! QV (specific humidity)
-      IF(ivar.eq.32) Dimension_of_Variable = 3 ! QL (liquid)
-      IF(ivar.eq.33) Dimension_of_Variable = 3 ! QI (ice)
+      if(ivar.eq.30) Dimension_of_Variable = 3 ! Rel. Hum
+      if(ivar.eq.31) Dimension_of_Variable = 3 ! QV (specific humidity)
+      if(ivar.eq.32) Dimension_of_Variable = 3 ! QL (liquid)
+      if(ivar.eq.33) Dimension_of_Variable = 3 ! QI (ice)
 
-      IF(ivar.eq.40) Dimension_of_Variable = 2 ! Categorical rain
-      IF(ivar.eq.41) Dimension_of_Variable = 2 ! Categorical snow
-      IF(ivar.eq.42) Dimension_of_Variable = 2 ! Categorical frozen rain
-      IF(ivar.eq.43) Dimension_of_Variable = 2 ! Categorical ice
-      IF(ivar.eq.44) Dimension_of_Variable = 2 ! Precipitation rate large-scale (liquid)
-      IF(ivar.eq.45) Dimension_of_Variable = 2 ! Precipitation rate convective (liquid)
-      IF(ivar.eq.46) Dimension_of_Variable = 3 ! Precipitation rate large-scale (ice)
-      IF(ivar.eq.47) Dimension_of_Variable = 3 ! Precipitation rate convective (ice)
+      if(ivar.eq.40) Dimension_of_Variable = 2 ! Categorical rain
+      if(ivar.eq.41) Dimension_of_Variable = 2 ! Categorical snow
+      if(ivar.eq.42) Dimension_of_Variable = 2 ! Categorical frozen rain
+      if(ivar.eq.43) Dimension_of_Variable = 2 ! Categorical ice
+      if(ivar.eq.44) Dimension_of_Variable = 2 ! Precipitation rate large-scale (liquid)
+      if(ivar.eq.45) Dimension_of_Variable = 2 ! Precipitation rate convective (liquid)
+      if(ivar.eq.46) Dimension_of_Variable = 3 ! Precipitation rate large-scale (ice)
+      if(ivar.eq.47) Dimension_of_Variable = 3 ! Precipitation rate convective (ice)
 
-      IF(ivar.eq.40.or.&
+      if(ivar.eq.40.or.&
          ivar.eq.41.or.&
          ivar.eq.42.or.&
-         ivar.eq.43)THEN
+         ivar.eq.43)then
           ! Catagorical variables are integers and need special interpolation
         IsCatagorical = .true.
-      ELSE
+      else
           ! The default is to read floating point values
         IsCatagorical = .false.
-      ENDIF
+      endif
 
-      IF(MR_iwindformat.eq.27)THEN
+      if(MR_iwindformat.eq.27)then
         ! Get correct GRIB1 file
-        write(*,*)"MR ERROR: iwf27 not working for GRIB1"
+        write(MR_global_error,*)"MR ERROR: iwf27 not working for GRIB1"
         stop 1
-        IF(ivar.eq.1)THEN
+        if(ivar.eq.1)then
           write(index_file,125)trim(adjustl(MR_MetStep_File(istep))), &
                            "pgrbanl_mean_",MR_iwind5_year(istep), &
                            "_HGT_pres.nc"
           np_met_loc = np_fullmet
-        ELSEIF(ivar.eq.2)THEN
+        elseif(ivar.eq.2)then
           write(index_file,126)trim(adjustl(MR_MetStep_File(istep))), &
                            "pgrbanl_mean_",MR_iwind5_year(istep), &
                            "_UGRD_pres.nc"
           np_met_loc = np_fullmet
-        ELSEIF(ivar.eq.3)THEN
+        elseif(ivar.eq.3)then
           write(index_file,126)trim(adjustl(MR_MetStep_File(istep))), &
                            "pgrbanl_mean_",MR_iwind5_year(istep), &
                            "_VGRD_pres.nc"
           np_met_loc = np_fullmet
-        ELSEIF(ivar.eq.4)THEN
+        elseif(ivar.eq.4)then
           write(index_file,126)trim(adjustl(MR_MetStep_File(istep))), &
                            "pgrbanl_mean_",MR_iwind5_year(istep), &
                            "_VVEL_pres.nc"
           np_met_loc = np_fullmet_Vz
-        ELSEIF(ivar.eq.5)THEN
+        elseif(ivar.eq.5)then
           write(index_file,125)trim(adjustl(MR_MetStep_File(istep))), &
                            "pgrbanl_mean_",MR_iwind5_year(istep), &
                            "_TMP_pres.nc"
           np_met_loc = np_fullmet
-        ELSEIF(ivar.eq.10)THEN
+        elseif(ivar.eq.10)then
           write(index_file,128)trim(adjustl(MR_MetStep_File(istep))), &
                            "sflxgrbfg_mean_",MR_iwind5_year(istep), &
                            "_HPBL_sfc.nc"
-        ELSEIF(ivar.eq.22)THEN
+        elseif(ivar.eq.22)then
           write(index_file,130)trim(adjustl(MR_MetStep_File(istep))), &
                            "sflxgrbfg_mean_",MR_iwind5_year(istep), &
                            "_TMP_low-cldtop.nc"
-        ELSEIF(ivar.eq.23)THEN
+        elseif(ivar.eq.23)then
           write(index_file,131)trim(adjustl(MR_MetStep_File(istep))), &
                            "sflxgrbfg_mean_",MR_iwind5_year(istep), &
                            "_TCDC_low-cldlay.nc"
-        ELSEIF(ivar.eq.30)THEN
+        elseif(ivar.eq.30)then
           write(index_file,127)trim(adjustl(MR_MetStep_File(istep))), &
                            "pgrbanl_mean_",MR_iwind5_year(istep), &
                            "_RH_pres.nc"
           np_met_loc = np_fullmet_RH
-        ELSEIF(ivar.eq.44)THEN
+        elseif(ivar.eq.44)then
           write(index_file,129)trim(adjustl(MR_MetStep_File(istep))), &
                            "sflxgrbfg_mean_",MR_iwind5_year(istep), &
                            "_PRATE_sfc.nc"
-        ELSEIF(ivar.eq.45)THEN
+        elseif(ivar.eq.45)then
           write(index_file,129)trim(adjustl(MR_MetStep_File(istep))), &
                            "sflxgrbfg_mean_",MR_iwind5_year(istep), &
                            "_CPRAT_sfc.nc"
-        ELSE
-          write(*,*)"Requested variable not available."
+        else
+          write(MR_global_error,*)"MR ERROR : Requested variable not available."
           stop 1
-        ENDIF
+        endif
         index_file = trim(adjustl(index_file))
 
  125      format(a50,a13,i4,a12)
@@ -2134,69 +2135,69 @@
  129      format(a50,a15,i4,a13)
  130      format(a50,a15,i4,a18)
  131      format(a50,a15,i4,a19)
-      ELSE  ! all other cases besides iwf27
+      else  ! all other cases besides iwf27
         ! Set up pressure level index that we will search for
         p_met_loc = 0
-        IF(ivar.eq.4)THEN      ! Vertical_velocity_pressure_isobaric
+        if(ivar.eq.4)then      ! Vertical_velocity_pressure_isobaric
           np_met_loc = np_fullmet_Vz
           !p_met_loc(1:np_met_loc)  = int(p_fullmet_Vz_sp(1:np_met_loc)/100.0)
           p_met_loc(1:np_met_loc)  = int(p_fullmet_Vz_sp(1:np_met_loc))
-        ELSEIF(ivar.eq.10)THEN ! Planetary_Boundary_Layer_Height_surface
+        elseif(ivar.eq.10)then ! Planetary_Boundary_Layer_Height_surface
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
-        ELSEIF(ivar.eq.11)THEN ! u-component_of_wind_height_above_ground
+        elseif(ivar.eq.11)then ! u-component_of_wind_height_above_ground
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 10
-        ELSEIF(ivar.eq.12)THEN ! v-component_of_wind_height_above_ground
+        elseif(ivar.eq.12)then ! v-component_of_wind_height_above_ground
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 10
-        ELSEIF(ivar.eq.13)THEN ! Frictional_Velocity_surface
+        elseif(ivar.eq.13)then ! Frictional_Velocity_surface
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
-        ELSEIF(ivar.eq.15)THEN ! Snow_depth_surface
+        elseif(ivar.eq.15)then ! Snow_depth_surface
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
-        ELSEIF(ivar.eq.16)THEN ! Volumetric_Soil_Moisture_Content_depth_below_surface_layer
+        elseif(ivar.eq.16)then ! Volumetric_Soil_Moisture_Content_depth_below_surface_layer
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
-        ELSEIF(ivar.eq.17)THEN ! Surface_roughness_surface
+        elseif(ivar.eq.17)then ! Surface_roughness_surface
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
-        ELSEIF(ivar.eq.18)THEN ! Wind_speed_gust_surface
+        elseif(ivar.eq.18)then ! Wind_speed_gust_surface
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
-        ELSEIF(ivar.eq.20)THEN ! Pressure_cloud_base
+        elseif(ivar.eq.20)then ! Pressure_cloud_base
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
-        ELSEIF(ivar.eq.21)THEN ! Pressure_cloud_topw
+        elseif(ivar.eq.21)then ! Pressure_cloud_topw
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
-        ELSEIF(ivar.eq.23)THEN ! Total_cloud_cover_entire_atmosphere
+        elseif(ivar.eq.23)then ! Total_cloud_cover_entire_atmosphere
            ! Something is wrong reading this
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
-        ELSEIF(ivar.eq.30)THEN ! Relative_humidity_isobaric
+        elseif(ivar.eq.30)then ! Relative_humidity_isobaric
           np_met_loc = np_fullmet_RH
           !p_met_loc(1:np_met_loc)  = int(p_fullmet_RH_sp(1:np_met_loc)/100.0)
           p_met_loc(1:np_met_loc)  = int(p_fullmet_RH_sp(1:np_met_loc))
-        ELSEIF(ivar.eq.40.or.ivar.eq.41.or.ivar.eq.42.or.ivar.eq.43)THEN ! categorical precip
+        elseif(ivar.eq.40.or.ivar.eq.41.or.ivar.eq.42.or.ivar.eq.43)then ! categorical precip
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
-        ELSEIF(ivar.eq.44)THEN ! Precipitation_rate_surface
+        elseif(ivar.eq.44)then ! Precipitation_rate_surface
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
-        ELSE
+        else
           np_met_loc = np_fullmet
           !p_met_loc(1:np_met_loc)  = int(p_fullmet_sp(1:np_met_loc)/100.0)
           p_met_loc(1:np_met_loc)  = int(p_fullmet_sp(1:np_met_loc))
-        ENDIF
-        !write(*,*)p_met_loc
-        !write(*,*)"Allocating full_values ",nx_fullmet,ny_fullmet,np_met_loc
+        endif
+        !write(MR_global_info,*)p_met_loc
+        !write(MR_global_info,*)"Allocating full_values ",nx_fullmet,ny_fullmet,np_met_loc
         allocate(full_values(nx_fullmet,ny_fullmet,np_met_loc))
           ! Files are listed directly, not through directories (as in MR_iwindformat=25,27)
         grib2_file = trim(adjustl(MR_MetStep_File(istep)))
         index_file = trim(adjustl(MR_MetStep_File(istep))) // ".index"
-      ENDIF
+      endif
       invar = Met_var_names(ivar)
 
       ! Load data variables for just the subgrid defined above
@@ -2214,10 +2215,10 @@
         iright(1)  = nx_submet
         iistart(1) = istart
         iicount(1) = nx_submet
-      end if
+      endif
 
-      IF(Use_GRIB2_Index)THEN
-        write(*,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
+      if(Use_GRIB2_Index)then
+        write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
                   trim(adjustl(index_file))!,nx_submet,ny_submet,np_met_loc
   
         call grib_index_read(idx,index_file)
@@ -2270,7 +2271,7 @@
                     count1=count1+1
   
           call grib_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
-          !write(*,*)discipline_idx(l),parameterCategory_idx(j),&
+          !write(MR_global_info,*)discipline_idx(l),parameterCategory_idx(j),&
           !          parameterNumber_idx(k),level_idx(i),forecastTime_idx(t),&
           !          typeOfFirstFixedSurface
           if ( discipline_idx(l)       .eq. iv_discpl .and. &
@@ -2279,38 +2280,38 @@
                typeOfFirstFixedSurface .eq. iv_typeSf) then
 
             !call grib_get(igrib,'shortName',sName)
-            !write(*,*)"       FOUND :: ",sName
+            !write(MR_global_info,*)"       FOUND :: ",sName
             call grib_get(igrib,'numberOfPoints',numberOfPoints)
             call grib_get(igrib,'Ni',Ni)
             call grib_get(igrib,'Nj',Nj)
-            IF(nx_fullmet.ne.Ni)THEN
-              write(*,*)"MR ERROR:  Grid is not the expected size"
-              write(*,*)"nx_fullmet = ",nx_fullmet
-              write(*,*)"Ni         = ",Ni
+            if(nx_fullmet.ne.Ni)then
+              write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+              write(MR_global_error,*)"nx_fullmet = ",nx_fullmet
+              write(MR_global_error,*)"Ni         = ",Ni
               stop 1
-            ENDIF
-            IF(ny_fullmet.ne.Nj)THEN
-              write(*,*)"MR ERROR:  Grid is not the expected size"
-              write(*,*)"ny_fullmet = ",ny_fullmet
-              write(*,*)"Nj         = ",Nj
+            endif
+            if(ny_fullmet.ne.Nj)then
+              write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+              write(MR_global_error,*)"ny_fullmet = ",ny_fullmet
+              write(MR_global_error,*)"Nj         = ",Nj
               stop 1
-            ENDIF
+            endif
             allocate(values(numberOfPoints))
             allocate(slice(Ni,Nj))
               call grib_get(igrib,'values',values)
-              DO m = 1,Nj
+              do m = 1,Nj
                 rstrt = (m-1)*Ni + 1
                 rend  = m*Ni
                 slice(1:Ni,m) = values(rstrt:rend)
-              ENDDO
+              enddo
               deallocate(values)
       
              ! There is no guarentee that grib levels are in order so...
              ! Now loop through the pressure values for this variable and put this
              ! slice at the correct level.
              do kk = 1,np_met_loc
-               !write(*,*)"Checking levels: ",kk,p_met_loc(kk),level_idx(i)
-               IF(p_met_loc(kk).eq.level_idx(i))then
+               !write(MR_global_info,*)"Checking levels: ",kk,p_met_loc(kk),level_idx(i)
+               if(p_met_loc(kk).eq.level_idx(i))then
                  full_values(:,:,kk) = real(slice(:,:),kind=sp)
                  exit
                endif
@@ -2320,20 +2321,20 @@
       
                     call grib_release(igrib)
                     call grib_new_from_index(idx,igrib, iret)
-                  end do
+                  enddo
                   call grib_release(igrib)
       
-                end do ! loop on forecastTime
-              end do ! loop on level
-            end do ! loop on parameterNumber
-          end do ! loop on parameterCategory
-        end do ! loop on discipline
+                enddo ! loop on forecastTime
+              enddo ! loop on level
+            enddo ! loop on parameterNumber
+          enddo ! loop on parameterCategory
+        enddo ! loop on discipline
       
         call grib_index_release(idx)
-      ELSE
+      else
         ! We don't have/(can't make) the index file so scan all messages of the
         ! grib2 file
-        write(*,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
+        write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
                   trim(adjustl(grib2_file))!,nx_submet,ny_submet,np_met_loc
         ifile=5
         call grib_open_file(ifile,grib2_file,'R')
@@ -2343,7 +2344,7 @@
       
         ! Loop on all the messages in a file.
         call grib_new_from_file(ifile,igrib,iret)
-        !write(*,*)"  ifile,igrib,iret: ",ifile,igrib,iret
+        !write(MR_global_info,*)"  ifile,igrib,iret: ",ifile,igrib,iret
         count1=0
         do while (iret/=GRIB_END_OF_FILE)
           count1=count1+1
@@ -2355,7 +2356,7 @@
           call grib_get(igrib,'scaledValueOfFirstFixedSurface',level)
 
           call grib_get(igrib,'scaledValueOfFirstFixedSurface',scaledValueOfFirstFixedSurface)
-          !write(*,*)count1,discipline,parameterCategory,parameterNumber,typeOfFirstFixedSurface
+          !write(MR_global_info,*)count1,discipline,parameterCategory,parameterNumber,typeOfFirstFixedSurface
           if ( discipline              .eq. iv_discpl .and. &
                parameterCategory       .eq. iv_paramC .and. &
                parameterNumber         .eq. iv_paramN .and. &
@@ -2363,26 +2364,26 @@
             call grib_get(igrib,'numberOfPoints',numberOfPoints)
             call grib_get(igrib,'Ni',Ni)
             call grib_get(igrib,'Nj',Nj)
-            IF(nx_fullmet.ne.Ni)THEN
-              write(*,*)"MR ERROR:  Grid is not the expected size"
-              write(*,*)"nx_fullmet = ",nx_fullmet
-              write(*,*)"Ni         = ",Ni
+            if(nx_fullmet.ne.Ni)then
+              write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+              write(MR_global_error,*)"nx_fullmet = ",nx_fullmet
+              write(MR_global_error,*)"Ni         = ",Ni
               stop 1
-            ENDIF
-            IF(ny_fullmet.ne.Nj)THEN
-              write(*,*)"MR ERROR:  Grid is not the expected size"
-              write(*,*)"ny_fullmet = ",ny_fullmet
-              write(*,*)"Nj         = ",Nj
+            endif
+            if(ny_fullmet.ne.Nj)then
+              write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+              write(MR_global_error,*)"ny_fullmet = ",ny_fullmet
+              write(MR_global_error,*)"Nj         = ",Nj
               stop 1
-            ENDIF
+            endif
             allocate(values(numberOfPoints))
             allocate(slice(Ni,Nj))
             call grib_get(igrib,'values',values)
-            DO m = 1,Nj
+            do m = 1,Nj
               rstrt = (m-1)*Ni + 1
               rend  = m*Ni
               slice(1:Ni,m) = values(rstrt:rend)
-            ENDDO
+            enddo
             deallocate(values)
 
              ! There is no guarentee that grib levels are in order so...
@@ -2391,7 +2392,7 @@
              ! slice at the correct level.
              if(ivar.eq.16)level = scaledValueOfFirstFixedSurface
              do kk = 1,np_met_loc
-               IF(p_met_loc(kk).eq.level)then
+               if(p_met_loc(kk).eq.level)then
                  full_values(:,:,kk) = real(slice(:,:),kind=sp)
                  exit
                endif
@@ -2402,42 +2403,35 @@
           call grib_new_from_file(ifile,igrib, iret)
         enddo
         call grib_close_file(ifile)
-      ENDIF
+      endif
 
-      IF(Dimension_of_Variable.eq.3)THEN
+      if(Dimension_of_Variable.eq.3)then
         MR_dum3d_metP = 0.0_sp
         allocate(temp3d_sp(nx_submet,ny_submet,np_met_loc,1))
 
         do i=1,ict        !read subgrid at current time step
             ! for any other 3d variable (non-WRF, non-NCEP)
-          !write(*,*)nx_submet,ny_submet,np_met_loc,1
-          !write(*,*)ileft(i),iright(i),iright(i)-ileft(i)+1
-          !write(*,*)iistart(i),iistart(i)+iicount(i),iicount(i)
           temp3d_sp(ileft(i):iright(i)              ,1:ny_submet            ,1:np_met_loc,1) = &
-        full_values(iistart(i):iistart(i)+iicount(i)-1,jstart:jstart+ny_submet-1,1:np_met_loc)
-!            nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
-!                     start = (/iistart(i),jstart,1,iwstep/),       &
-!                     count = (/iicount(i),ny_submet,np_met_loc,1/))
+          full_values(iistart(i):iistart(i)+iicount(i)-1,jstart:jstart+ny_submet-1,1:np_met_loc)
         enddo
-        !stop 1
 
           do j=1,ny_submet
             itmp = ny_submet-j+1
             !reverse the j indices (since they increment from N to S)
-            IF(y_inverted)THEN
+            if(y_inverted)then
               MR_dum3d_metP(1:nx_submet,j,1:np_met_loc)  = temp3d_sp(1:nx_submet,itmp,1:np_met_loc,1)
-            ELSE
+            else
               MR_dum3d_metP(1:nx_submet,j,1:np_met_loc)  = temp3d_sp(1:nx_submet,j,1:np_met_loc,1)
-            ENDIF
-          end do
+            endif
+          enddo
 
         deallocate(temp3d_sp)
 
-      ELSEIF(Dimension_of_Variable.eq.2)THEN
-!        IF(IsCatagorical)THEN
+      elseif(Dimension_of_Variable.eq.2)then
+!        if(IsCatagorical)then
 !          allocate(temp2d_int(nx_submet,ny_submet,1))
 !          do i=1,ict        !read subgrid at current time step
-!            if(MR_iwindformat.eq.25)THEN
+!            if(MR_iwindformat.eq.25)then
 !              ! No catagorical variables for MR_iwindformat = 25
 !            else
 !              nSTAT = nf90_get_var(ncid,in_var_id,temp2d_int(ileft(i):iright(i),:,:), &
@@ -2445,193 +2439,193 @@
 !                         count = (/iicount(i),ny_submet,1/))
 !              do j=1,ny_submet
 !                itmp = ny_submet-j+1
-!                IF(y_inverted)THEN
+!                if(y_inverted)then
 !                  MR_dum2d_met_int(1:nx_submet,j)  = temp2d_int(1:nx_submet,itmp,1)
-!                ELSE
+!                else
 !                  MR_dum2d_met_int(1:nx_submet,j)  = temp2d_int(1:nx_submet,j,1)
-!                ENDIF
+!                endif
 !              enddo
 !            endif
-!            IF(nSTAT.ne.0)THEN
-!               write(6,*)'MR ERROR: get_var:Vx ',invar,nf90_strerror(nSTAT)
-!               write(9,*)'MR ERROR: get_var:Vx ',invar,nf90_strerror(nSTAT)
+!            if(nSTAT.ne.0)then
+!               write(MR_global_error,*)'MR ERROR: get_var:Vx ',invar,nf90_strerror(nSTAT)
+!               write(MR_global_log  ,*)'MR ERROR: get_var:Vx ',invar,nf90_strerror(nSTAT)
 !               stop 1
-!             ENDIF
-!          end do
+!             endif
+!          enddo
 !          deallocate(temp2d_int)
-!        ELSE
+!        else
           allocate(temp2d_sp(nx_submet,ny_submet,1))
-          IF(ivar.eq.11.or.ivar.eq.12)THEN
+          if(ivar.eq.11.or.ivar.eq.12)then
               ! Surface winds usually have a z coordinate as well
             allocate(temp3d_sp(nx_submet,ny_submet,1,1))
-          ENDIF
+          endif
   
           do i=1,ict        !read subgrid at current time step
-            if(MR_iwindformat.eq.25)THEN
+            if(MR_iwindformat.eq.25)then
 
             else
               ! 2d variables for iwf .ne. 25
-!              IF(ivar.eq.11.or.ivar.eq.12)THEN
+!              if(ivar.eq.11.or.ivar.eq.12)then
 !                ! Surface velocities do have a z dimension
 !                nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
 !                         start = (/iistart(i),jstart,1,iwstep/),       &
 !                         count = (/iicount(i),ny_submet,1,1/))
-!                IF(nSTAT.ne.0)THEN
-!                   write(6,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
-!                   write(9,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
+!                if(nSTAT.ne.0)then
+!                   write(MR_global_error,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
+!                   write(MR_global_log  ,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
 !                   stop 1
-!                ENDIF
+!                endif
 !                do j=1,ny_submet
 !                  itmp = ny_submet-j+1
-!                  IF(y_inverted)THEN
+!                  if(y_inverted)then
 !                    MR_dum2d_met(1:nx_submet,j)  = temp3d_sp(1:nx_submet,itmp,1,1)
-!                  ELSE
+!                  else
 !                    MR_dum2d_met(1:nx_submet,j)  = temp3d_sp(1:nx_submet,j,1,1)
-!                  ENDIF
+!                  endif
 !                enddo
-!              ELSE
+!              else
 !                nSTAT = nf90_get_var(ncid,in_var_id,temp2d_sp(ileft(i):iright(i),:,:), &
 !                         start = (/iistart(i),jstart,iwstep/),       &
 !                         count = (/iicount(i),ny_submet,1/))
-!                IF(nSTAT.ne.0)THEN
-!                   write(6,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
-!                   write(9,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
+!                if(nSTAT.ne.0)then
+!                   write(MR_global_error,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
+!                   write(MR_global_log  ,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
 !                   stop 1
-!                ENDIF
+!                endif
           temp2d_sp(ileft(i):iright(i)              ,1:ny_submet,1) = &
         full_values(iistart(i):iistart(i)+iicount(i)-1,jstart:jstart+ny_submet-1,1)
 
                 do j=1,ny_submet
                   itmp = ny_submet-j+1
-                  IF(y_inverted)THEN
+                  if(y_inverted)then
                     MR_dum2d_met(1:nx_submet,j)  = temp2d_sp(1:nx_submet,itmp,1)
-                  ELSE
+                  else
                     MR_dum2d_met(1:nx_submet,j)  = temp2d_sp(1:nx_submet,j,1)
-                  ENDIF
+                  endif
                 enddo
-!              ENDIF
+!              endif
             endif
-          end do
+          enddo
           deallocate(temp2d_sp)
-          IF(ivar.eq.11.or.ivar.eq.12) deallocate(temp3d_sp)
-!        ENDIF ! IsCatagorical
-      ENDIF ! Dimension_of_Variable.eq.2
+          if(ivar.eq.11.or.ivar.eq.12) deallocate(temp3d_sp)
+!        endif ! IsCatagorical
+      endif ! Dimension_of_Variable.eq.2
 
-      IF(ivar.eq.1)THEN
+      if(ivar.eq.1)then
         ! If this is filling HGT, then we need to do a special QC check
-        !IF(MR_iwindformat.eq.24)THEN
+        !if(MR_iwindformat.eq.24)then
           ! It seems like only NASA has NaNs for pressures greater than surface
           ! pressure
-          DO i=1,nx_submet
-            DO j=1,ny_submet
-              DO k=1,np_met_loc
-                IF(MR_dum3d_metP(i,j,k).gt.1.0e10_sp)THEN
+          do i=1,nx_submet
+            do j=1,ny_submet
+              do k=1,np_met_loc
+                if(MR_dum3d_metP(i,j,k).gt.1.0e10_sp)then
                    ! linearly interpolate in z
                    ! find the first non NaN above k
                    do kk = k+1,np_met_loc,1
-                     IF(MR_dum3d_metP(i,j,kk).lt.1.0e10_sp)exit
+                     if(MR_dum3d_metP(i,j,kk).lt.1.0e10_sp)exit
                    enddo
-                   if(kk.eq.np_met_loc+1)THEN
+                   if(kk.eq.np_met_loc+1)then
                      kk=np_met_loc
                      MR_dum3d_metP(i,j,kk) = 0.0_sp
-                   ENDIF
+                   endif
                    ! find the first non NaN below k if k!=1
                    do kkk = max(k-1,1),1,-1
-                     IF(MR_dum3d_metP(i,j,kkk).lt.1.0e10_sp)exit
+                     if(MR_dum3d_metP(i,j,kkk).lt.1.0e10_sp)exit
                    enddo
-                   if(kkk.eq.0)THEN
+                   if(kkk.eq.0)then
                      kkk=1
                      MR_dum3d_metP(i,j,kkk) = 0.0_sp
-                   ENDIF
+                   endif
                    MR_dum3d_metP(i,j,k) = MR_dum3d_metP(i,j,kkk) + &
                          (MR_dum3d_metP(i,j,kk)-MR_dum3d_metP(i,j,kkk)) * &
                          real(k-kkk,kind=sp)/real(kk-kkk,kind=sp)
-                ENDIF
-              ENDDO
-            ENDDO
-          ENDDO
-        !ENDIF
+                endif
+              enddo
+            enddo
+          enddo
+        !endif
         ! convert m to km
         MR_dum3d_metP = MR_dum3d_metP / 1000.0_sp
-      ELSEIF(Dimension_of_Variable.eq.3)THEN
+      elseif(Dimension_of_Variable.eq.3)then
         ! Do QC checking of all other 3d variables
-        If(ivar.eq.2.or.ivar.eq.3.or.ivar.eq.4)THEN
+        if(ivar.eq.2.or.ivar.eq.3.or.ivar.eq.4)then
           ! taper winds (vx,vy,vz) to zero at ground surface
-          IF(istep.eq.MR_iMetStep_Now)THEN
+          if(istep.eq.MR_iMetStep_Now)then
             call MR_QC_3dvar(nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
                           np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
                           bc_low_sp=0.0_sp)
-          ELSE
+          else
             call MR_QC_3dvar(nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
                           np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
                           bc_low_sp=0.0_sp)
-          ENDIF
-        ELSEIF(ivar.eq.5)THEN
+          endif
+        elseif(ivar.eq.5)then
           ! set ground and top-level conditions for temperature
           Z_top = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/real(100.0,kind=sp))
           T_top = MR_Temp_US_StdAtm(Z_top)
-          IF(istep.eq.MR_iMetStep_Now)THEN
+          if(istep.eq.MR_iMetStep_Now)then
             call MR_QC_3dvar(nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
                           np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
                           bc_low_sp=293.0_sp, bc_high_sp=T_top)
-          ELSE
+          else
             call MR_QC_3dvar(nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
                           np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
                           bc_low_sp=293.0_sp, bc_high_sp=T_top)
-          ENDIF
-        ELSE
+          endif
+        else
           ! For other variables, use the top and bottom non-fill values
-          IF(istep.eq.MR_iMetStep_Now)THEN
+          if(istep.eq.MR_iMetStep_Now)then
             call MR_QC_3dvar(nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
                           np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat))
-          ELSE
+          else
             call MR_QC_3dvar(nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
                           np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat))
-          ENDIF
-        ENDIF
-      ENDIF
+          endif
+        endif
+      endif
 
-      IF(ivar.eq.4)THEN
+      if(ivar.eq.4)then
           ! For pressure vertical velocity, convert from Pa s to m/s by dividing
           ! by pressure gradient
-        DO k=1,np_met_loc
-          DO i=1,nx_submet
-            DO j=1,ny_submet
-              IF(k.eq.1)THEN
+        do k=1,np_met_loc
+          do i=1,nx_submet
+            do j=1,ny_submet
+              if(k.eq.1)then
                 ! Use one-sided gradients for bottom
                 del_P = p_fullmet_Vz_sp(2)-p_fullmet_Vz_sp(1)
-                IF(istep.eq.MR_iMetStep_Now)THEN
+                if(istep.eq.MR_iMetStep_Now)then
                   del_H = MR_geoH_metP_last(i,j,2) - MR_geoH_metP_last(i,j,1)
-                ELSE
+                else
                   del_H = MR_geoH_metP_next(i,j,2) - MR_geoH_metP_next(i,j,1)
-                ENDIF
-              ELSEIF(k.eq.np_met_loc)THEN
+                endif
+              elseif(k.eq.np_met_loc)then
                 ! Use one-sided gradients for top
                 del_P = p_fullmet_Vz_sp(np_met_loc) - &
                          p_fullmet_Vz_sp(np_met_loc-1)
-                IF(istep.eq.MR_iMetStep_Now)THEN
+                if(istep.eq.MR_iMetStep_Now)then
                   del_H = MR_geoH_metP_last(i,j,np_met_loc) - &
                            MR_geoH_metP_last(i,j,np_met_loc-1)
-                ELSE
+                else
                   del_H = MR_geoH_metP_next(i,j,np_met_loc) - &
                            MR_geoH_metP_next(i,j,np_met_loc-1)
-                ENDIF
-              ELSE
+                endif
+              else
                 ! otherwise, two-sided calculation
                 del_P = p_fullmet_Vz_sp(k+1)-p_fullmet_Vz_sp(k-1)
-                IF(istep.eq.MR_iMetStep_Now)THEN
+                if(istep.eq.MR_iMetStep_Now)then
                   del_H = MR_geoH_metP_last(i,j,k+1) - MR_geoH_metP_last(i,j,k-1)
-                ELSE
+                else
                   del_H = MR_geoH_metP_next(i,j,k+1) - MR_geoH_metP_next(i,j,k-1)
-                ENDIF
-              ENDIF
+                endif
+              endif
               del_h = del_H * 1000.0_sp ! convert to m
               dpdz  = del_P/del_H
               MR_dum3d_metP(i,j,k) = MR_dum3d_metP(i,j,k) / dpdz
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDIF
+            enddo
+          enddo
+        enddo
+      endif
       MR_dum3d_metP = MR_dum3d_metP * Met_var_conversion_factor(ivar)
 
       end subroutine MR_Read_MetP_Variable_GRIB

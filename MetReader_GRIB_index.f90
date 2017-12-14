@@ -4,6 +4,8 @@
 
       implicit none
 
+      integer            :: MR_global_info = 6
+
       character(len=130)  :: grib2_file
 
       character(len=130)  :: index_file
@@ -93,7 +95,7 @@
 ! Large-scale_precipitation_non-convective_surface_0_Hour_Accumulation
 
       index_file = adjustl(trim(grib2_file)) // ".index"
-      write(*,*)"Generating index file: ",index_file
+      write(MR_global_info,*)"Generating index file: ",index_file
 
           ! create an index from a grib file using some keys
         !call grib_index_create(idx,adjustl(trim(grib2_file)),&
@@ -149,17 +151,17 @@
                 do while (iret /= GRIB_END_OF_INDEX)
                    count1=count1+1
                    !call grib_get(igrib,'shortName',sName)
-                   !write(*,*)count1,sName
+                   !write(MR_global_info,*)count1,sName
                    call grib_release(igrib)
                    call grib_new_from_index(idx,igrib, iret)
-                end do
+                enddo
                 call grib_release(igrib)
       
-                end do ! loop on forecastTime
-              end do ! loop on level
-            end do ! loop on parameterNumber
-          end do ! loop on parameterCategory
-        end do ! loop on discipline
+                enddo ! loop on forecastTime
+              enddo ! loop on level
+            enddo ! loop on parameterNumber
+          enddo ! loop on parameterCategory
+        enddo ! loop on discipline
       
         call grib_index_write(idx,adjustl(trim(index_file)))
       

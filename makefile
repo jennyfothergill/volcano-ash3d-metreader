@@ -47,6 +47,10 @@ USENETCDF = T
 USEGRIB2 = T
 USEHDF = F   # Note: the hdf reader is not yet functional
 
+# MEMORY
+# If you need pointer arrays instead of allocatable arrays, set this to 'T'
+USEPOINTERS = F
+
 ###############################################################################
 #####  END OF USER SPECIFIED FLAGS  ###########################################
 ###############################################################################
@@ -63,7 +67,12 @@ endif
 ifeq ($(USEHDF), T)
  hdfFPPFLAG = -DUSEHDF
 endif
-FPPFLAGS = -x f95-cpp-input $(ncFPPFLAG) $(grb2FPPFLAG) $(hdfFPPFLAG)
+
+ifeq ($(USEPOINTERS), T)
+ memFPPFLAG = -DUSEPOINTERS
+endif
+
+FPPFLAGS = -x f95-cpp-input $(ncFPPFLAG) $(grb2FPPFLAG) $(hdfFPPFLAG) $(memFPPFLAG)
 
 ###############################################################################
 ###############################################################################

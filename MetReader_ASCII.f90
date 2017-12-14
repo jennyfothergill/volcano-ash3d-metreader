@@ -110,9 +110,9 @@
       character(len=80)  :: linebuffer
       logical :: In_hPa = .true.
 
-      write(*,*)"--------------------------------------------------------------------------------"
-      write(*,*)"----------                MR_Read_Met_Times_ASCII_1d                  ----------"
-      write(*,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"----------                MR_Read_Met_Times_ASCII_1d                  ----------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
 !------------------------------------------------------------------------------
 !    MR_iwind.eq.1
@@ -195,7 +195,7 @@
 
       Met_dim_IsAvailable = .false.
       Met_var_IsAvailable = .false.
-      If(MR_iwind.eq.1.and.MR_iwindformat.eq.1)THEN
+      if(MR_iwind.eq.1.and.MR_iwindformat.eq.1)then
         ! We are reading just one windfile with the following format
         !  If three values per line:
         !    Elevation(m) , Velocity(m/s) , Direction(degree E of N)
@@ -219,13 +219,13 @@
         MR_windfiles_nt_fullmet(:) = nt_fullmet
 
         Have_Vz = .false.
-        DO itime = 1,MR_Snd_nt_fullmet
-          DO iloc = 1,MR_nSnd_Locs
+        do itime = 1,MR_Snd_nt_fullmet
+          do iloc = 1,MR_nSnd_Locs
         ! In general, we will want to have multiple locations and multiple times
         ! For now, just set the index of each to 1
 
         iw_idx = (itime-1)*MR_nSnd_Locs + iloc
-        write(*,*)"Opening sonde file ",iw_idx,MR_windfiles(iw_idx)
+        write(MR_global_info,*)"Opening sonde file ",iw_idx,MR_windfiles(iw_idx)
         fid = 127
         open(unit=fid,file=trim(adjustl(MR_windfiles(1))), status='unknown',err=1971)
         read(fid,*)!skip over first line
@@ -237,18 +237,18 @@
         nlev     = ivalue1
         ! Try for three values
         read(linebuffer,*,iostat=ioerr) rvalue1,ivalue1, ivalue2
-        IF(ioerr.eq.0)THEN
+        if(ioerr.eq.0)then
           ! Success: third value is the number of variables
           !    Note: We need at least 5 variables for P,H,U,V,T
           ! First check if this is the first file read, otherwise do not allocate
-          IF(iw_idx.eq.1)THEN
+          if(iw_idx.eq.1)then
             MR_Snd_nvars = max(5,ivalue2)
             allocate(MR_SndVarsID(MR_Snd_nvars))
-          ENDIF
+          endif
           read(linebuffer,*,iostat=ioerr) rvalue1,ivalue1, ivalue2, MR_SndVarsID(1:MR_Snd_nvars)
-        ELSE
+        else
           ! If no list of variables is provided, we will still need a list up to 5
-          IF(iw_idx.eq.1)THEN
+          if(iw_idx.eq.1)then
             MR_Snd_nvars = 5
             allocate(MR_SndVarsID(MR_Snd_nvars))
             MR_SndVarsID(1) = 0 ! P
@@ -256,15 +256,15 @@
             MR_SndVarsID(3) = 2 ! U
             MR_SndVarsID(4) = 3 ! V
             MR_SndVarsID(5) = 5 ! T
-          ENDIF
-        ENDIF
+          endif
+        endif
           ! This variable will hold all the sonde data
-        IF(iw_idx.eq.1)THEN
+        if(iw_idx.eq.1)then
           allocate(MR_SndVars_metP(MR_nSnd_Locs,MR_Snd_nt_fullmet,MR_Snd_nvars,300))
           allocate(MR_Snd_np_fullmet(MR_nSnd_Locs,MR_Snd_nt_fullmet))
           MR_SndVars_metP   = 0.0
           MR_Snd_np_fullmet = 0
-        ENDIF
+        endif
         MR_Snd_np_fullmet(iloc,itime) = nlev
         read(fid,*) rvalue1,rvalue2
         x_fullmet_sp(iloc) = rvalue1
@@ -297,16 +297,16 @@
               Snd_Have_PT = .true.
               ! Five values were successfully read, interpret as:
               ! WindElevation,,WindVelocity,WindDirection,Pressure,Temperature
-              IF(iw_idx.eq.1.and.i.eq.1.and.rvalue4.gt.1500.0)THEN
+              if(iw_idx.eq.1.and.i.eq.1.and.rvalue4.gt.1500.0)then
                 ! For the first file and first level (ground), check if pressure is greater
                 ! than the extected 1013 hPa.  If so, assume pressure is in Pa
                 In_hPa = .false.
-              ENDIF
-              IF(In_hPa)THEN
+              endif
+              if(In_hPa)then
                 MR_SndVars_metP(iloc,itime,1,i) = rvalue4            ! already in Pa
-              ELSE
+              else
                 MR_SndVars_metP(iloc,itime,1,i) = rvalue4 * 100.0_sp ! convert to Pa
-              ENDIF
+              endif
               MR_SndVars_metP(iloc,itime,5,i) = rvalue5 + 273.0_sp
             else
               MR_SndVars_metP(iloc,itime,1,i) = MR_Pres_US_StdAtm(MR_SndVars_metP(iloc,itime,2,i))&
@@ -327,26 +327,26 @@
           Met_var_IsAvailable(3) = .true.  ! V
           Met_var_IsAvailable(5) = .true.  ! T
 
-        end do
+        enddo
         close(fid)
-        ENDDO
-      ENDDO
+        enddo
+      enddo
 
       ! Here we look for the highest pressure value (lowest altitude) of all the pressure
       ! values to be used for setting the master pressure array (p_fullmet_sp)
       p_maxtop = 0.0
       p_tidx = 0
       p_lidx = 0
-      DO itime = 1,MR_Snd_nt_fullmet
-        DO iloc = 1,MR_nSnd_Locs
+      do itime = 1,MR_Snd_nt_fullmet
+        do iloc = 1,MR_nSnd_Locs
           p_top =  MR_SndVars_metP(iloc,itime,1,MR_Snd_np_fullmet(iloc,itime))
-          IF(p_top.gt.p_maxtop)THEN
+          if(p_top.gt.p_maxtop)then
             p_maxtop = MR_Snd_np_fullmet(iloc,itime)
             p_tidx = itime
             p_lidx = iloc
-          ENDIF
-        ENDDO
-      ENDDO
+          endif
+        enddo
+      enddo
       np_fullmet = MR_Snd_np_fullmet(p_lidx,p_tidx)
       np_fullmet_Vz = np_fullmet
       np_fullmet_RH = np_fullmet
@@ -358,41 +358,41 @@
       p_fullmet_RH_sp = p_fullmet_sp
       MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
 
-      IF(nt_fullmet.gt.1)THEN
+      if(nt_fullmet.gt.1)then
         MR_ForecastInterval = MR_windfile_starthour(MR_nSnd_Locs+1) - &
                                MR_windfile_starthour(1)
-      ELSE
+      else
         MR_ForecastInterval = 2400.0_dp
-      ENDIF
+      endif
 
-      ELSEIF(MR_iwind.eq.1.and.MR_iwindformat.eq.2)THEN
+      elseif(MR_iwind.eq.1.and.MR_iwindformat.eq.2)then
         ! We are reading radiosonde data from http://weather.uwyo.edu/
         ! Allocate arrays for iGridCode points at iwindfiles times, and 300 levels
         !  
         Have_Vz = .false.
 
 
-      ENDIF
+      endif
 
       ! Finished setting up the start time of each wind file in HoursSince : MR_windfile_starthour(iw)
       !  and the forecast (offset from start of file) for each step        : MR_windfile_stephour(iw,iwstep)
 
-      write(*,*)"File, step, Ref, Offset, HoursSince"
-      DO iw = 1,MR_iwindfiles
-        DO iws = 1,nt_fullmet
-          write(*,*)iw,iws,real(MR_windfile_starthour(iw),kind=4),&
+      write(MR_global_info,*)"File, step, Ref, Offset, HoursSince"
+      do iw = 1,MR_iwindfiles
+        do iws = 1,nt_fullmet
+          write(MR_global_info,*)iw,iws,real(MR_windfile_starthour(iw),kind=4),&
                            real(MR_windfile_stephour(iw,iws),kind=4),&
                            real(MR_windfile_starthour(iw)+MR_windfile_stephour(iw,iws),kind=4)
-        ENDDO
-      ENDDO
+        enddo
+      enddo
 
-      write(*,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       return
 
-1971  write(6,*)  'error: cannot find file input wind file.',&
+1971  write(MR_global_error,*)  'error: cannot find file input wind file.',&
                   '  Program stopped.'
-      write(9,*)  'error: cannot find file input wind file.',&
+      write(MR_global_log  ,*)  'error: cannot find file input wind file.',&
                   '  Program stopped.'
       stop 1
 
@@ -434,12 +434,12 @@
       integer, parameter :: sp        = 4 ! single precision
       integer, parameter :: dp        = 8 ! double precision
 
-      write(*,*)"--------------------------------------------------------------------------------"
-      write(*,*)"----------                          MR_Set_MetComp_Grids_ASCII_1d     ----------"
-      write(*,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"----------                          MR_Set_MetComp_Grids_ASCII_1d     ----------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
-      If(MR_iwind.eq.1.and.MR_iwindformat.eq.1.or.&
-         MR_iwind.eq.1.and.MR_iwindformat.eq.2)THEN
+      if(MR_iwind.eq.1.and.MR_iwindformat.eq.1.or.&
+         MR_iwind.eq.1.and.MR_iwindformat.eq.2)then
           ! 1d ascii file or Radiosonde case
         nx_submet     = 1
         ny_submet     = 1
@@ -455,32 +455,32 @@
 
         allocate(MR_Snd2Comp_tri_map_wgt(nx_comp,ny_comp,3))
         allocate(MR_Snd2Comp_tri_map_idx(nx_comp,ny_comp,3))
-        IF(MR_nSnd_Locs.eq.1)THEN
+        if(MR_nSnd_Locs.eq.1)then
           ! Easy case: all weights are on the one sonde point
           MR_Snd2Comp_tri_map_wgt = 0.0_sp
           MR_Snd2Comp_tri_map_wgt(1:nx_comp,1:ny_comp,1)   = 1.0_sp
           MR_Snd2Comp_tri_map_idx(1:nx_comp,1:nx_comp,1:3) = 1
-        ELSEIf(MR_nSnd_Locs.eq.2)THEN
+        elseif(MR_nSnd_Locs.eq.2)then
           ! Also somewhat easy, but not yet implemented
           ! Find each comp point wrt the the two sonde locations.
           !  Use bilinear for points between and sonde points for points beyond
-          write(*,*)"MR ERROR:  Multiple sonde locations not yet implemented"
+          write(MR_global_error,*)"MR ERROR:  Multiple sonde locations not yet implemented"
           stop 1
-        ELSE
+        else
           ! Difficult case:  Here we need to triangulate each comp point with
           ! nearby sonde locations.
-          write(*,*)"MR ERROR:  Multiple sonde locations not yet implemented"
+          write(MR_global_error,*)"MR ERROR:  Multiple sonde locations not yet implemented"
           stop 1
-        ENDIF
+        endif
 
-      ELSE
-        write(*,*)"Unknown ASCII wind file format."
-        write(*,*)"  MR_iwind = ",MR_iwind
-        write(*,*)"MR_iwindformat = ",MR_iwindformat
+      else
+        write(MR_global_error,*)"MR ERROR : Unknown ASCII wind file format."
+        write(MR_global_error,*)"        MR_iwind = ",MR_iwind
+        write(MR_global_error,*)"  MR_iwindformat = ",MR_iwindformat
         stop 1
-      ENDIF
+      endif
 
-      write(*,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       end subroutine MR_Set_MetComp_Grids_ASCII_1d
 
@@ -507,7 +507,7 @@
 !      integer, parameter :: sp        = 4 ! single precision
 !      integer, parameter :: dp        = 8 ! double precision
 !
-!      If(MR_iwind.eq.1.and.MR_iwindformat.eq.1)THEN
+!      If(MR_iwind.eq.1.and.MR_iwindformat.eq.1)then
 !          ! 1d ascii file
 !        allocate(MR_MetStep_File(2))
 !        allocate(MR_MetStep_tindex(2))
@@ -523,16 +523,16 @@
 !        MR_MetStep_File(2)   = MR_windfiles(1) ! Currently, only one sounding
 !        MR_MetStep_tindex(2) = 2            ! Only one time with sounding file
 !        MR_MetStep_Hour_since_baseyear(2) = MR_Comp_StartHour + MR_Comp_Time_in_hours + 1.0_sp
-!      ELSEIF(MR_iwind.eq.1.and.MR_iwindformat.eq.2)THEN
+!      elseif(MR_iwind.eq.1.and.MR_iwindformat.eq.2)then
 !        ! Radiosonde case
-!      ELSEIF(MR_iwind.eq.2.and.MR_iwindformat.eq.1)THEN
+!      elseif(MR_iwind.eq.2.and.MR_iwindformat.eq.1)then
 !        ! 3d ascii windfiles
-!      ELSE
-!        write(*,*)"Unknown ASCII wind file format."
-!        write(*,*)"  MR_iwind = ",MR_iwind
-!        write(*,*)"MR_iwindformat = ",MR_iwindformat
+!      else
+!        write(MR_global_info,*)"Unknown ASCII wind file format."
+!        write(MR_global_info,*)"  MR_iwind = ",MR_iwind
+!        write(MR_global_info,*)"MR_iwindformat = ",MR_iwindformat
 !        stop 1
-!      ENDIF
+!      endif
 !
 !      end subroutine MR_Set_Met_Times_ASCII
 
@@ -556,7 +556,8 @@
       integer, parameter :: sp        = 4 ! single precision
       integer, parameter :: dp        = 8 ! double precision
 
-      integer,intent(in) :: ivar,istep
+      integer,intent(in) :: ivar
+      integer,intent(in) :: istep
 
       integer :: icol, i, j
       integer :: itime
@@ -565,19 +566,19 @@
       itime = MR_MetStep_findex(istep)
             ! these variables are set in MR_Read_Met_DimVars_ASCII_1d
       !  P,H,U,V,T
-      IF(Met_var_IsAvailable(ivar))THEN
-        DO i=1,MR_Snd_nvars
-          IF(ivar.eq.MR_SndVarsID(i))THEN
+      if(Met_var_IsAvailable(ivar))then
+        do i=1,MR_Snd_nvars
+          if(ivar.eq.MR_SndVarsID(i))then
             exit
-          ENDIF
-        ENDDO
+          endif
+        enddo
         icol  = i
         ! Now loop over all the submet points and build the value needed by multiplying by the
         ! weights determined in MR_Set_MetComp_Grids_ASCII_1d
         ! Note: This is a placeholder for multi-sonde triangulation, but only 1 sonde location is
         !       currently supported.
-        DO i = 1,nx_submet
-          DO j = 1,ny_submet
+        do i = 1,nx_submet
+          do j = 1,ny_submet
             iloc1 = MR_Snd2Comp_tri_map_idx(i,j,1)  ! Right now, these should all be 1, with weights of (1,0,0)
             iloc2 = MR_Snd2Comp_tri_map_idx(i,j,2)
             iloc3 = MR_Snd2Comp_tri_map_idx(i,j,3)
@@ -585,12 +586,12 @@
               MR_SndVars_metP(iloc1,itime,icol,1:np_fullmet) * MR_Snd2Comp_tri_map_wgt(i,j,1) + &
               MR_SndVars_metP(iloc2,itime,icol,1:np_fullmet) * MR_Snd2Comp_tri_map_wgt(i,j,2) + &
               MR_SndVars_metP(iloc3,itime,icol,1:np_fullmet) * MR_Snd2Comp_tri_map_wgt(i,j,3)
-          ENDDO
-        ENDDO
-      ELSE
+          enddo
+        enddo
+      else
         ! W is typically not provided
         MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_fullmet) = 0.0_sp
-      ENDIF
+      endif
 
       return
 
