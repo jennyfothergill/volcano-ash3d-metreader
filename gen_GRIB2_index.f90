@@ -12,7 +12,8 @@
 
       nargs = iargc()
       if (nargs.ne.1) then
-        write(MR_global_error,*)"MR ERROR: no grib2 file given"
+        !write(MR_global_error,*)"MR ERROR: no grib2 file given"
+        write(0,*)"MR ERROR: no grib2 file given"
         stop 1
       else
         call getarg(1,lllinebuffer)

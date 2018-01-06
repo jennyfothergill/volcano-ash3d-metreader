@@ -112,22 +112,22 @@ libMetReader.a: MetReader.F90 MetReader.o $(ncOBJS) $(grb2OBJS) MetReader_Grids.
 MetReader.o: MetReader.F90 makefile
 	$(FC) $(FPPFLAGS) $(EXFLAGS) -L../lib -c MetReader.F90
 MetReader_Grids.o: MetReader_Grids.f90 MetReader.o makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -Iinclude/ -c MetReader_Grids.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c MetReader_Grids.f90
 MetReader_ASCII.o: MetReader_ASCII.f90 MetReader.o makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -Iinclude/ -c MetReader_ASCII.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c MetReader_ASCII.f90
 
 ifeq ($(USENETCDF), T)
 MetReader_NetCDF.o: MetReader_NetCDF.f90 MetReader.o makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lnetcdf -lnetcdff -Iinclude/ -c MetReader_NetCDF.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lnetcdf -lnetcdff -c MetReader_NetCDF.f90
 endif
 ifeq ($(USEGRIB2), T)
 MetReader_GRIB_index.o: MetReader_GRIB_index.f90 makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lgrib_api_f90 -lgrib_api -c MetReader_GRIB_index.f90
 MetReader_GRIB.o: MetReader_GRIB.f90 MetReader_GRIB_index.o MetReader.o makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lgrib_api_f90 -lgrib_api -Iinclude/ -c MetReader_GRIB.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lgrib_api_f90 -lgrib_api -c MetReader_GRIB.f90
 gen_GRIB2_index: gen_GRIB2_index.f90 MetReader_GRIB_index.o makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lgrib_api_f90 -lgrib_api -Iinclude/ -c gen_GRIB2_index.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) MetReader_GRIB_index.o gen_GRIB2_index.o $(LIBS) -lgrib_api_f90 -lgrib_api -Llib -Iinclude/ -o gen_GRIB2_index
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lgrib_api_f90 -lgrib_api -c gen_GRIB2_index.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) MetReader_GRIB_index.o gen_GRIB2_index.o $(LIBS) -lgrib_api_f90 -lgrib_api -Llib -o gen_GRIB2_index
 endif
 #ifeq ($(USEHDF), T)
 #MetReader_HDF.o: MetReader_HDF.f90 MetReader.o makefile
