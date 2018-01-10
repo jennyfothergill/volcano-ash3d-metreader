@@ -49,7 +49,7 @@ USEHDF = F   # Note: the hdf reader is not yet functional
 
 # MEMORY
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'
-USEPOINTERS = F
+USEPOINTERS = T
 
 ###############################################################################
 #####  END OF USER SPECIFIED FLAGS  ###########################################
