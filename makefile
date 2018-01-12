@@ -135,9 +135,10 @@ endif
 #endif
 
 clean:
-	rm *.o
-	rm *.mod
-	rm lib*.a
+	rm -f *.o
+	rm -f *.mod
+	rm -f lib*.a
+	rm -f gen_GRIB2_index
 
 install:
 	install -d $(INSTALLDIR)/lib/

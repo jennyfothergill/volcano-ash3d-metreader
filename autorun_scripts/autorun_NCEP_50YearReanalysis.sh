@@ -20,27 +20,35 @@
 
 # Shell script that manages the download of the NCEP 2.5 degree Reanalysis data files.
 
+# Please edit the line below to be consistant with the install directory specified in
+# the makefile
+INSTALLDIR="/opt/USGS/"
+# This is the location where the downloaded windfiles will be placed.
+# Please edit this to suit your system.
+WINDROOT="/data/WindFiles"
+
 echo "------------------------------------------------------------"
 echo "running NCEP_50year_Reanalysis.sh"
 echo `date`
 echo "------------------------------------------------------------"
 
-SCRIPTDIR="/opt/USGS/bin/autorun_scripts"
-
+SCRIPTDIR="${INSTALLDIR}bin/autorun_scripts"
 echo "SCRIPTDIR=$SCRIPTDIR"
 
 starttime=`date`                  #record when we're starting the download
 echo "starting autorun_NCEP_50YearReanalysis.sh at $starttime"
 
-#Directory containing wind files
-WINDROOT="/data/WindFiles"
+rc=0
 NCEPDATAHOME="${WINDROOT}/NCEP"
-
+install -d ${NCEPDATAHOME}
+if [[ $? -ne 0 ]]; then
+   echo "Error:  Download directory ${NCEPDATAHOME} cannot be"
+   echo "        created or has insufficient write permissions."
+   rc=$((rc + 1))
+   exit $rc
+fi
 echo "NCEPDATAHOME=$NCEPDATAHOME"
 
-#y=`date | cut -c25-28`
-#monthnow=`date +%Y%m%d | cut -c5-6`
-#daynow=`date +%Y%m%d | cut -c7-8`
 y=`date +%Y`
 monthnow=`date +%m`
 daynow=`date +%d`

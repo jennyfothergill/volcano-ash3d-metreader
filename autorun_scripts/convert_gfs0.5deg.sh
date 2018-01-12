@@ -18,29 +18,29 @@
 #      and its documentation for any purpose.  We assume no responsibility to provide
 #      technical support to users of this software.
 
-# Shell script that downloads gfs 0.5degree data files for the current date.
+# Script that converts the gfs grib files to netcdf using netcdf-java.
 # This script is called from autorun_gfs0.5deg.sh and takes two command-line arguments
 #   get_gfs0.5deg.sh YYYYMMDD HR
 
-# This is the location where the downloaded windfiles will be placed.
-# Please edit this to suit your system.
+# Please edit these variables to match your system and location of netcdf-java
+JAVAHOME="/usr/local/bin/"
+NCJv="~/ncj/netcdfAll-4.5.jar"
 WINDROOT="/data/WindFiles"
+
 
 yearmonthday=$1
 FChour=$2
 
 echo "------------------------------------------------------------"
-echo "running get_gfs0.5deg.sh ${yearmonthday} ${FChour}"
+echo "running convert_gfs0.5deg.sh ${yearmonthday} ${FChour}"
 echo `date`
 echo "------------------------------------------------------------"
-t0=`date`
+
 
 rc=0
 GFSDATAHOME="${WINDROOT}/gfs"
-install -d ${GFSDATAHOME}
-if [[ $? -ne 0 ]] ; then
-   echo "Error:  Download directory ${GFSDATAHOME} cannot be"
-   echo "        created or has insufficient write permissions."
+if [[ -d ${GFSDATAHOME} ]] ; then
+   echo "Error:  Download directory ${GFSDATAHOME} does not exist"
    rc=$((rc + 1))
    exit $rc
 fi
@@ -52,29 +52,58 @@ FC_day=gfs.${yearmonthday}${FChour}
 #START EXECUTING
 
 #go to correct directory
-cd $GFSDATAHOME
-mkdir $FC_day
-cd $FC_day
+echo "going to ${GFSDATAHOME}/${FC_day}"
+cd ${GFSDATAHOME}/${FC_day}
 
+#Convert to NetCDF
 t=0
-while [ "$t" -le 99 ]; do
+while [ "$t" -le 99 ]
+do
   if [ "$t" -le 9 ]; then
-      hour="0$t"
-   else
-      hour="$t"
+    gfsfile="gfs.t${FChour}z.pgrb2.0p50.f00${t}"
+    netcdffile="${yearmonthday}${FChour}.f0${t}.nc"
+  else
+    gfsfile="gfs.t${FChour}z.pgrb2.0p50.f0${t}"
+    netcdffile="${yearmonthday}${FChour}.f${t}.nc"
   fi
-  filename="http://motherlode.ucar.edu/native/conduit/data/nccf/com/gfs/prod/${FC_day}/gfs.t${FChour}z.pgrb2.0p50.f0${hour}"
-  #filename="ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/${FC_day}/gfs.t${FChour}z.pgrb2.0p50.f0${hour}"
-  echo "wget ${filename}"
-  time wget ${filename}
-  t=$(($t+3))
+  if test -r ${gfsfile}
+  then
+     echo "Converting ${gfsfile} to ${netcdffile}"
+     echo "java -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out ${netcdffile} -IsLargeFile"
+     ${JAVAHOME}java -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out ${netcdffile} -IsLargeFile
+     if [[ $? -ne 0 ]]; then
+          exit 1
+     fi
+     t=$((t+3))
+   else
+     echo "error: ${gfsfile} does not exist."
+     exit 1
+   fi
 done
 
-echo "finished downloading wind files"
-t1=`date`
-echo "download start: $t0"
-echo "download   end: $t1"
+#Make sure the netcdf files all exist
+echo "making sure all netcdf files exist"
+t=0
+while [ "$t" -le 99 ]
+do
+  if [ "$t" -le 9 ]; then
+    netcdffile="${yearmonthday}${FChour}.f0${t}.nc"
+  else
+    netcdffile="${yearmonthday}${FChour}.f${t}.nc"
+  fi
+  if test -r ${netcdffile}
+  then
+     echo "${netcdffile} exists"
+     t=$((t+3))
+   else
+     echo "error: ${netcdffile} does not exist."
+     exit 1
+   fi
+done
+
+echo "all done with windfiles"
+
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "finished get_gfs0.5deg.sh ${yearmonthday} ${FChour}"
+echo "finished convert_gfs0.5deg.sh ${yearmonthday} ${FChour}"
 echo `date`
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"

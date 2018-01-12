@@ -20,20 +20,14 @@
 
 # Shell script that manages the download of the gfs 0.5 degree data files for the
 # current date, and converts the file to NetCDF.
+# This script expects a command line argument indicating which forecast package to download.
+#   autorun_gfs0.5deg.sh 0   for the 00 foracast package
+
+# Please edit the line below to be consistant with the install directory specified in
+# the makefile
+INSTALLDIR="/opt/USGS/"
 
 FC=$1
-
-#gfs.2017100800/                    2017-10-10 00:47    -   
-#gfs.2017100806/                    2017-10-10 06:42    -   
-#gfs.2017100812/                    2017-10-10 12:45    -   
-#gfs.2017100818/                    2017-10-08 16:55    -   
-#gfs.2017100900/                    2017-10-08 22:43    -   
-#gfs.2017100906/                    2017-10-09 04:50    -   
-#gfs.2017100912/                    2017-10-09 10:53    -   
-#gfs.2017100918/                    2017-10-09 16:47    -   
-#gfs.2017101000/                    2017-10-09 22:46    -   
-#gfs.2017101006/                    2017-10-10 04:49    -   
-#gfs.2017101012/                    2017-10-10 10:54    -   
 
 if [[ "$FC" -eq 0 ]] ; then
  FChour="00"
@@ -62,7 +56,7 @@ echo "------------------------------------------------------------"
 echo "running autorun_gfs0.5deg ${yearmonthday} ${FChour} script"
 echo "------------------------------------------------------------"
 
-SCRIPTDIR="/opt/USGS/bin/autorun_scripts"
+SCRIPTDIR="${INSTALLDIR}bin/autorun_scripts"
 
 #script that gets the wind files
 echo "  Calling ${SCRIPTDIR}/get_gfs0.5deg.sh ${yearmonthday} ${FChour}"

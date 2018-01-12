@@ -1,4 +1,4 @@
-![hschwaiger@ramp RAW]$ more ../get_RadioSond.sh 
+!  Here is a script for downloading the Radiosonde data in Alaska
 !#!/bin/bash
 !
 !StationNum=("70414" "70316" "70326" "70350" "70273")

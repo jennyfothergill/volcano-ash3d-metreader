@@ -25,6 +25,10 @@
 #    ./get_NCEP_50YearReanalysis.sh $year
 #  where $year is the year you want to get.
 
+# This is the location where the downloaded windfiles will be placed.
+# Please edit this to suit your system.
+WINDROOT="/data/WindFiles"
+
 echo "------------------------------------------------------------"
 echo "running get_NCEP_50YearReanalysis.sh for year $1"
 echo `date`
@@ -33,10 +37,13 @@ echo "------------------------------------------------------------"
 starttime=`date`                  #record when we're starting the download
 echo "starting NCEP_getyear.sh at $starttime"
 
-#Directory containing wind files
-WINDROOT="/data/WindFiles"
+rc=0
 NCEPDATAHOME="${WINDROOT}/NCEP"
-
+if [[ -d ${NCEPDATAHOME} ]] ; then
+   echo "Error:  Download directory ${NCEPDATAHOME} does not exist"
+   rc=$((rc + 1))
+   exit $rc
+fi
 echo "NCEPDATAHOME=$NCEPDATAHOME"
 
 #get year
@@ -75,13 +82,6 @@ for (( i=0;i<=5;i++))
 do
  echo "wget http://www.esrl.noaa.gov/psd/thredds/fileServer/Datasets/ncep/${var[i]}.${y}.nc"
  wget http://www.esrl.noaa.gov/psd/thredds/fileServer/Datasets/ncep.reanalysis/pressure/${var[i]}.${y}.nc
-
-  # Here you can convert the netcdf4 file just downloaded to the legacy netcdf3 format.
-  # This might be useful if Ash3d is compiled with netcdf3 libraries.
- #mv ${var[i]}.${y}.nc ${var[i]}.${y}.nc4             # flag downloaded file as netcdf4
- #nccopy -k 1 ${var[i]}.${y}.nc4 ${var[i]}.${y}.nc    # convert nc4 to netcdf3
- #mv ${var[i]}.${y}.nc4 ../${y}/${var[i]}.${y}.nc4
-
  mv ${var[i]}.${y}.nc ../${y}/${var[i]}.${y}.nc       #overwrite older file
 done
 
