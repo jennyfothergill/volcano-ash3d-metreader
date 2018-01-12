@@ -3387,14 +3387,16 @@
       ! Finished setting up the start time of each wind file in HoursSince : MR_windfile_starthour(iw)
       !  and the forecast (offset from start of file) for each step        : MR_windfile_stephour(iw,iwstep)
 
-      write(MR_global_info,*)"File, step, Ref, Offset, HoursSince"
-      do iw = 1,MR_iwindfiles
-        do iws = 1,nt_fullmet
-          write(MR_global_info,*)iw,iws,real(MR_windfile_starthour(iw),kind=4),&
-                           real(MR_windfile_stephour(iw,iws),kind=4),&
-                           real(MR_windfile_starthour(iw)+MR_windfile_stephour(iw,iws),kind=4)
+      if (MR_iwindformat.ne.25.and.MR_iwindformat.ne.27)then
+        write(MR_global_info,*)"File, step, Ref, Offset, HoursSince"
+        do iw = 1,MR_iwindfiles
+          do iws = 1,nt_fullmet
+            write(MR_global_info,*)iw,iws,real(MR_windfile_starthour(iw),kind=4),&
+                             real(MR_windfile_stephour(iw,iws),kind=4),&
+                             real(MR_windfile_starthour(iw)+MR_windfile_stephour(iw,iws),kind=4)
+          enddo
         enddo
-      enddo
+      endif
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 

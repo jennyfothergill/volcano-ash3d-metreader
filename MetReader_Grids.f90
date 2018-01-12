@@ -93,7 +93,7 @@
         ny_fullmet = 721
         dx_met_const = 0.3125_sp
         dy_met_const = 0.25_sp
-        x_start = -180.0_dp
+        x_start = -180.0_dp    ! These are double-precision for GEOS_Np
         y_start = -90.0_dp
         allocate(x_fullmet_sp(0:nx_fullmet+1))
         allocate(y_fullmet_sp(ny_fullmet))
@@ -1495,6 +1495,8 @@
           if(y_fullmet_sp(ny_fullmet).ge.yUR)then
             if(IsRegular_MetGrid)then
               jend = max(2,floor((abs(y_fullmet_sp(1)-yUR)/dy_met_const))+2)
+                ! Make sure jend doesn't exceed the met grid
+              jend = min(jend,ny_fullmet)
             else
               ! Need to actually march through all the values of y_fullmet_sp and find
               ! which interval is needed
