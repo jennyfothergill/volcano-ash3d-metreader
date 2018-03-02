@@ -83,7 +83,6 @@
         Met_var_names(33) = "Ice_mixing_ratio_isobaric"         ; Met_var_IsAvailable(33)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.4)then
           ! NARR3D NAM221 32 km North America files (RAW : assumes full set of
@@ -152,7 +151,6 @@
           Met_var_IsAvailable(44)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.5)then
           ! NAM216 AK 45km
@@ -221,7 +219,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.6)then
           ! NAM Regional 90 km grid 104
@@ -291,7 +288,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.7)then
           ! CONUS 212 40km
@@ -363,7 +359,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.8)then
           ! CONUS 218 (12km)
@@ -416,7 +411,6 @@
           Met_var_IsAvailable(30)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 1.0_4
 
       elseif(MR_iwindformat.eq.9)then
          !Unassigned
@@ -453,7 +447,6 @@
           Met_var_IsAvailable(30)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.10)then
           ! NAM 242 11.25 km AK
@@ -513,7 +506,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.11)then
           ! NAM 196 2.5 km HI
@@ -591,7 +583,6 @@
           Met_var_IsAvailable(44)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
       elseif(MR_iwindformat.eq.12)then
           ! NAM 198 5.953 km AK
@@ -671,7 +662,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
       elseif(MR_iwindformat.eq.13)then
           ! NAM 91 2.976 km AK
@@ -755,7 +745,6 @@
         !  Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
       elseif (MR_iwindformat.eq.20.or.MR_iwindformat.eq.22.or.MR_iwindformat.eq.26) then
            ! GFS 0.5 (or 0.25) deg from http://www.nco.ncep.noaa.gov/pmb/products/gfs/
@@ -821,7 +810,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 3.0_4
 
       elseif (MR_iwindformat.eq.21) then
            ! Old format GFS 0.5-degree
@@ -850,7 +838,6 @@
           Met_var_IsAvailable(5)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 3.0_4
 
        elseif (MR_iwindformat.eq.23) then
          ! NCEP / doE reanalysis 2.5 degree files 
@@ -890,7 +877,6 @@
           Met_var_IsAvailable(44)=.true.
 
         fill_value_sp(MR_iwindformat) = 9.999_sp
-        MR_ForecastInterval = 6.0_4
 
        elseif (MR_iwindformat.eq.24) then
          ! NASA-MERRA reanalysis 1.25 degree files 
@@ -967,7 +953,6 @@
         fill_value_sp(MR_iwindformat) = 1.0e15_sp
 
         Met_var_conversion_factor(44) = 1.0_sp/1.0e3_sp
-        MR_ForecastInterval = 3.0_4
 
        elseif (MR_iwindformat.eq.25) then
          ! NCEP/NCAR reanalysis 2.5 degree files 
@@ -1034,7 +1019,6 @@
         iwf25_scale_facs(45) = 1.0e-7_sp ; iwf25_offsets(45) = 0.0031765_sp ! cprat
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 6.0_4
 
        elseif (MR_iwindformat.eq.27) then
          ! NOAA-CIRES reanalysis 2.5 degree files 
@@ -1086,7 +1070,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = 1.e+20_sp
-        MR_ForecastInterval = 6.0_4
 
        elseif (MR_iwindformat.eq.28) then
          ! ECMWF Interim Reanalysis (ERA-Interim)
@@ -1126,8 +1109,6 @@
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
         Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
 
-        MR_ForecastInterval = 6.0_4
-
        elseif (MR_iwindformat.eq.29) then
          ! JRA-55 reanalysis
        elseif (MR_iwindformat.eq.31) then
@@ -1160,7 +1141,6 @@
           Met_var_IsAvailable(5)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 3.0_4
 
        elseif (MR_iwindformat.eq.32) then
          ! Air Force Weather Agency subcenter = 0
@@ -1229,7 +1209,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999._sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
        elseif (MR_iwindformat.eq.33) then
          ! CCSM3.0 Community Atmosphere Model (CAM)
@@ -1272,7 +1251,6 @@
           Met_var_IsAvailable(31)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 744.0_4
 
        elseif (MR_iwindformat.eq.40) then
          ! NASA-GEOS Cp
@@ -1306,7 +1284,6 @@
           Met_var_IsAvailable(5)=.true.
 
         fill_value_sp(MR_iwindformat) = 1.0e15_sp
-        MR_ForecastInterval = 3.0_4
 
        elseif (MR_iwindformat.eq.41) then
          ! NASA-GEOS Np
@@ -1340,7 +1317,6 @@
           Met_var_IsAvailable(5)=.true.
 
         fill_value_sp(MR_iwindformat) = 1.0e15_sp
-        MR_ForecastInterval = 3.0_4
 
        elseif (MR_iwindformat.eq.50) then
          ! WRF - output
@@ -1408,7 +1384,6 @@
         fill_value_sp(MR_iwindformat) = 1.e+20_sp
 
         Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
-        MR_ForecastInterval = 1.0_4
 
       elseif(MR_iwindformat.eq.51)then
           ! NAM 198 5.953 km AK
@@ -1477,7 +1452,6 @@
         fill_value_sp(MR_iwindformat) = -9999._sp ! actually NaNf
 
         !Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
-        MR_ForecastInterval = 3.0_4
 
       else
         ! Not a recognized MR_iwindformat
@@ -2980,6 +2954,9 @@
       real(kind=dp),dimension(:), allocatable :: dum1d_dp
       real(kind=sp),dimension(:), allocatable :: dum1d_sp
       integer(kind=4),dimension(:), allocatable :: dum1d_int4
+      integer,dimension(8) :: values
+      integer              :: Current_Year,nt_tst
+      character(len=130)   :: infile
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                MR_Read_Met_Times_netcdf                    ----------"
@@ -3016,6 +2993,46 @@
         else
           nt_fullmet = 1460     ! Not a leap year
         endif
+        ! Note: The nt_fullmet given above is the expected number based on a complete year.
+        !       If MR_Comp_StartYear is the current year, then we will not have this many
+        !       time steps available.  Double-check
+        ! Getting current year
+        call date_and_time(VALUES=values)
+        Current_Year = values(1)
+        ! Now getting the actual nt of the file; trying the hgt file
+ 111    format(a50,a4,i4,a3)
+        write(infile,111)trim(adjustl(MR_windfiles(1))), &
+                         "hgt.",MR_Comp_StartYear,".nc"
+        nSTAT = nf90_open(trim(ADJUSTL(infile)),NF90_NOWRITE,ncid)
+        if(nSTAT.ne.NF90_NOERR)then
+          write(MR_global_error,*)'MR ERROR: nf90_open: ',nf90_strerror(nSTAT)
+          write(MR_global_error,*)"    Could not open file: ",trim(ADJUSTL(infile))
+          write(MR_global_log  ,*)'MR ERROR: nf90_open: ',nf90_strerror(nSTAT)
+          stop 1
+        endif
+        nSTAT = nf90_inq_dimid(ncid,Met_dim_names(1),t_dim_id)
+        if(nSTAT.ne.NF90_NOERR)then
+          write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+          write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(1)
+          write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+          stop 1
+        endif
+        nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,len=nt_tst)
+        if(nSTAT.ne.NF90_NOERR)then
+          write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+          write(MR_global_error,*)"    Could not dimension length: "
+          write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+          stop 1
+        endif
+        nSTAT = nf90_close(ncid)
+        if(MR_Comp_StartYear.lt.Current_Year.and.nt_tst.lt.nt_fullmet)then
+          write(MR_global_info,*)"WARNING:  The NCEP files are for an archived year yet are incomplete."
+          write(MR_global_info,*)"          To get the complete year, run the script "
+          write(MR_global_info,*)"            autorun_scripts/get_NCEP_50YearReanalysis.sh",MR_Comp_StartYear
+          write(MR_global_info,*)"          Steps available = ",nt_tst
+          write(MR_global_info,*)"          Hours into year = ",(nt_tst-1)*6
+        endif
+        nt_fullmet = nt_tst
         MR_windfiles_nt_fullmet(1)=nt_fullmet
         MR_windfiles_nt_fullmet(2)=nt_fullmet  ! Note: we don't care if the next
                                                !       year is a leap year since
@@ -3024,9 +3041,8 @@
         allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
 
           ! the interval for both iwf25 and iwf27 is 6 hours
-        MR_ForecastInterval = 6.0_4
         do iwstep = 1,nt_fullmet
-          MR_windfile_stephour(:,iwstep) = (iwstep-1)*MR_ForecastInterval
+          MR_windfile_stephour(:,iwstep) = (iwstep-1)*6.0_4
         enddo
       elseif(MR_iwindformat.eq.31)then
         ! Here's the branch for the Catania files

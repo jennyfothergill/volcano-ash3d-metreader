@@ -358,12 +358,12 @@
       p_fullmet_RH_sp = p_fullmet_sp
       MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
 
-      if(nt_fullmet.gt.1)then
-        MR_ForecastInterval = MR_windfile_starthour(MR_nSnd_Locs+1) - &
-                               MR_windfile_starthour(1)
-      else
-        MR_ForecastInterval = 2400.0_dp
-      endif
+      !if(nt_fullmet.gt.1)then
+      !  MR_ForecastInterval = MR_windfile_starthour(MR_nSnd_Locs+1) - &
+      !                         MR_windfile_starthour(1)
+      !else
+      !  MR_ForecastInterval = 2400.0_dp
+      !endif
 
       elseif(MR_iwind.eq.1.and.MR_iwindformat.eq.2)then
         ! We are reading radiosonde data from http://weather.uwyo.edu/

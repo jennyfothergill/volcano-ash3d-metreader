@@ -2294,6 +2294,7 @@
       character(len=30) :: dname
       character(len=71) :: vname
       character(len=5)  :: vname_WMO
+      real(kind=8)      :: StepInterval
 
       write(MR_global_info,*)"Inside MR_Read_Met_Template"
       INQUIRE( FILE=adjustl(trim(MR_iwf_template)), EXIST=IsThere )
@@ -2332,7 +2333,8 @@
       Met_Re        = PJ_radius_earth
 
       read(27,'(a130)')lllinebuffer
-      read(lllinebuffer,*,iostat=ioerr)MR_ForecastInterval,useLeap_str
+      read(lllinebuffer,*,iostat=ioerr)StepInterval,useLeap_str
+
       if (ioerr.eq.0)then
         ! Two values read, process useLeap_str to determine T or F
         if(useLeap_str(1:1).eq.'F'.or.useLeap_str(1:1).eq.'f')then
@@ -2343,7 +2345,7 @@
       else
         ! default will be whatever is set in the host program or in
         ! MetReader.f90 if the calling program doesn't specify
-        read(lllinebuffer,*,iostat=ioerr)MR_ForecastInterval
+        read(lllinebuffer,*,iostat=ioerr)StepInterval
       endif
       read(27,'(a130)')lllinebuffer
       read(lllinebuffer,*,err=2002)ndims_custom,nvars_custom

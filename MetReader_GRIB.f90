@@ -439,7 +439,6 @@
           Met_var_IsAvailable(44)      = .true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
       elseif(MR_iwindformat.eq.12)then
           ! NAM 198 5.953 km AK
@@ -544,7 +543,6 @@
           Met_var_IsAvailable(44)      = .true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
       elseif(MR_iwindformat.eq.13)then
           ! NAM 91 2.976 km AK (nam198 at twice the resolution)
@@ -650,7 +648,6 @@
           Met_var_IsAvailable(44)      = .true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
       elseif (MR_iwindformat.eq.20.or.MR_iwindformat.eq.22) then
            ! GFS 0.5 (or 0.25) deg from http://www.nco.ncep.noaa.gov/pmb/products/gfs/
@@ -716,7 +713,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 1.0_4
 
       elseif (MR_iwindformat.eq.21) then
            ! Old format GFS 0.5-degree
@@ -833,8 +829,6 @@
 
 
         fill_value_sp(MR_iwindformat) = 9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
-
 
        elseif (MR_iwindformat.eq.40) then
          ! NASA-GEOS Cp
@@ -1831,9 +1825,8 @@
         allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
 
           ! the interval for iwf27 is 6 hours
-        MR_ForecastInterval = 6.0_4
         do iwstep = 1,nt_fullmet
-          MR_windfile_stephour(:,iwstep) = (iwstep-1)*MR_ForecastInterval
+          MR_windfile_stephour(:,iwstep) = (iwstep-1)*6.0_4
         enddo
       else
         ! For all other formats, try to read the first grib message and get
