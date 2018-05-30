@@ -151,7 +151,7 @@ MetReader_GRIB_index.o: MetReader_GRIB_index.f90 makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c MetReader_GRIB_index.f90
 MetReader_GRIB.o: MetReader_GRIB.f90 MetReader_GRIB_index.o MetReader.o makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c MetReader_GRIB.f90
-gen_GRIB2_index: gen_GRIB2_index.f90 MetReader_GRIB_index.o makefile
+gen_GRIB2_index: gen_GRIB2_index.f90 MetReader_GRIB_index.o makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c gen_GRIB2_index.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) MetReader_GRIB_index.o gen_GRIB2_index.o $(LIBS) $(grblib) -o gen_GRIB2_index
 endif
@@ -160,7 +160,14 @@ endif
 #	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lhdf -Iinclude/ -c MetReader_HDF.f90
 #endif
 
-tools: ncMetSonde ncMetTraj_F ncMetTraj_B ncMet_check
+
+ifeq ($(USEGRIB2), T)
+  GRIBTOOL = gen_GRIB2_index
+else
+  GRIBTOOL =
+endif
+
+tools: ncMetSonde ncMetTraj_F ncMetTraj_B ncMet_check $(GRIBTOOL)
 
 ncMetSonde: tools/ncMetSonde.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/ncMetSonde.f90

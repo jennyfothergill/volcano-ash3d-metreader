@@ -264,11 +264,11 @@
       real(kind=sp),dimension(:)       ,allocatable         :: MR_dy_met, MR_dy_submet
 #endif
 
-      logical       :: IsRegular_MetGrid
+      logical       :: IsRegular_MetGrid                ! True if the grid-spacing is uniform
       real(kind=sp) :: dx_met_const, dy_met_const
 
         ! There are some computational grid variables we might need, so make local copies
-      integer       :: MR_BaseYear            = 1900       ! This should be reset in calling program
+      integer       :: MR_BaseYear            = 1900    ! This should be reset in calling program
       logical       :: MR_useLeap             = .true.  ! This too
       integer       :: MR_Comp_StartYear
       real(kind=dp) :: MR_Comp_StartHour
@@ -295,9 +295,24 @@
       integer      ,dimension(:,:,:),allocatable :: CompPoint_on_subMet_idx ! index on met sub-grid of comp point
       real(kind=sp),dimension(:,:,:),allocatable :: bilin_map_wgt
 #endif
+      ! Here are a few variables needed for sigma-altitude coordinates
+      logical        :: MR_use_SigmaAlt   = .false.
+      integer        :: MR_ZScaling_ID    = 0  ! = 0 for no scaling (i.e. s = z)
+                                               ! = 1 for altitude shifting (s=z=zsurf)
+                                               ! = 2 for sigma-altitude (s=(z-surf)/(top-surf))
+      real(kind=sp)  :: MR_ztop
+#ifdef USEPOINTERS
+      real(kind=sp),dimension(:),    pointer :: s_comp_sp => null() ! s-coordinates (scaled z) of computational grid
+      real(kind=sp),dimension(:,:),  pointer :: MR_zsurf  => null() ! surface elevation in km
+      real(kind=sp),dimension(:,:),  pointer :: MR_jacob  => null() ! Jacobian of trans. = MR_ztop-MR_zsurf
+#else
+      real(kind=sp),dimension(:),    allocatable :: s_comp_sp ! s-coordinates (scaled z) of computational grid
+      real(kind=sp),dimension(:,:),  allocatable :: MR_zsurf  ! surface elevation in km
+      real(kind=sp),dimension(:,:),  allocatable :: MR_jacob  ! Jacobian of trans. = MR_ztop-MR_zsurf
+#endif
 
       logical :: Have_Vz = .false.
-      real(kind=sp),dimension(0:100)  :: fill_value_sp = -9999.0_sp
+      real(kind=sp),dimension(0:100) :: fill_value_sp = -9999.0_sp
       character(len=30),dimension(9) :: Met_dim_names
       logical          ,dimension(9) :: Met_dim_IsAvailable
       real(kind=sp)    ,dimension(9) :: Met_dim_fac  = 1.0_sp
@@ -470,6 +485,9 @@
        if(associated(bilin_map_wgt                 ))deallocate(bilin_map_wgt)
        if(associated(amap_iwf25                    ))deallocate(amap_iwf25)
        if(associated(imap_iwf25                    ))deallocate(imap_iwf25)
+       if(associated(s_comp_sp                     ))deallocate(s_comp_sp)
+       if(associated(MR_zsurf                      ))deallocate(MR_zsurf)
+       if(associated(MR_jacob                      ))deallocate(MR_jacob)
 #else
        if(allocated(MR_windfiles                  ))deallocate(MR_windfiles)
        if(allocated(MR_dum2d_met_int              ))deallocate(MR_dum2d_met_int)
@@ -510,6 +528,9 @@
        if(allocated(bilin_map_wgt                 ))deallocate(bilin_map_wgt)
        if(allocated(amap_iwf25                    ))deallocate(amap_iwf25)
        if(allocated(imap_iwf25                    ))deallocate(imap_iwf25)
+       if(allocated(s_comp_sp                     ))deallocate(s_comp_sp)
+       if(allocated(MR_zsurf                      ))deallocate(MR_zsurf)
+       if(allocated(MR_jacob                      ))deallocate(MR_jacob)
 #endif
        if(allocated(MR_u_ER_metP                  ))deallocate(MR_u_ER_metP)
        if(allocated(MR_v_ER_metP                  ))deallocate(MR_v_ER_metP)
@@ -1120,6 +1141,7 @@
 
       end subroutine MR_Set_CompProjection
 
+
 !##############################################################################
 !
 !     MR_Initialize_Met_Grids
@@ -1265,6 +1287,44 @@
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       end subroutine MR_Initialize_Met_Grids
+
+!##############################################################################
+!
+!     MR_Set_SigmaAlt_Scaling
+
+!##############################################################################
+
+      subroutine MR_Set_SigmaAlt_Scaling(nx,ny,nz, &
+                                         dum_sp, dumz_sp, dumxy1_sp, &
+                                         dum_int)
+
+      implicit none
+
+      integer      ,intent(in) :: nx,ny,nz
+      real(kind=sp),intent(in) :: dum_sp
+      real(kind=sp),intent(in) :: dumz_sp(nz)
+      real(kind=sp),intent(in) :: dumxy1_sp(nx,ny)
+      integer      ,intent(in) :: dum_int
+
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"----------      MR_Set_SigmaAlt_Scaling                               ----------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+
+      MR_use_SigmaAlt   = .true.
+      MR_ztop           = dum_sp
+      MR_ZScaling_ID    = dum_int
+      allocate(s_comp_sp(nz));     s_comp_sp(1:nz) = dumz_sp(1:nz)
+      allocate(MR_zsurf(nx,ny));   MR_zsurf(1:nx,1:ny) = dumxy1_sp(1:nx,1:ny)
+      allocate(MR_jacob(nx,ny))
+      if (MR_ZScaling_ID.eq.2)then
+        MR_jacob(1:nx,1:ny) = MR_ztop - MR_zsurf(1:nx,1:ny)
+      else
+        MR_jacob(1:nx,1:ny) = 1.0_sp
+      endif
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+      end subroutine MR_Set_SigmaAlt_Scaling
 
 !##############################################################################
 !
@@ -1862,6 +1922,7 @@
       integer :: i,j,k
       integer :: kc,knext
       integer :: np_fully_padded
+      real(kind=sp),dimension(:),allocatable :: dumVertCoord_sp
 
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
       !write(MR_global_production,*)"----------      MR_Read_3d_MetH_Variable                              ----------"
@@ -1888,6 +1949,7 @@
       allocate(  z_col_metP(np_fully_padded))
       allocate(var_col_metP(np_fully_padded))
       allocate(var_col_metH(nz_comp))
+      allocate(dumVertCoord_sp(nz_comp))
 
 !     CREATE 1-D ARRAYS IN P, AND REGRID THEM INTO 1-D ARRAYS IN z
       do i=1,nx_submet
@@ -1944,11 +2006,20 @@
             endif
           endif
 
+
+          if (MR_use_SigmaAlt)then
+              ! this recovers the real-world z coordinate from the sigma level and topography
+            dumVertCoord_sp(1:nz_comp) = MR_zsurf(i,j) + &
+                                           s_comp_sp(1:nz_comp) * MR_jacob(i,j)
+          else
+            dumVertCoord_sp(1:nz_comp) = z_comp_sp(1:nz_comp)
+          endif
+
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           !   Interpolate these values to a regular grid with
           !   spacing equal to the simulation grid
-          call MR_Regrid_P2H_linear(np_fullmet+2, z_col_metP,  var_col_metP, & 
-                                    nz_comp,       z_comp_sp,  var_col_metH)
+          call MR_Regrid_P2H_linear(np_fullmet+2, z_col_metP,       var_col_metP, & 
+                                    nz_comp,      dumVertCoord_sp,  var_col_metH)
 
           MR_dum3d_metH(i,j,:) = var_col_metH
 
@@ -2043,10 +2114,10 @@
           MR_dum3d_compH(:,:,k) = MR_dum3d_metH(1,1,k)
           cycle
         endif
-
+  
         call MR_Regrid_Met2Comp(nx_submet,ny_submet, MR_dum3d_metH(1:nx_submet,1:ny_submet,k),       &
                                 nx_comp,  ny_comp,   tmp_regrid2d_sp(1:nx_comp,1:ny_comp))
-
+  
         do i = 1,nx_comp
           do j = 1,ny_comp
             if(isnan(tmp_regrid2d_sp(i,j)))tmp_regrid2d_sp(i,j)=0.0_sp
@@ -2054,6 +2125,19 @@
         enddo
         MR_dum3d_compH(:,:,k) = tmp_regrid2d_sp(:,:)
       enddo
+
+      if (MR_use_SigmaAlt) then
+        ! If we are using sigma-altitude coordinates, then MR_dum3d_compH is returned on the
+        ! s-grid, but we might need to scale the variable
+        if(ivar.eq.4)then
+          ! vertical velocity is scaled by jacobian
+          do i=1,nx_comp
+            do j=1,ny_comp
+              MR_dum3d_compH(i,j,:)=MR_dum3d_compH(i,j,:)/MR_jacob(i,j)
+            enddo
+          enddo
+        endif
+      endif
 
       deallocate(tmp_regrid2d_sp)
 
