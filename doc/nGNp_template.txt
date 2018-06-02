@@ -1,0 +1,16 @@
+1 1 -150.0 90.0 0.933 6371.229                                                                               Projection params line
+3.0                                                                                                          Time interval
+6 7                                                                                                          ndims, nvars
+d      1  1.6667e-2 time                                                                                     hours since
+d      2      100.0 lev                                                                                      Pa
+d      3        1.0 lat                                                                                      km or deg
+d      4        1.0 lon                                                                                      km or deg
+d      5      100.0 lev                                                                                      Pa
+d      6      100.0 lev                                                                                      Pa
+v 4  2 1        1.0    HGT   H                                                                               gpm
+v 4  2 2        1.0   UGRD   U                                                                               m/s
+v 4  2 3        1.0   VGRD   V                                                                               m/s
+v 4  5 4        1.0   VVEL   OMEGA                                                                           Pa/s
+v 4  2 5        1.0    TMP   T                                                                               K
+v 4  6 30       1.0     RH   RH                                                                              %
+v 4  6 31       1.0   SPFH   SH                                                                              kg/kg

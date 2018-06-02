@@ -304,7 +304,7 @@
         MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
       elseif(igrid.eq.2)then
-         ! Used by NCEP doE reanalysis, NCEP-1
+         ! Used by NCEP DOE reanalysis, NCEP-1
         IsLatLon_MetGrid  = .true.
         IsGlobal_MetGrid  = .true.
         IsRegular_MetGrid = .true.
@@ -1224,7 +1224,7 @@
       real(kind=dp) :: xout,yout
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                          MR_Set_MetComp_Grids              ----------"
+      write(MR_global_production,*)"----------                 MR_Set_MetComp_Grids                       ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       call MR_Set_Comp2Met_Map
@@ -1269,7 +1269,7 @@
       endif
 
       if(IsLatLon_MetGrid)then
-        if(xLL.gt.x_fullmet_sp(nx_fullmet))then
+        if(xLL.gt.x_fullmet_sp(nx_fullmet).and.x_fullmet_sp(nx_fullmet).le.180.0_sp)then
           ! If the comp grid starts in the western himisphere (xLL>180) and if
           ! the global Met grid only extends to 180, then shift the comp grid
           ! into the domain of the met grid
@@ -2073,7 +2073,7 @@
           enddo
         enddo
       elseif(Map_Case.eq.5)then
-          ! Here, we need to map the projected comp grid to a Lon/Lat gird, then
+          ! Here, we need to map the projected comp grid to a Lon/Lat grid, then
           ! map to the projected Met grid
         do i=1,nx_comp
           do j=1,ny_comp

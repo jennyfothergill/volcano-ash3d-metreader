@@ -19,7 +19,7 @@
       integer,public :: MR_iwind       !     MR_IWIND specifies the type of wind input to the model:
                              !   MR_IWIND=1 if a 1-D wind sounding is use, 
                              !           =2 if a 3-D grid is read from a ASCII file.
-                             !           =3 if a single, multistep 3-D NetCDF file is used
+                             !           =3 if a single, multistep 3-D file is used
                              !           =4 if multiple 3-D NetCDF files are used
                              !           =5 if multiple file with multiple steps are used
       integer,public :: MR_iwindformat !      MR_iwindformat specifies the format of the met data
@@ -58,8 +58,9 @@
       integer,public :: MR_idataFormat !   Specifies the data model used
                                     !    =1 ASCII
                                     !    =2 netcdf
-                                    !    =3 grib
-                                    !    =4 hdf
+                                    !    =3 grib2
+                                    !    =4 grib1
+                                    !    =5 hdf
 
         ! These variables describe the full list of windfiles read
       integer                                       ,public :: MR_iwindfiles           ! number of files provided
@@ -91,8 +92,8 @@
       integer           , allocatable,dimension(:),public :: MR_MetStep_DOY
       real(kind=dp)     , allocatable,dimension(:),public :: MR_MetStep_Hour_Of_Day
 
-      logical                                             :: MR_runAsForecast = .false.
-      real(kind=dp)                                       :: MR_FC_Offset     = 0.0_dp
+      !logical                                             :: MR_runAsForecast = .false.
+      !real(kind=dp)                                       :: MR_FC_Offset     = 0.0_dp
       logical                                             :: MR_Reannalysis   = .false.
       integer           ,dimension(:), allocatable,public :: MR_iwind5_year
 
@@ -806,7 +807,7 @@
         stop 1
 #endif
       case(3)
-        write(MR_global_info,*)"            data format = ",MR_idataFormat,"GRIB"
+        write(MR_global_info,*)"            data format = ",MR_idataFormat,"GRIB2"
 #ifndef USEGRIB2
         write(MR_global_error,*)"MR ERROR: Met files are grib2, but MetReader was not"
         write(MR_global_error,*)"          compiled with grib2 support."
@@ -814,6 +815,14 @@
         stop 1
 #endif
       case(4)
+        write(MR_global_info,*)"            data format = ",MR_idataFormat,"GRIB1"
+#ifndef USEGRIB1
+        write(MR_global_error,*)"MR ERROR: Met files are grib1, but MetReader was not"
+        write(MR_global_error,*)"          compiled with grib1 support."
+        write(MR_global_error,*)"          Please recompile MetReader with grib1 support"
+        stop 1
+#endif
+      case(5)
         write(MR_global_info,*)"            data format = ",MR_idataFormat,"HDF"
 #ifndef USEHDF
         write(MR_global_error,*)"MR ERROR: Met files are hdf, but MetReader was not"
@@ -979,13 +988,13 @@
           write(MR_global_info,*)"            Reannalysis) are used, then MR_Read_Met_DimVars"
           write(MR_global_info,*)"            should be called with a start year.  This is needed"
           write(MR_global_info,*)"            to allocate the correct number of time steps per file."
-          write(MR_global_info,*)"            Setting MR_Comp_StartYear to 2017 for a non-leap year."
+          write(MR_global_info,*)"            Setting MR_Comp_StartYear to 2018 for a non-leap year."
           write(MR_global_info,*)"            However, MR_Comp_StartYear will be checked later to"
           write(MR_global_info,*)"            verify that the start year is not a leap year."
           write(MR_global_info,*)"            If there is an inconsistancy, the program will stop."
           write(MR_global_info,*)"            If MR_Comp_StartYear is changed to a leap year outside"
           write(MR_global_info,*)"            of MetReader, then the results will be incorrect."
-          MR_Comp_StartYear = 2017
+          MR_Comp_StartYear = 2018
         endif
 
       endif
@@ -1034,6 +1043,11 @@
           call MR_Read_Met_Times_GRIB
 #endif
         elseif(MR_idataFormat.eq.4)then
+#ifdef USEGRIB1
+          !call MR_Read_Met_DimVars_GRIB
+          !call MR_Read_Met_Times_GRIB
+#endif
+        elseif(MR_idataFormat.eq.5)then
 #ifdef USEHDF
           !call MR_Read_Met_DimVars_HDF
 #endif
@@ -1157,7 +1171,7 @@
 !
 !     In some cases, it is useful to have velocity values saved within MetReader.
 !     For example, velocities might be read to calculate diffusivities, stored
-!     locally, then reused last for advection.  If the calling program sets the
+!     locally, then reused later for advection.  If the calling program sets the
 !     variable MR_Save_Velocities=.true. , then space is allocated for the local
 !     copies of velocity.
 !
@@ -1777,6 +1791,10 @@
           call MR_Read_MetP_Variable_GRIB(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.4)then
+#ifdef USEGRIB1
+          !call MR_Read_MetP_Variable_GRIB(ivar,istep)
+#endif
+        elseif(MR_idataFormat.eq.5)then
 #ifdef USEHDF
           !call MR_Read_MetP_Variable_HDF(ivar,istep)
 #endif
@@ -1800,6 +1818,10 @@
         call MR_Read_MetP_Variable_GRIB(ivar,istep+1)
 #endif
       elseif(MR_idataFormat.eq.4)then
+#ifdef USEGRIB1
+        !call MR_Read_MetP_Variable_GRIB(ivar,istep+1)
+#endif
+      elseif(MR_idataFormat.eq.5)then
 #ifdef USEHDF
         !call MR_Read_MetP_Variable_HDF(ivar,istep+1)
 #endif
@@ -1879,6 +1901,10 @@
           call MR_Read_MetP_Variable_GRIB(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.4)then
+#ifdef USEGRIB1
+          !call MR_Read_MetP_Variable_GRIB(ivar,istep)
+#endif
+        elseif(MR_idataFormat.eq.5)then
 #ifdef USEHDF
           !call MR_Read_MetP_Variable_HDF(ivar,istep)
 #endif
@@ -2043,7 +2069,7 @@
 !       Read_3d_MetH_Variable                   (gets variable on Met_x, Met_y, Comp_z)
 !        -> Read_3d_MetP_Variable               (gets variable on native Met subgrid)
 !            -> Read_3d_MetP_Variable_[format]  (direct read of variable in
-!                                                whatever format : nc,hdf,grib,ascii)
+!                                                whatever format : nc,hdf,grib1/2,ascii)
 !
 !     Takes as input :: ivar  :: specifies which variable to read
 !                       istep :: specified the met step
@@ -2197,6 +2223,10 @@
           call MR_Read_MetP_Variable_GRIB(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.4)then
+#ifdef USEGRIB1
+          !call MR_Read_MetP_Variable_GRIB(ivar,istep)
+#endif
+        elseif(MR_idataFormat.eq.5)then
 #ifdef USEHDF
           !call MR_Read_MetP_Variable_HDF(ivar,istep)
 #endif
@@ -2220,7 +2250,7 @@
 !       Read_2d_Met_Variable                   (gets variable on Met_x, Met_y)
 !          -> Read_Met_Variable_[format]       (direct read of variable in
 !                                                whatever format :
-!                                                nc,hdf,grib,ascii)
+!                                                nc,hdf,grib1/2,ascii)
 !
 !     Takes as input :: ivar  :: specifies which variable to read
 !                       istep :: specified the met step

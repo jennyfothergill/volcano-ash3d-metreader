@@ -2972,11 +2972,11 @@
       if(MR_iwindformat.eq.25.or.MR_iwindformat.eq.27)then
         ! Here the branch for when MR_iwindformat = 25 or 27
         ! First copy path read in to slot 2
-        if(MR_runAsForecast)then
-          write(MR_global_error,*)"MR ERROR: iwf=25 and 27 cannot be used for forecast runs."
-          write(MR_global_error,*)"          These are reanalysis files."
-          stop 1
-        endif
+        !if(MR_runAsForecast)then
+        !  write(MR_global_error,*)"MR ERROR: iwf=25 and 27 cannot be used for forecast runs."
+        !  write(MR_global_error,*)"          These are reanalysis files."
+        !  stop 1
+        !endif
         dumstr = MR_windfiles(1)
  110    format(a50,a1,i4,a1)
         write(MR_windfiles(1),110)trim(ADJUSTL(dumstr)),'/', &

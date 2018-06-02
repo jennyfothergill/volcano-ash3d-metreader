@@ -26,8 +26,8 @@ programs.
 
 This library requires two additional libraries made available on GitHub and USGS GitLab:
 
-- [HoursSince](https://github.com/hschwaiger-usgs/HoursSince)
-- [projection](https://github.com/hschwaiger-usgs/projection)
+- [HoursSince](https://github.com/usgs/volcano-ash3d-hourssince)
+- [projection](https://github.com/usgs/volcano-ash3d-projection)
 
 Additionally, the default makefile will build MetReader with both netcdf and grib2
 enabled.  If either of these libraries are unavailable on your system, you can

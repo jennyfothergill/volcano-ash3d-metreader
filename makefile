@@ -98,7 +98,8 @@ EXEC = \
  gen_GRIB2_index   \
  tools/ncMetSonde  \
  tools/ncMetTraj_F \
- tools/ncMetTraj_B
+ tools/ncMetTraj_B \
+ tools/ncMet_check
 
 ###############################################################################
 ###############################################################################
