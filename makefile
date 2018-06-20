@@ -36,7 +36,7 @@ SYSTEM = gfortran
 #      PROF  : includes profiling flags with some optimization
 #      OPT   : includes optimizations flags for fastest runtime
 #    This variable cannot be left blank
-RUN = OPT
+RUN = DEBUG
 #
 INSTALLDIR=/opt/USGS
 #INSTALLDIR=~/gcc

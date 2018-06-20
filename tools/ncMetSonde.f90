@@ -321,9 +321,8 @@
       ! Get the fractional time between forecast steps
       Probe_StartHour = HS_hours_since_baseyear(inyear,inmonth,inday,inhour,&
                                                 MR_BaseYear,MR_useLeap)
-      tfrac = (Probe_StartHour-MR_MetStep_Hour_since_baseyear(1)) / &
-               !MR_ForecastInterval
-               MR_MetStep_Interval(MR_iMetStep_Now)
+      tfrac = real((Probe_StartHour-MR_MetStep_Hour_since_baseyear(1)) / &
+               MR_MetStep_Interval(MR_iMetStep_Now),kind=4)
       tc    = 1.0_4-tfrac
       ! Get the fractional position in cell and corner weights
       xfrac=(inlon - x_submet_sp(1))/dx_met_const

@@ -11,11 +11,8 @@
       character (len=100) :: arg
 
       real(kind=4)        :: inlon,inlat
-      integer             :: inyear,inmonth,inday
-      real(kind=8)        :: inhour
 
       character(len=100)  :: infile1
-      integer             :: FC_freq = 12
       integer             :: nxmax,nymax,nzmax !,nsize
       real(kind=4),dimension(:)    ,allocatable :: lon_grid
       real(kind=4),dimension(:)    ,allocatable :: lat_grid

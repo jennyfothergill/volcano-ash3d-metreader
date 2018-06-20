@@ -145,6 +145,9 @@
       integer :: MR_Snd_nt_fullmet = 1  ! Number of times at the Sonde locations
       integer :: MR_Snd_nvars      = 5  ! Number of Sonde variables (P,H,U,V,T,+user-specified)
       logical :: Snd_Have_PT = .false.
+      logical :: Snd_Have_Coord = .false.  ! If the 1-d data have the optional projection params
+                                           ! then it will be used, otherwise vel will be relative
+                                           ! to comp grid.
       real(kind=sp),dimension(:,:,:,:),allocatable, public :: MR_SndVars_metP   ! (MR_nSnd_Locs,MR_Snd_nt_fullmet,MR_Snd_nvars,300)
       integer      ,dimension(:,:)    ,allocatable, public :: MR_Snd_np_fullmet ! Number of pressure values for each location/time
       integer      ,dimension(:)      ,allocatable, public :: MR_SndVarsID      ! Lists which vars are in which columns of  MR_SndVars_metP
@@ -889,14 +892,6 @@
           write(MR_global_error,*)"          MR_Snd_nt_fullmet = ",real(MR_iwindfiles)/real(MR_nSnd_Locs)
           stop 1
         endif
-        if(MR_nSnd_Locs.gt.1)then
-          write(MR_global_error,*)"MR ERROR: Currently, only one sonde location is supported."
-          stop 1
-        endif
-        if(MR_Snd_nt_fullmet.gt.1)then
-          write(MR_global_error,*)"MR ERROR: Currently, only one sonde time is supported."
-          stop 1
-        endif
       endif
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
@@ -1243,7 +1238,7 @@
       case(1)   ! if we're using a 1-D wind sounding
         call MR_Set_MetComp_Grids_ASCII_1d
       case(2)
-        !call Set_MetComp_Grids_3dascii
+        !call MR_Set_MetComp_Grids_ASCII_3d
       case (3:5)
         ! Now that we have the full grids defined in MR_Read_Met_DimVars_netcdf,
         ! calculate the subgrid needed for the simulation
@@ -1418,7 +1413,13 @@
       if(MR_iwind.eq.1)then
         if(MR_iwindformat.eq.1)then
           ! 1-D ASCII
-          StepInterval = 1000.0_8 ! some large number
+          if(MR_Snd_nt_fullmet.eq.1)then
+            StepInterval = 1000.0_8 ! some large number
+          else
+            met_t1 = MR_windfile_starthour(1)
+            met_t2 = MR_windfile_starthour(MR_nSnd_Locs+1)
+            StepInterval = met_t2 - met_t1
+          endif
         elseif(MR_iwindformat.eq.2)then
           ! 1-D Radiosonde
           StepInterval = 12.0_8
@@ -1441,7 +1442,6 @@
         StepInterval = met_t2 - met_t1
       endif
 
-
       !   Checking if a prestep is needed
       if(MR_iwind.eq.1.and.MR_iwindformat.eq.1)then
         ! For the ASCII profile cases (not the radiosonde), hours are given as offset
@@ -1449,7 +1449,9 @@
         write(MR_global_info,*)"Note:  The hours value in 1d ascii profiles are interpreted as offset"
         write(MR_global_info,*)"       hours.  Shifting the file time to reflect the requested start"
         write(MR_global_info,*)"       time plus offset."
-        MR_windfile_starthour(1) = MR_windfile_starthour(1) + MR_Comp_StartHour
+        do i=1,MR_Snd_nt_fullmet
+          MR_windfile_starthour(i) = MR_windfile_starthour(i) + MR_Comp_StartHour
+        enddo
       endif
       met_t1  = MR_windfile_starthour(1)+MR_windfile_stephour(1,1)
       met_dt1 = StepInterval
@@ -1495,6 +1497,11 @@
         else
           write(MR_global_error,*)"MR ERROR: End time is after the last available data and"
           write(MR_global_error,*)"       cannot be extrapolated."
+          write(MR_global_error,*)"  MR_Comp_StartHour    = ",MR_Comp_StartHour
+          write(MR_global_error,*)"  MR_Comp_Time_in_hours= ",MR_Comp_Time_in_hours
+          write(MR_global_error,*)"  met_t1               = ",met_t1
+          write(MR_global_error,*)"  met_dt1              = ",met_dt1
+
           stop 1
         endif
       else

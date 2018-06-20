@@ -188,7 +188,7 @@ This can alternatively be given as hours since a different base year as describe
 Additionally, there are several other parameters that could be set, if needed.
 \begin{itemize}
 \item \texttt{MR\_BaseYear} :: The default value for this is 1900, but must be
-reassigned by the calling program is the wind files to be read contain data prior to 1900.
+reassigned by the calling program if the wind files to be read contain data prior to 1900.
 \item \texttt{MR\_useLeap} :: The default is \texttt{.true.} but can be set to \texttt{.false.}
 if the wind files use a calendar without leap years (e.g. some paleoclimate CAM files)
 \item \texttt{MR\_iHeightHandler} :: This code defines how MetReader behaves when values at
@@ -293,6 +293,8 @@ following list:
   \item 3 = Vy ($\mathrm{m/s}$)
   \item 4 = Vz ($\mathrm{Pa/s}$)
   \item 5 = Temperature ($\mathrm{K}$)
+  \item 6 = Wind speed ($\mathrm{m/s}$)
+  \item 7 = Wind direction (deg East of North)
  \end{itemize}
  Surface
  \begin{itemize}
@@ -431,7 +433,7 @@ a common interface regardless of the data format (ASCII, NetCDF, GRIB2, etc.), d
 structure (latitude might be top-to-bottom or bottom-to-top, pressure might be surface-to-top
 or top-down, grid might be staggered, longitude might be $-180 \rightarrow 180$ or $0 \rightarrow 360$).
 In all cases for 3-d variables, what is returned is the public work array
-\texttt{MR\_dum3d\_metP}
+\texttt{MR\_dum3d\_metP}.
 This array is consistantly ordered such that \texttt{x}
 and \texttt{y} (or \texttt{lon} and \texttt{lat}) increase with index (North to South NWP grids
 are flipped) and with \texttt{p} ordered from the surface to top (pressure is high to low).
@@ -560,72 +562,264 @@ a height in $\mathrm{km}$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Supported types of meteorological data}
-MetReader can read 
-\subsection{1-d user-specified profiles}
-\subsection{1-d radiosonde profiles (single or multiple times)}
+MetReader can read meteorological data in a variety of different formats.  
+\subsection{1-d ASCII data}
+The simplest format for meteorological data is just a 1-d wind profile in ASCII
+format.  To read this type, set \texttt{MR\_iwind = 1}.  The particular format
+of the 1-d data can be specified by the \texttt{MR\_iwindformat}, where 1 indicates a
+user-specified column of values and 2 indicates that the files are from 
+the global radiosonde data available from \texttt{https://ruc.noaa.gov/raobs/} or
+from \texttt{http://weather.uwyo.edu}.
+In both these cases, there is no NCEP grid ID associated with the sonde points so
+\texttt{MR\_iGridCode} is interpreted as the number of profile points.  Each point at each
+time must have its own file containing the profile data.
+\texttt{MR\_idataFormat} is not needed (ASCII is assumed from \texttt{MR\_iwind = 1}).
+Profiles at multiple times can be included by repeating the sequence of profile
+locations at the later times.  All points must have profiles for all times and files
+for subsequent time steps must be given in the same order.
+Also, all profile files must be in the same format (projection, columns of data).
+For example:
+
+\begin{verbatim}
+MR_iwind = 1
+MR_iwindformat = 2
+MR_iGrid = 3
+MR_iwindfiles = 6     # This must be an even multiple of MR_iGrid
+PADQ_2018060100.dat   # 00Z radio sonde at Kodiak, AK
+PAKN_2018060100.dat   # 00Z radio sonde at King Salmon, AK
+PANC_2018060100.dat   # 00Z radio sonde at Anchorage, AK
+PADQ_2018060112.dat   # 12Z radio sonde at Kodiak, AK
+PAKN_2018060112.dat   # 12Z radio sonde at King Salmon, AK
+PANC_2018060112.dat   # 12Z radio sonde at Anchorage, 
+\end{verbatim}
+
+\subsubsection{User-specified profiles}
+User-specified profiles describe minimally, the horizontal velocity as a function
+of height at a point (or points) in the domain.  Beyond this constraint,
+the format is fairly
+general.  The format is as follows.
+\begin{verbatim}
+L01 string header line
+L02 time(hr) nlev [ncol] [ivar(ncol)]
+L03 x/lon y/lat [LLflag] [projection parameters]
+L04 data
+    :
+Ln  EOF
+\end{verbatim}
+
+Line 1 is a header line that is ignored
+
+Line 2 contains at least the time of the profiles and the number of lines of data
+to read.  Optionally, the number of columns of data can be specified followed by 
+a sequence of integers specifiying the variable ID's (see Table ) for the corresponding
+columns.  If neither of these optional arguments \texttt{ncol ivar(ncol)} are given,
+then MetReader tests for the number of columns present.  If there are 3, then
+the data are read in as altitude (in $\mathrm{m}$), wind speed (in $\mathrm{m/s}$), and 
+wind direction (in degrees E of N, with the convention of where the wind is coming from).
+If 5 columns are present, the fourth and fifth columns correspond to pressure (in $\mathrm{hPa}$)
+and temperature (in $\mathrm{^{\circ}C}$), respectively.  If the optional parameters on line 2
+are given with the number of columns of data and corresponding variables, then the variables
+can be read in any order, but must include some measure of height and some measure of the 
+wind vector.  Height can include either altitude (in $\mathrm{m}$), or pressure (in $\mathrm{hPa}$),
+or both.  If only one of these two is given, the other is filled according the the U.S. Standard
+Atmosphere.  The measure of the wind vector can be given either in U and V, or speed and direction.
+If temperature is not provided, it is calculated from the pressure or altitude using the
+U.S. Standard atmosphere.
+
+Line 3 contains the coordinate of the 1-d profile.  If two values are given, the coordinate
+system is assumed to be that of the computational grid (either in projected or lon/lat grids).
+If more that two parameters are given, then the parameters beyond 2 are interpreted to be the list
+of parameters required by \texttt{libprojection.a}.
+If the \texttt{LLflag} is given as a third parameter with a value of 1, then the coordinate
+is interpreted to be in longitude and latitude.  If the value is 0, then the coordinate system
+is projected with specification defined by subsequent values on line 3.
+
+Line 4 contains the start of \texttt{nlev} rows of data
+
+Here is an example of the 3-column format.
+\begin{verbatim}
+Hanford
+2    5                             #wind time, number of levels
+-120.0   46.20                     #Longitude, latitude
+0       10.000   90.00
+5000    10.000   90.00
+10000   10.000   90.00
+15000   10.000   90.00
+20000   10.000   90.00
+\end{verbatim}
+
+Here is an example of a user-specified number of columns with data on a 
+projected grid.
+\begin{verbatim}
+Hanford
+0    5   5  1 2 3 0 5  #wind time, number of levels, nvar ivars(1:nvar)
+-2062.26 2606.69 0 4 265.0 25.0 25.0 25.0 6371.229 # (-120.0   46.20) in LCC grid 212 coords
+0       -10.000   0.00 1000.0  10.0
+5000    -10.000   0.00  560.0 -5.5
+10000   -10.000   0.00  262.0 -47.3
+15000   -10.000   0.00  126.0 -58.1
+20000   -10.000   0.00   58.0 -54.9
+\end{verbatim}
+
+
+\subsubsection{1-d radiosonde profiles (single or multiple times)}
+Instead of user-specified profiles, MetReader can also read radiosonde data.
+Both the global archive as well as the 00Z and 12Z radiosonde data are
+available from the NOAA Earth System Research Laboratory Rapid Update Cycle
+Radiosonde Database \texttt{https://ruc.noaa.gov/raobs/}.  These data
+are also archived at the University of Wyoming
+\texttt{http://weather.uwyo.edu/upperair/sounding.html}.
+To use data in this format, set \texttt{MR\_iwindformat = 2}.
+From both these sites, radiosonde data are availalbe in a variety of formats.
+The default format for the UW site is "Text: List``
+
+\begin{verbatim}
+72694 SLE Salem Observations at 00Z 06 Jun 2018
+-----------------------------------------------------------------------------
+   PRES   HGHT   TEMP   DWPT   RELH   MIXR   DRCT   SKNT   THTA   THTE   THTV
+    hPa     m      C      C      %    g/kg    deg   knot     K      K      K
+-----------------------------------------------------------------------------
+ 1009.0     61   22.8    4.8     31   5.37    290      6  295.2  311.2  296.1
+ 1000.0    137   20.6    3.6     33   4.98    285      7  293.8  308.5  294.6
+  999.0    146   20.4    3.4     33   4.91    284      7  293.6  308.2  294.5
+  980.6    305   18.6    2.5     34   4.69    275      8  293.4  307.3  294.2
+  979.0    319   18.4    2.4     34   4.67    274      8  293.3  307.2  294.1
+  946.0    610   15.5    1.9     40   4.67    260      8  293.3  307.1  294.1
+  925.0    801   13.6    1.6     44   4.67    255      7  293.2  307.1  294.0
+  912.5    914   12.5    1.3     46   4.63    260      7  293.2  307.0  294.1
+    :
+    :
+    :
+   11.0  30785  -38.2                         100      6  851.9         851.9
+   10.3  31243  -35.9                          81     19  876.9         876.9
+   10.1  31394  -34.4                          75     23  887.8         887.8
+   10.0  31450  -33.9                          70     17  891.8         891.8
+    9.7  31664  -32.5                                     904.9         904.9
+Station information and sounding indices
+                         Station identifier: SLE
+                             Station number: 72694
+                           Observation time: 180606/0000
+                           Station latitude: 44.91
+                          Station longitude: -123.00
+                          Station elevation: 61.0
+                            Showalter index: 11.69
+                               Lifted index: 10.87
+    LIFT computed using virtual temperature: 10.77
+                                SWEAT index: 43.98
+                                    K index: -1.50
+                         Cross totals index: 12.70
+                      Vertical totals index: 19.70
+                        Totals totals index: 32.40
+      Convective Available Potential Energy: 0.00
+             CAPE using virtual temperature: 0.00
+                      Convective Inhibition: 0.00
+             CINS using virtual temperature: 0.00
+                     Bulk Richardson Number: 0.00
+          Bulk Richardson Number using CAPV: 0.00
+  Temp [K] of the Lifted Condensation Level: 272.58
+Pres [hPa] of the Lifted Condensation Level: 771.61
+     Mean mixed layer potential temperature: 293.55
+              Mean mixed layer mixing ratio: 4.80
+              1000 hPa to 500 hPa thickness: 5593.00
+Precipitable water [mm] for entire sounding: 15.02
+\end{verbatim}
+This file contains many pressure levels, but the radiosonde standard include
+a limited set of "required`` pressure levels (1000, 925, 850, 700, 500,
+400, 300, 250, 200, 150, and 100 $\mathrm{mbar}$; and suplimentally
+70, 50, 30, 20, 10 if the probe reaches those heights.).
+When MetReader reads a file of this format, only these mandatory pressure levels are
+read.  Only the pressure, height, temperature, wind direction and wind speed are read.
+After the columnar data are read, the \texttt{Station number} is read.  From this number
+($72694$ in the above example), the station longitude, latitude and elevation are
+automatically populated from internally stored station
+metadata available from \texttt{https://ruc.noaa.gov/raobs/General\_Information.html}.  The
+station list is truncated to just what is currently operationa and to just current
+coordinates (some stations have been moved or deactivated).
+Next the \texttt{Observation time} is read.  
+
+An alternative format is the FAA604 WMO/GTS format from \texttt{https://ruc.noaa.gov/raobs/}
+or the nearly identical "Text:Raw`` format from the University of Wyoming.
+
+\begin{verbatim}
+ TTAA 69001 72694 99008 28066 26006 00135 26066 28007 92814 19460 30506 85534
+14459 34009 70141 01856 34517 50579 10963 01020 40746 23530 03527 30949 39962
+06011 25071 50757 07522 20214 54178 02507 15399 53583 32009 10658 57981 25512
+88216 59357 05019 77999 31313 58208 82338 51515 10164 00005 10194 30507 33515
+ TTBB 69008 72694 00008 28066 11997 25665 22886 16259 33870 15661 44838 13459
+55830 14063 66815 12863 77658 02349 88653 02558 99644 03357 11642 03358 22636
+02572 33634 02174 44613 03174 55601 03168 66584 04358 77568 05957 88558 06360
+99506 10163 11416 22749 22406 23756 33402 23532 44398 23731 55360 29531 66345
+31545 77322 35557 88314 37162 99306 38960 11299 40162 22289 42359 33272 45957
+44261 48358 55240 52956 66230 55750 77223 57357 88216 59357 99213 58758 11210
+54762 22207 53565 33198 54382 44196 52983 55190 53183 66182 50584 77169 52783
+88166 52183 99159 53383 11156 52783 22153 53783 33144 53383 44131 56182 55129
+55382 66126 55582 77123 54383 88115 56581 99110 57181 11106 56581 31313 58208
+82338 41414 60921
+ PPBB 69008 72694 90012 26006 29008 29507 90346 32506 30007 34516 90789 33014
+32516 32514 91245 34519 03524 05016 91678 02011 02510 36017 92024 02022 01027
+02528 9256/ 03025 02525 93012 04017 05510 09515 93357 07516 07522 08520 9389/
+04520 05006 950// 33505
+ TTCC 69001 72694 70883 58780 18003 50095 58380 07523 30423 531// 11018 20688
+453// 09017 10160 355// 08527 88999 77999 31313 58208 82338
+\end{verbatim}
+This format contains nearly the same information as the previous example, but 
+requires a bit of translation.  If the string "TTAA`` is found
+in the ASCII file, this format is attemped first, otherwise the "Text:List" is
+assumed.  This WMO/GTS format is intended for the Rapid Update Cycle data and
+does not contain the year or month (only the day-of-month and hour) of the data.
+If this format is detected, the year and month of the simulation is assumed unless
+specified by the calling program.
+
 \subsection{Network of 1-d radiosonde profiles}
+In most of the world, the radiosonde launch sites are too dispers to form
+a meaningful network across which we can interpolate values.  The radiosonde
+data is most useful for the regions of interest proximal to launch sites.
+Currently, the use of multiple sonde locations is not implemented.
+%2 sites -> average
+%        -> linear
+%3 sites -> average
+%        -> tri-linear (internal), bi- or mono-linear outside
+%4 sites -> average
+%        -> bi-linear
+%5 sites -> average
+%        -> LS plane
+%6-10    -> LS plane
+%> 10 error
+
 \subsection{3-d forecast or reanalysis data}
-\subsubsection{ASCII input}
-\subsubsection{netcdf}
-\subsubsection{hdf}
-\subsubsection{grib2}
+%\subsubsection{ASCII input}
+%3-d ASCII input files was originally designed around a particular tool for
+%converting netcdf forecast files to ASCII.  This input format
+%( \texttt{MR\_iwind=2} and \texttt{MR\_iwindformat=1}) has since been
+%depreciated until a more general input format can be designed.
+%\subsubsection{netcdf}
+MetReader's preferred format for 3-d forecast and reanalysis files is netcdf.  Many
+products are available directly in netcdf format suce as NCEP/NCAR Reanalysis 1 or
+NASA GEOS-5.  These products generally require netcdf version 4.  Most of the NCEP
+forecast products are provided in grib2 format.  To convert these forecast products
+to netcdf format, MetReader relies on the netcdf java package
+(\texttt{https://www.unidata.ucar.edu/software/thredds/current/netcdf-java/}).  The
+conversion script in the \texttt{autorun\_scripts} folder are linked to \texttt{netcdfAll-4.5}
+however any recent version should work.  Older versions create netcdf files with
+different variable names.
+
+MetReader can also read grib2 files directly for certain forecast products, including the
+NAM 196 grid over HI (\texttt{MR\_iwindformat=11}), the NAM 91 grid over AK
+(\texttt{MR\_iwindformat=13}) and the GFS $0.25 \, ^{\circ}$ and $0.5 \, ^{\circ}$
+products (\texttt{MR\_iwindformat=22,20}).  To read these grib2 files, an index
+file containing the locations of all the records.  This index file can be created 
+by the utility \texttt{gen\_GRIB2\_index}, or if the file does not exist at
+run-time, can be generated through the subroutine call
+\texttt{MR\_Set\_Gen\_Index\_GRIB(filename)}.
+
+
+%\subsubsection{hdf}
+%\subsubsection{grib2}
 
 %\section{Usage: For programs with no computational grid}
 
 %\clearpage
 %\section{Usage: For programs with a separate computational grid}
-
-%\clearpage
-%\section{Library structure}
-%MetReader.f90
-%  subroutines:
-%    MR_Allocate_MetFileList
-%    MR_Set_CompProjection
-%    MR_Initialize_Met_Grids
-%    MR_Set_Met_Times
-%    MR_Read_HGT_arrays
-%    MR_Read_3d_MetP_Variable
-%    MR_Read_3d_MetH_Variable
-%    MR_Read_3d_Met_Variable_to_CompGrid
-%    MR_Read_2d_Met_Variable
-%    MR_Read_2d_Met_Variable_to_CompGrid
-%    MR_Read_UV_MetGridRelative
-%    MR_Read_UV_CompGridRelative
-%    MR_Regrid_MetP_to_CompGrid
-%    MR_Regrid_MetP_to_MetH
-%    MR_Regrid_Met2d_to_Comp2d
-%    MR_DelMetP_Dx
-%    MR_DelMetP_Dy
-%    MR_GridChecker
-%  functions:
-%    MR_Temp_US_StdAtm
-%    MR_Z_US_StdAtm
-%    MR_Pres_US_StdAtm
-%
-%MetReader_Grids.f90
-%  subroutines:
-%    MR_Set_Met_NCEPGeoGrid
-%    MR_Set_Comp2Met_Map
-%    MR_Regrid_Met2Comp
-%  functions:
-%
-%MetReader_ASCII.f90
-%  subroutines:
-%    MR_Set_MetComp_Grids_1dascii
-%    MR_Set_Met_Times_ascii
-%  functions:
-%
-%MetReader_NetCDF.f90
-%  subroutines:
-%  functions:
-%
-%MetReader_HWM_NRLMSISE.f90
-%  subroutines:
-%    Allocate_HWT_supl_grid
-%    Allocate_HWT_full_grid
-%    Set_HWT_UVT
-%    Get_WindTemp_Empir
-%  functions:
 
 \clearpage
 \section{Supported meteorological files / grids}
