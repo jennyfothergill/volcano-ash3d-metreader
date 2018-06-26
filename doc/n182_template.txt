@@ -31,8 +31,3 @@ v 3  0 42       1.0  CFRZR   Categorical_Freezing_Rain_surface                  
 v 3  0 43       1.0  CICEP   Categorical_Ice_Pellets_surface                                                 0 or 1
 v 3  0 45       1.0   APCP   Total_precipitation_surface_0_Hour_Accumulation                                 kg.m-2
 v 3  0 46       1.0  ACPCP   Convective_precipitation_surface_0_Hour_Accumulation                            kg.m-2
-
-
-
-Geopotential_height_cloud_tops
-Geopotential_height_cloud_base 

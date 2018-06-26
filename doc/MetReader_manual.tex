@@ -124,7 +124,7 @@ provide access to the meteorological data on either the native grid of the NWP d
 onto a finer regular grid.  Before the meterological data can be accessible, several preliminary steps
 must first be completed.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Preliminary meta-data}
+\subsection{Preliminary meta-data}\label{SSecPrelimMetaData}
 The calling program needs to prepare several parameters that define the type of meteorological
 data to be read.  
 \begin{itemize}
@@ -176,7 +176,7 @@ data to be read.
  \item   2 : NetCDF
  \item   3 : GRIB Edition 2
  \item   4 : GRIB Edition 1 (Not implemented; used by NARR)
- \item   5 : HDF (Not implemented; used by NASA MERRA)
+ %\item   5 : HDF (Not implemented; used by older NASA MERRA)
  \end{itemize}
 \item \texttt{iwfiles} :: number of windfiles to be read
 %\item iy      ::   year of start time needed (integer)
@@ -637,92 +637,25 @@ is projected with specification defined by subsequent values on line 3.
 Line 4 contains the start of \texttt{nlev} rows of data
 
 Here is an example of the 3-column format.
-\begin{verbatim}
-Hanford
-2    5                             #wind time, number of levels
--120.0   46.20                     #Longitude, latitude
-0       10.000   90.00
-5000    10.000   90.00
-10000   10.000   90.00
-15000   10.000   90.00
-20000   10.000   90.00
-\end{verbatim}
+\small \verbatiminput{windfiles/Hanford_3col.txt} \normalsize
 
 Here is an example of a user-specified number of columns with data on a 
 projected grid.
-\begin{verbatim}
-Hanford
-0    5   5  1 2 3 0 5  #wind time, number of levels, nvar ivars(1:nvar)
--2062.26 2606.69 0 4 265.0 25.0 25.0 25.0 6371.229 # (-120.0   46.20) in LCC grid 212 coords
-0       -10.000   0.00 1000.0  10.0
-5000    -10.000   0.00  560.0 -5.5
-10000   -10.000   0.00  262.0 -47.3
-15000   -10.000   0.00  126.0 -58.1
-20000   -10.000   0.00   58.0 -54.9
-\end{verbatim}
-
+\small \verbatiminput{windfiles/Hanford_Ncol.txt} \normalsize
 
 \subsubsection{1-d radiosonde profiles (single or multiple times)}
 Instead of user-specified profiles, MetReader can also read radiosonde data.
 Both the global archive as well as the 00Z and 12Z radiosonde data are
 available from the NOAA Earth System Research Laboratory Rapid Update Cycle
-Radiosonde Database \texttt{https://ruc.noaa.gov/raobs/}.  These data
-are also archived at the University of Wyoming
-\texttt{http://weather.uwyo.edu/upperair/sounding.html}.
+Radiosonde Database (\texttt{https://ruc.noaa.gov/raobs/}).  These data
+are also archived at the University of Wyoming\\
+(\texttt{http://weather.uwyo.edu/upperair/sounding.html}).
 To use data in this format, set \texttt{MR\_iwindformat = 2}.
 From both these sites, radiosonde data are availalbe in a variety of formats.
 The default format for the UW site is "Text: List``
 
-\begin{verbatim}
-72694 SLE Salem Observations at 00Z 06 Jun 2018
------------------------------------------------------------------------------
-   PRES   HGHT   TEMP   DWPT   RELH   MIXR   DRCT   SKNT   THTA   THTE   THTV
-    hPa     m      C      C      %    g/kg    deg   knot     K      K      K
------------------------------------------------------------------------------
- 1009.0     61   22.8    4.8     31   5.37    290      6  295.2  311.2  296.1
- 1000.0    137   20.6    3.6     33   4.98    285      7  293.8  308.5  294.6
-  999.0    146   20.4    3.4     33   4.91    284      7  293.6  308.2  294.5
-  980.6    305   18.6    2.5     34   4.69    275      8  293.4  307.3  294.2
-  979.0    319   18.4    2.4     34   4.67    274      8  293.3  307.2  294.1
-  946.0    610   15.5    1.9     40   4.67    260      8  293.3  307.1  294.1
-  925.0    801   13.6    1.6     44   4.67    255      7  293.2  307.1  294.0
-  912.5    914   12.5    1.3     46   4.63    260      7  293.2  307.0  294.1
-    :
-    :
-    :
-   11.0  30785  -38.2                         100      6  851.9         851.9
-   10.3  31243  -35.9                          81     19  876.9         876.9
-   10.1  31394  -34.4                          75     23  887.8         887.8
-   10.0  31450  -33.9                          70     17  891.8         891.8
-    9.7  31664  -32.5                                     904.9         904.9
-Station information and sounding indices
-                         Station identifier: SLE
-                             Station number: 72694
-                           Observation time: 180606/0000
-                           Station latitude: 44.91
-                          Station longitude: -123.00
-                          Station elevation: 61.0
-                            Showalter index: 11.69
-                               Lifted index: 10.87
-    LIFT computed using virtual temperature: 10.77
-                                SWEAT index: 43.98
-                                    K index: -1.50
-                         Cross totals index: 12.70
-                      Vertical totals index: 19.70
-                        Totals totals index: 32.40
-      Convective Available Potential Energy: 0.00
-             CAPE using virtual temperature: 0.00
-                      Convective Inhibition: 0.00
-             CINS using virtual temperature: 0.00
-                     Bulk Richardson Number: 0.00
-          Bulk Richardson Number using CAPV: 0.00
-  Temp [K] of the Lifted Condensation Level: 272.58
-Pres [hPa] of the Lifted Condensation Level: 771.61
-     Mean mixed layer potential temperature: 293.55
-              Mean mixed layer mixing ratio: 4.80
-              1000 hPa to 500 hPa thickness: 5593.00
-Precipitable water [mm] for entire sounding: 15.02
-\end{verbatim}
+\small \verbatiminput{windfiles/SLE_20180620_00Z_TextList.dat} \normalsize
+
 This file contains many pressure levels, but the radiosonde standard include
 a limited set of "required`` pressure levels (1000, 925, 850, 700, 500,
 400, 300, 250, 200, 150, and 100 $\mathrm{mbar}$; and suplimentally
@@ -740,41 +673,28 @@ Next the \texttt{Observation time} is read.
 An alternative format is the FAA604 WMO/GTS format from \texttt{https://ruc.noaa.gov/raobs/}
 or the nearly identical "Text:Raw`` format from the University of Wyoming.
 
-\begin{verbatim}
- TTAA 69001 72694 99008 28066 26006 00135 26066 28007 92814 19460 30506 85534
-14459 34009 70141 01856 34517 50579 10963 01020 40746 23530 03527 30949 39962
-06011 25071 50757 07522 20214 54178 02507 15399 53583 32009 10658 57981 25512
-88216 59357 05019 77999 31313 58208 82338 51515 10164 00005 10194 30507 33515
- TTBB 69008 72694 00008 28066 11997 25665 22886 16259 33870 15661 44838 13459
-55830 14063 66815 12863 77658 02349 88653 02558 99644 03357 11642 03358 22636
-02572 33634 02174 44613 03174 55601 03168 66584 04358 77568 05957 88558 06360
-99506 10163 11416 22749 22406 23756 33402 23532 44398 23731 55360 29531 66345
-31545 77322 35557 88314 37162 99306 38960 11299 40162 22289 42359 33272 45957
-44261 48358 55240 52956 66230 55750 77223 57357 88216 59357 99213 58758 11210
-54762 22207 53565 33198 54382 44196 52983 55190 53183 66182 50584 77169 52783
-88166 52183 99159 53383 11156 52783 22153 53783 33144 53383 44131 56182 55129
-55382 66126 55582 77123 54383 88115 56581 99110 57181 11106 56581 31313 58208
-82338 41414 60921
- PPBB 69008 72694 90012 26006 29008 29507 90346 32506 30007 34516 90789 33014
-32516 32514 91245 34519 03524 05016 91678 02011 02510 36017 92024 02022 01027
-02528 9256/ 03025 02525 93012 04017 05510 09515 93357 07516 07522 08520 9389/
-04520 05006 950// 33505
- TTCC 69001 72694 70883 58780 18003 50095 58380 07523 30423 531// 11018 20688
-453// 09017 10160 355// 08527 88999 77999 31313 58208 82338
-\end{verbatim}
+\small \verbatiminput{windfiles/SLE_20180620_00Z_TextRaw.dat} \normalsize
+
 This format contains nearly the same information as the previous example, but 
-requires a bit of translation.  If the string "TTAA`` is found
+requires a bit of translation.
+Appendix F of\\
+\texttt{https://www.ofcm.gov/publications/fmh/FMH3/00-entire-FMH3.pdf}
+gives the full specification.
+If the string "TTAA`` is found
 in the ASCII file, this format is attemped first, otherwise the "Text:List" is
 assumed.  This WMO/GTS format is intended for the Rapid Update Cycle data and
 does not contain the year or month (only the day-of-month and hour) of the data.
-If this format is detected, the year and month of the simulation is assumed unless
+If this format is detected, the year and month of the at
+execution time is assumed unless otherwise
 specified by the calling program.
 
 \subsection{Network of 1-d radiosonde profiles}
 In most of the world, the radiosonde launch sites are too dispers to form
 a meaningful network across which we can interpolate values.  The radiosonde
 data is most useful for the regions of interest proximal to launch sites.
-Currently, the use of multiple sonde locations is not implemented.
+Currently, the use of multiple sonde locations is not implemented, but simple
+interpolation using a small number of sonde points is planned for future
+versions of this library.
 %2 sites -> average
 %        -> linear
 %3 sites -> average
@@ -794,84 +714,173 @@ Currently, the use of multiple sonde locations is not implemented.
 %depreciated until a more general input format can be designed.
 %\subsubsection{netcdf}
 MetReader's preferred format for 3-d forecast and reanalysis files is netcdf.  Many
-products are available directly in netcdf format suce as NCEP/NCAR Reanalysis 1 or
+products are available directly in netcdf format such as NCEP/NCAR Reanalysis 1 or
 NASA GEOS-5.  These products generally require netcdf version 4.  Most of the NCEP
 forecast products are provided in grib2 format.  To convert these forecast products
-to netcdf format, MetReader relies on the netcdf java package
+to netcdf format, MetReader relies on the netcdf java package\\
 (\texttt{https://www.unidata.ucar.edu/software/thredds/current/netcdf-java/}).  The
 conversion script in the \texttt{autorun\_scripts} folder are linked to \texttt{netcdfAll-4.5}
 however any recent version should work.  Older versions create netcdf files with
 different variable names.
 
+Many of the forecast and reanalysis products are built in to MetReader where the
+grid geometry, variable list, and pressure levels are preset.  These include all
+the \texttt{iwf} numbers listed in section \ref{SSecPrelimMetaData}.  If the
+products change such that the pressure levels differ or if variable names change,
+then the source code will need to be modified to account for the changes.
+Alternatively, a template file could be used as described in section \ref{SecCust} below.
+
 MetReader can also read grib2 files directly for certain forecast products, including the
-NAM 196 grid over HI (\texttt{MR\_iwindformat=11}), the NAM 91 grid over AK
-(\texttt{MR\_iwindformat=13}) and the GFS $0.25 \, ^{\circ}$ and $0.5 \, ^{\circ}$
-products (\texttt{MR\_iwindformat=22,20}).  To read these grib2 files, an index
-file containing the locations of all the records.  This index file can be created 
+NAM 196 grid over HI (\texttt{iwf=11}), the NAM 91 grid over AK
+(\texttt{iwf=13}) and the GFS $0.25 \, ^{\circ}$ and $0.5 \, ^{\circ}$
+products (\texttt{iwf=22,20}).  To read these grib2 files, an index
+file containing the locations of all the records must be created.
+This index file can be created 
 by the utility \texttt{gen\_GRIB2\_index}, or if the file does not exist at
 run-time, can be generated through the subroutine call
-\texttt{MR\_Set\_Gen\_Index\_GRIB(filename)}.
+\texttt{MR\_Set\_Gen\_Index\_GRIB(filename)}.  In practice, if windfiles will be used
+more than a few times, it is generally worthwhile to convert them to netcdf prior
+to usage by MetReader.  The current
+implementation of the grib2 reader will read each of the required grib records into
+memory, decompress the full gridded data, then extract the needed sub-grid; whereas the 
+netcdf interface allows a more natural direct access to sub-grids.  For high resolution,
+global grids where only a small sub-grid is needed, the impact of reading and uncompressing
+full grids will be noticable.
 
-
-%\subsubsection{hdf}
-%\subsubsection{grib2}
 
 %\section{Usage: For programs with no computational grid}
 
 %\clearpage
 %\section{Usage: For programs with a separate computational grid}
 
-\clearpage
-\section{Supported meteorological files / grids}
+%\clearpage
+%\section{Supported meteorological files / grids}
 
 \clearpage
 \section{Custom meteorlogical file specification}\label{SecCust}
+As an alternative to using a particular forecast or reanalysis product with
+hard-coded file structure, a template file can be used the allows a custom
+specification of a netcdf file.
+The custom template is indicated by \texttt{iwf=0} and setting \texttt{MR\_iwf\_template}
+to the name of the template file.  The template file has the following format.
+
+Line 1: The line of projection parameters as expected by \texttt{libprojection.a}.
+e.g.
+\\
+Polar-stereographic; Grid 91: \verb|0 1 -150.0 90.0 0.933 6371.229| \\
+Polar-stereographic; Grid 216: \verb|0 1 -135.0 90.0 0.933 6371.229| \\
+Mercator; Grid 196: \verb|0 5 198.475 20.0 0.933 6371.229| \\
+Lambert Conformal, Grid 212: \verb|0 4 265.0 25.0 25.0 25.0 6371.229| \\
+Lambert Conformal, Grid 221: \verb| 0 4 -107.0 50.0 50.0 50.0 6371.229| \\
+
+Line 2: \verb|StepInterval   [T/F]| :: time interval in hours, and flag indicating
+whether or not to use leap years (Assumed \verb|T| if not provided)
+
+Line 3: \verb|ndims nvars| :: number of dimensions and variable that will be listed
+
+Line 4-: list of dimensions where each row specifies the information about the dimension.
+For example
+\begin{verbatim}
+d      1  1.6667e-2 time                         hours since
+d      2      100.0 lev                          Pa
+\end{verbatim}
+In this example, the \verb|d| signifies that the row describes a dimension, \verb|1| is
+the dimension number, \verb|1.6667e-2| is a scaling factor, and
+\verb|time| is the name of the dimension.  The dimensions should be listed in the
+following order: time, pressure used for primary state variables (velocity, temperature),
+y (or longitude), x (or latitude), pressure used for vertical velocities, and pressure
+used for moisture variables.  Additional dimensions can be listed to support other
+specific variables.  The scaling factor is the factor needed to convert the dimension
+from the units provided to the units required.  In this example, the time values are
+supplied in minutes, and must be multiplied by \verb|1.6667e-2| to be in the expected
+units of hours.  Similarly, pressure is supplied in $\mathrm{hPa}$ but is expected in
+$\mathrm{Pa}$.  
+
+Line 4+\verb|ndims|- : list of variables where each row specifies the information about
+the variable.
+\begin{verbatim}
+v 4  2 1        1.0    HGT   H                              gpm
+v 4  2 2        1.0   UGRD   U                              m/s
+v 4  2 3        1.0   VGRD   V                              m/s
+v 4  5 4        1.0   VVEL   OMEGA                          Pa/s
+v 4  2 5        1.0    TMP   T                              K
+v 4  6 30       1.0     RH   RH                             %
+v 4  6 31       1.0   SPFH   SH                             kg/kg
+\end{verbatim}
+In this example, the first character, \verb|v|, signifies that the row describes a variable.
+The next integer is the dimensionality of the variable (\verb|3| or \verb|4|).
+It is assumed that the variable
+is a function of x, y, and t, but if also a function of pressure, the vertical dimension
+needs to be specified.  The next integer indicated which of the vertical dimensions listed
+earlier in the file are used for this variable.  The fourth item on the line (third integer)
+is the variable ID according to Table \ref{VarIDs}.  Next is the scaling factor to convert
+the provided values to the units expected for the variable.  The next two fields are the
+WMO variable name and the variable name given in the netcdf file.
+
+There are several limitations of the template for the custom NWP reader.  Firstly, only
+the netcdf reader is currently implemented.  Secondly, currently all variables are
+assumed to be transient; so land-use or topography cannot be read with this scheme.
+Variables that cannot be simply scaled to the expected units cannot be 
+described in this template.  For example, WRF files (\verb|iwf=50|) uses a staggered
+grid with pressure and geopotential given both as a base value plus a perturbation.
+Lastly, to determine the start time of the data, a reference time must be read.  First
+the time variable is checked for the \texttt{GRIB\_orgReferenceTime} attribute.  If this
+is not found, then the variable \texttt{reftime} is checked, if it exists.
+
+The next section shows several examples of these template files used with NAM and GFS
+forecast products.
+
 \begin{figure}[htbp]\begin{center}
- \includegraphics[angle=-90,scale=1.0]{Figs/Geostationary_NAM-Grids.pdf}
+ \includegraphics[angle=-90,scale=1.0]{Figs/Overview_NCEP-Grids.pdf}
 \parbox{15cm}{\caption{\label{FigNAMs}
-North America Mesoscale models from NCEP
+Outlines of North America Mesoscale (NAM) and Global Forecase System (GFS)
+models from NCEP that are compatible with MetReader template files.
 }}
 \end{center}\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Broader North America
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
-\subsection{NAM 5 Regional N.America (190.5 km)}
-
-\verb|nam.t00z.grb5fm00.tm00|\\
-Available from:\\
-\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/| \\
-
-\begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=0.9]{Figs/AK_n005.pdf}
-\parbox{15cm}{\caption{\label{FigNAM005}
-NAM 5, Regional N. America 190.5 km Polar Stereographic
-}}
-\end{center}\end{figure}
-\clearpage
-\verb|n005_template.txt| \\
-\tiny \verbatiminput{n005_template.txt} \normalsize
+%\clearpage
+%\subsection{NAM 5 Regional N.America (190.5 km)}
+%
+%  NOTE:  This requires a general stereographic projection.
+%         libproj.a only provides polar stereographic
+%
+%\verb|nam.t00z.grb5fm00.tm00|\\
+%Available from:\\
+%\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/| \\
+%
+%\begin{figure}[htbp]\begin{center}
+% \includegraphics[angle=-90,scale=0.9]{Figs/n005.pdf}
+%\parbox{15cm}{\caption{\label{FigNAM005}
+%NAM 5, Regional N. America 190.5 km Polar Stereographic
+%}}
+%\end{center}\end{figure}
+%\clearpage
+%\verb|n005_template.txt| \\
+%\tiny \verbatiminput{n005_template.txt} \normalsize
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
-\subsection{NAM 104 Regional N.America (90.7 km)}
-
-\verb|nam.t00z.grbgrd00.tm00|\\
-Available from:\\
-\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/| \\
-
-\begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=0.5]{Figs/grid104.pdf}
-\parbox{15cm}{\caption{\label{FigNAM005}
-NAM 104, Regional N. America 90.7 km Polar Stereographic
-}}
-\end{center}\end{figure}
-\clearpage
-\verb|n104_template.txt| \\
-\tiny \verbatiminput{n104_template.txt} \normalsize
-
+%\clearpage
+%\subsection{NAM 104 Regional N.America (90.7 km)}
+%  NOTE:  Corners of this grid extend beyond the horizon causing errors with GMT.
+%         These regions are NaN's in the data.
+%
+%\verb|nam.t00z.grbgrd00.tm00|\\
+%Available from:\\
+%\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/| \\
+%
+%\begin{figure}[htbp]\begin{center}
+%% \includegraphics[angle=-90,scale=0.5]{Figs/grid104.pdf}
+%\parbox{15cm}{\caption{\label{FigNAM005}
+%NAM 104, Regional N. America 90.7 km Polar Stereographic
+%}}
+%\end{center}\end{figure}
+%\clearpage
+%\verb|n104_template.txt| \\
+%\tiny \verbatiminput{n104_template.txt} \normalsize
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -883,7 +892,7 @@ Available from:\\
 \verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/| \\
 
 \begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=1.0]{Figs/AK_n221.pdf}
+ \includegraphics[angle=-90,scale=1.0]{Figs/n221.pdf}
 \parbox{15cm}{\caption{\label{FigNAM221}
 NAM 221, Regional N. America 32.5 km Lambert Conformal Conical
 }}
@@ -897,7 +906,7 @@ NAM 221, Regional N. America 32.5 km Lambert Conformal Conical
 % Alaska
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\subsection{NAM 216 AK (45.0 km)}
+\subsection{NAM 216 AK (45.0 km); NAM 242 AK (11.25 km)}
 
 \verb|nam.t00z.awipak00.tm00|\\
 Available from:\\
@@ -905,7 +914,7 @@ Available from:\\
 \verb|http://motherlode.ucar.edu/native/conduit/data/nccf/com/nam/prod/nam.YYYYMMDD/|\\
 
 \begin{figure}[htbp]\begin{center}
- %\includegraphics[angle=-90,scale=1.0]{Figs/AK_n216.pdf}
+ \includegraphics[angle=-90,scale=1.0]{Figs/n216.pdf}
 \parbox{15cm}{\caption{\label{FigNAM2116}
 NAM 216, AK 45.0 km Polar Stereographic
 }}
@@ -917,39 +926,41 @@ NAM 216, AK 45.0 km Polar Stereographic
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\subsection{NAM 242 AK (11.25km)}
+%\subsection{NAM 242 AK (11.25km)}
+Grid 242 uses the same projection and domain as Grid 216, but with 11.25 km
+grid spacing.
 
 \verb|nam.t00z.awak3d00.grb2.tm00|\\
 Available from:\\
 \verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/|
 
-\begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=1.0]{Figs/AK_n242.pdf}
-\parbox{15cm}{\caption{\label{FigNAM242}
-NAM 242, AK 11.25 km Polar Stereographic
-}}
-\end{center}\end{figure}
-\clearpage 
+%\begin{figure}[htbp]\begin{center}
+% \includegraphics[angle=-90,scale=1.0]{Figs/n242.pdf}
+%\parbox{15cm}{\caption{\label{FigNAM242}
+%NAM 242, AK 11.25 km Polar Stereographic
+%}}
+%\end{center}\end{figure}
+%\clearpage 
 \verb|n242_template.txt| \\
 \tiny \verbatiminput{n242_template.txt} \normalsize
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\subsection{NAM 198 AK (5.9 km)}
+\subsection{NAM 91 AK (2.95 km); NAM 198 AK (5.9 km)}
 
 \verb|nam.t00z.alaskanest.hiresf00.tm00|\\
 Available from:\\
 \verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/| \\
 
 \begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=1.0]{Figs/AK_n198.pdf}
+ \includegraphics[angle=-90,scale=1.0]{Figs/n091.pdf}
 \parbox{15cm}{\caption{\label{FigNAM198}
-NAM 198, AK 5.9 km Polar Stereographic
+NAM 91, AK 2.95 km Polar Stereographic (previously NAM 198, AK 5.9 km)
 }}
 \end{center}\end{figure}
 \clearpage
-\verb|n198_template.txt| \\
-\tiny \verbatiminput{n198_template.txt} \normalsize
+\verb|n091_template.txt| \\
+\tiny \verbatiminput{n091_template.txt} \normalsize
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -963,7 +974,7 @@ Available from:\\
 \verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/|
 
 \begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=0.9]{Figs/AK_n243.pdf}
+ \includegraphics[angle=-90,scale=0.9]{Figs/n243.pdf}
 \parbox{15cm}{\caption{\label{FigNAM243}
 NAM 243, Eastern N. Pac./HI 0.4-degrees
 }}
@@ -981,7 +992,7 @@ Available from:\\
 \verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/|
 
 \begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=0.9]{Figs/AK_n182.pdf}
+ \includegraphics[angle=-90,scale=0.9]{Figs/n182.pdf}
 \parbox{15cm}{\caption{\label{FigNAM182}
 NAM 182, HI 0.108-degrees
 }}
@@ -993,14 +1004,14 @@ NAM 182, HI 0.108-degrees
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\subsection{NAM 196 HI (2.5km)}
+\subsection{NAM 196 HI (2.5 km)}
 
 \verb|nam.t00z.hawaiinest.hiresf00.tm0|\\
 Available from:\\
 \verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/|
 
 \begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=1.0]{Figs/AK_n196.pdf}
+ \includegraphics[angle=-90,scale=1.0]{Figs/n196.pdf}
 \parbox{15cm}{\caption{\label{FigNAM196}
 NAM 196, AK 2.5 km Mercator
 }}
@@ -1013,73 +1024,33 @@ NAM 196, AK 2.5 km Mercator
 % Continental U.S.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\subsection{NAM 211 CONUS (81.3 km)}
-
-\verb|nam.t00z.awp21100.tm00|\\
-Available from:\\
-\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/|
+\subsection{NAM 211/212/218/227 CONUS}
 
 \begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=1.0]{Figs/AK_n211.pdf}
+ \includegraphics[angle=-90,scale=1.0]{Figs/n211.pdf}
 \parbox{15cm}{\caption{\label{FigNAM211}
-NAM 211 CONUS Lambert Conformal Conical
+NAM 211/212/218/227 CONUS Lambert Conformal Conical (dots
+correspond to the 81.3 km 211 grid)
 }}
 \end{center}\end{figure}
 \clearpage
+
+Available from:\\
+\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/|
+
+NAM 211 CONUS (81.3 km) :: \verb|nam.t00z.awp21100.tm00|\\
 \verb|n211_template.txt| \\
 \tiny \verbatiminput{n211_template.txt} \normalsize
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
-\subsection{NAM 212 CONUS (40.6 km)}
-
-\verb|nam.t00z.awip3d00.tm00|\\
-Available from:\\
-\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/|
-
-\begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=1.0]{Figs/AK_n212.pdf}
-\parbox{15cm}{\caption{\label{FigNAM212}
-NAM 212 CONUS Lambert Conformal Conical
-}}
-\end{center}\end{figure}
-\clearpage
+NAM 212 CONUS (40.6 km) :: \verb|nam.t00z.awip3d00.tm00|\\
 \verb|n212_template.txt| \\
 \tiny \verbatiminput{n212_template.txt} \normalsize
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
-\subsection{NAM 218 CONUS (12.2 km)}
-
-\verb|nam.t00z.awphys00.grb2.tm00|\\
-Available from:\\
-\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/|
-
-\begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=1.0]{Figs/AK_n218.pdf}
-\parbox{15cm}{\caption{\label{FigNAM218}
-NAM 218 CONUS Lambert Conformal Conical
-}}
-\end{center}\end{figure}
-\clearpage
+NAM 218 CONUS (12.2 km) :: \verb|nam.t00z.awphys00.grb2.tm00|\\
 \verb|n218_template.txt| \\
 \tiny \verbatiminput{n218_template.txt} \normalsize
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
-\subsection{NAM 227 CONUS (5.1 km)}
-
-\verb|nam.t00z.conusnest.hiresf00.tm00|\\
-Available from:\\
-\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/|
-
-\begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=1.0]{Figs/AK_n227.pdf}
-\parbox{15cm}{\caption{\label{FigNAM218}
-NAM 227 CONUS Lambert Conformal Conical
-}}
-\end{center}\end{figure}
-\clearpage
+NAM 227 CONUS (5.1 km)  :: \verb|nam.t00z.conusnest.hiresf00.tm00|\\
 \verb|n227_template.txt| \\
 \tiny \verbatiminput{n227_template.txt} \normalsize
 
@@ -1094,7 +1065,7 @@ Available from:\\
 \verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/|
 
 \begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=0.9]{Figs/AK_n181.pdf}
+ \includegraphics[angle=-90,scale=0.9]{Figs/n181.pdf}
 \parbox{15cm}{\caption{\label{FigNAM181}
 NAM 181, Caribbean 0.108-degrees
 }}
@@ -1105,154 +1076,56 @@ NAM 181, Caribbean 0.108-degrees
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
-\subsection{NAM 194 Puerto Rico (2.5 km)}
-
-\verb|nam.t00z.priconest.hiresf00.tm00|\\
-Available from:\\
-\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.YYYYMDD/|
-
-\begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=-90,scale=0.9]{Figs/AK_n194.pdf}
-\parbox{15cm}{\caption{\label{FigNAM194}
-NAM 194, Puerto Rico Mercator 2.5 km
-}}
-\end{center}\end{figure}
-\clearpage
-\verb|n194_template.txt| \\
-\tiny \verbatiminput{n194_template.txt} \normalsize
-%
-%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Global 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\subsection{GFS 2 (2.50 degrees)}
-
-\verb|gfs.t00z.pgrb2.2p50.f000.nc|\\
-Available from:\\
-\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.YYYYMDD/|
+\subsection{GFS 3/4/193}
 
 \begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=0,scale=0.9]{Figs/AK_n002.pdf}
-\parbox{15cm}{\caption{\label{FigNAM002}
-GFS 2, 2.5-degrees
-}}
-\end{center}\end{figure}
-\clearpage
-\verb|n002_template.txt| \\
-\tiny \verbatiminput{n002_template.txt} \normalsize
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
-\subsection{GFS 3 (1.00 degrees)}
-
-\verb|gfs.t00z.pgrb2.1p00.f000.nc|\\
-Available from:\\
-\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.YYYYMDD/|
-
-\begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=0,scale=0.9]{Figs/AK_n003.pdf}
+ \includegraphics[angle=0,scale=0.95]{Figs/n003.pdf}
 \parbox{15cm}{\caption{\label{FigNAM003}
-GFS 3, 1.0-degrees
+GFS 3,4,193, (dots correspond to the 1.0 degree NAM 3 grid)
 }}
 \end{center}\end{figure}
 \clearpage
+
+Available from:\\
+\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.YYYYMDD/|
+
+GFS NCEP Grid 3 (1-degree) :: \verb|gfs.t00z.pgrb2.1p00.f000.nc|\\
 \verb|n003_template.txt| \\
 \tiny \verbatiminput{n003_template.txt} \normalsize
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
-\subsection{GFS 4 (0.50 degrees)}
-
-\verb|gfs.t00z.pgrb2.0p50.f000.nc|\\
-Available from:\\
-\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.YYYYMDD/|
-
-\begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=0,scale=0.9]{Figs/AK_n004.pdf}
-\parbox{15cm}{\caption{\label{FigNAM004}
-GFS 4, 0.5-degrees
-}}
-\end{center}\end{figure}
-\clearpage
-\verb|n004_template.txt| \\
+GFS NCEP grid 4 (0.5-degrees) :: \verb|n004_template.txt| \\
 \tiny \verbatiminput{n004_template.txt} \normalsize
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
-\subsection{GFS 193 (0.25 degrees)}
-
-\verb|gfs.t00z.pgrb2.0p25.f000.nc|\\
-Available from:\\
-\verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.YYYYMDD/|
-
-\begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=0,scale=0.9]{Figs/AK_n193.pdf}
-\parbox{15cm}{\caption{\label{FigNAM002}
-GFS 193, 0.25-degrees
-}}
-\end{center}\end{figure}
-\clearpage
-\verb|n193_template.txt| \\
+GFS NCEP grid 193 (0.25-degrees) :: \verb|n193_template.txt| \\
 \tiny \verbatiminput{n193_template.txt} \normalsize
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\subsection{NASA GEOS-5 (0.625/0.5 degrees)}
-
-\verb|GEOS.fp.fcst.inst3_3d_asm_Cp.YYYYMMDD_00+YYYYMMDD_mmmm.V01.nc4|\\
-Available from:\\
-\verb|ftp://gmao_ops@ftp.nccs.nasa.gov/fp/forecast//|
+\subsection{NASA GEOS-5}
 
 \begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=0,scale=0.9]{Figs/AK_nGCp.pdf}
+ \includegraphics[angle=0,scale=0.95]{Figs/nGCp.pdf}
 \parbox{15cm}{\caption{\label{FigGCp}
 NASA GEOS-5, 0.625/0.5-degrees
 }}
 \end{center}\end{figure}
 \clearpage
-\verb|nGCp_template.txt| \\
-\tiny \verbatiminput{nGCp_template.txt} \normalsize
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
-\subsection{NASA GEOS-5 (0.25/0.3125 degrees)}
-
-\verb|GEOS.fp.fcst.inst3_3d_asm_Np.YYYYMMDD_00+YYYYMMDD_mmmm.V01.nc4|\\
 Available from:\\
 \verb|ftp://gmao_ops@ftp.nccs.nasa.gov/fp/forecast//|
 
-\begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=0,scale=0.9]{Figs/AK_nGNp.pdf}
-\parbox{15cm}{\caption{\label{FigGNp}
-NASA GEOS-5, 0.25/0.3125-degrees
-}}
-\end{center}\end{figure}
-\clearpage
+NASA GEOS-5 Cp (0.625/0.5-degrees) :: \\
+\verb|GEOS.fp.fcst.inst3_3d_asm_Cp.YYYYMMDD_00+YYYYMMDD_mmmm.V01.nc4|\\
+\verb|nGCp_template.txt| \\
+\tiny \verbatiminput{nGCp_template.txt} \normalsize
+
+NASA GEOS-5 Np (0.25/0.3125-degrees) :: \\
+\verb|GEOS.fp.fcst.inst3_3d_asm_Np.YYYYMMDD_00+YYYYMMDD_mmmm.V01.nc4|\\
 \verb|nGNp_template.txt| \\
 \tiny \verbatiminput{nGNp_template.txt} \normalsize
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
-\subsection{NASA MERRA 1.25 degrees)}
-
-\verb|MERRA300.prod.assim.inst3_3d_asm_Cp.YYYYMMDD.hdf|\\
-Available from:\\
-\verb|ftp://goldsmr3.sci.gsfc.nasa.gov/data/s4pa/MERRA/MAI3CPASM.5.2.0/|
-
-\begin{figure}[htbp]\begin{center}
-% \includegraphics[angle=0,scale=0.9]{Figs/AK_nMCp.pdf}
-\parbox{15cm}{\caption{\label{FigMCp}
-NASA MERRA 1.25-degrees
-}}
-\end{center}\end{figure}
-\clearpage
-\verb|nMCp_template.txt| \\
-\tiny \verbatiminput{nMCp_template.txt} \normalsize
-
 
 %
 %NCEP

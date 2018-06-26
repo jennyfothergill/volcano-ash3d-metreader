@@ -1,4 +1,4 @@
-0 4 -107.0 50.0 50.0 50.0 6371.229                                                                            Projection params line
+0 4 -107.0 50.0 50.0 50.0 6371.229                                                                           Projection params line
 3.0                                                                                                          Time interval
 9 29                                                                                                         ndims, nvars
 d      1        1.0 time                                                                                     hours since
