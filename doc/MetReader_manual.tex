@@ -24,16 +24,16 @@
 \section{Introduction}
 MetReader is a library written in fortran 90 that provides an interface to
 numerical weather prediction (NWP) data, or other forms of meteorological
-data, such as radiosonde or other 1-d data.
+data, such as radiosonde or other 1-D data.
 
 This library was originally written as a component of the USGS volcanic ash
 transport and dispersion model, Ash3d.  However, since it is useful for
-other programs other than Ash3d, this interface to NWP files is provided
+programs other than Ash3d, this interface to NWP files is provided
 as a separate repository that can either be compiled as a library or simply
 compiled directly with other source code.
 
 NWP data are generally made available by agencies (NCEP, NOAA, NASA, etc.)
-in a variety of formats (netcdf, grib1, grib2, hdf, ascii); each product having
+in a variety of formats (NetCDF, GRIB1, GRIB2, ASCII); each product having
 its own data structure, naming convention, units, etc.  This library
 isolates the calling program from the peculiarities of interfacing with
 a particular NWP product.  Data can be returned to the calling program on
@@ -55,10 +55,10 @@ This is a library that calculates commonly-used projected coordinates.\\
 (https://github.com/hschwaiger-usgs/projection)
 \end{itemize}
 
-These libraries are installed by default into \texttt{/opt/USGS}.  If there are
+These libraries are installed by default into \texttt{/opt/USGS}.  If they are
 installed elsewhere, then you will need to edit the makefile to point to your
 installation.
-Additionally, the default makefile will build MetReader with both netcdf and grib2
+Additionally, the default makefile will build MetReader with both NetCDF and GRIB2
 enabled.  If either of these libraries are unavailable on your system, you can
 deactivate those options by setting the corresponding flags to \texttt{F} in the makefile.
 On a RHEL/CentOS system, you can install the data format libraries by typing
@@ -73,9 +73,9 @@ To compile MetReader as a library, simple type:
 \begin{verbatim}
      make all
 \end{verbatim}
-This will build the requested components of the library.  If grib2 is enabled,
-this will also build the grib2 indexer, make \texttt{gen\_GRIB2\_index}.
-This is a tool that generates an index file of the grib records which speeds
+This will build the requested components of the library.  If GRIB2 is enabled,
+this will also build the GRIB2 indexer, \texttt{gen\_GRIB2\_index}.
+This is a tool that generates an index file of the GRIB records which speeds
 access time to individual records substantially.
 
 To install the library, module files and tools, edit the \texttt{INSTALLDIR} variable of
@@ -119,7 +119,7 @@ directory structure:
 \clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Usage}
-MetReader can read a variety of input data formats (1-d, 3-d, ASCII, netcdf, grib2) and
+MetReader can read a variety of input data formats (1-D, 3-D, ASCII, NetCDF, GRIB2) and
 provide access to the meteorological data on either the native grid of the NWP data, or interpolated
 onto a finer regular grid.  Before the meterological data can be accessible, several preliminary steps
 must first be completed.
@@ -128,23 +128,23 @@ must first be completed.
 The calling program needs to prepare several parameters that define the type of meteorological
 data to be read.  
 \begin{itemize}
-\item \texttt{iw} :: windfile class (this will be redundant/obselete soon)
+\item \texttt{iw} :: windfile class (the distinction between 3 adn 4 will be obselete soon)
  \begin{itemize}
  \item 1 : 1-D wind sounding
  \item 2 : 3-D grid is read from a ASCII file
  \item 3 : single, multistep 3-D datafile
- \item 4 : multiple 3-D datafiles, one per timestep
+ \item 4 : multiple 3-D datafiles
  \item 5 : special case for NCEP 50-year reanalysis and NOAA reanalysis
  \end{itemize}
 \item \texttt{iwf} :: windfile format number (linked to specific product in Table
   \ref{Tabiwf} of Appendix \ref{Apiwf})
 \item \texttt{igrid} :: NCEP Grid ID
-\item \texttt{idf} :: Data file format code (ascii, netcdf, grib, etc)
+\item \texttt{idf} :: Data file format code (ASCII, NetCDF, GRIB, etc)
  \begin{itemize}
  \item   1 : ASCII
  \item   2 : NetCDF
  \item   3 : GRIB Edition 2
- \item   4 : GRIB Edition 1 (Not implemented; used by NARR and NOAA-CIRES)
+ \item   4 : GRIB Edition 1 (Not yet implemented; used by NARR and NOAA-CIRES)
  \end{itemize}
 \item \texttt{iwfiles} :: number of windfiles to be read
 %\item iy      ::   year of start time needed (integer)
@@ -156,11 +156,11 @@ This can alternatively be given as hours since a different base year as describe
 Additionally, there are several other parameters that could be set, if needed.
 \begin{itemize}
 \item \texttt{MR\_BaseYear} :: The default value for this is 1900, but must be
-reassigned by the calling program if the wind files to be read contain data prior to 1900.
+reassigned by the calling program if the NWP files to be read contain data prior to 1900.
 \item \texttt{MR\_useLeap} :: The default is \texttt{.true.} but can be set to \texttt{.false.}
-if the wind files use a calendar without leap years (e.g. some paleoclimate CAM files)
+if the NWP files use a calendar without leap years (e.g. some paleoclimate CAM files)
 \item \texttt{MR\_iHeightHandler} :: This code defines how MetReader behaves when values at
-altitudes above those available in the wind files are requested.  Default value is 2.
+altitudes above those available in the NWP files are requested.  Default value is 2.
  \begin{itemize}
  \item   1 : Stop the program
  \item   2 : Return wind values equal to the value at the highest available node; temperature
@@ -175,7 +175,7 @@ one set of NWP files, but later during the execution of the calling program, a s
 set of NWP files is needed, this subroutine can be called to free all allocated memory.
 \end{itemize}
 
-\paragraph{Step 1:} The space needed for storing the wind file meta-data must be allocated.
+\paragraph{Step 1:} The space needed for storing the NWP file meta-data must be allocated.
 \begin{verbatim}
      call MR_Allocate_FullMetFileList(iw,iwf,igrid,idf,iwfiles)
 \end{verbatim}
@@ -184,9 +184,9 @@ This allocates the variable \texttt{MR\_windfiles(1:MR\_iwindfiles)}.
 \paragraph{Step 2:} The calling program must now fill the list of file names \texttt{MR\_windfiles()}
 with each name not exceeding 130 characters in length.  For the special cases for the NCEP/NCAR
 Reanalysis 1 or the NOAA-CIRES 20th Century Reanalysis (\texttt{iwf=}25 or 27), MetReader expects
-a specific structure to the directory holding the wind files.  For these reanalysis product,
+a specific structure to the directory holding the NWP files.  For these reanalysis product,
 the list of files is only one string (\texttt{iwfiles}=1)
-with the `file' given as the root directory to the wind files.  For example, for the
+with the `file' given as the root directory to the NWP files.  For example, for the
 NCEP/NCAR Reanalysis 1:
 \begin{verbatim}
 iwfiles = 1
@@ -235,30 +235,30 @@ where the files are stored as follows:
 |-- 2009
     | -- ...
 \end{verbatim}
-Note that the grib files are in version 1 format and cannot yet be directly read by
+Note that the GRIB files are in version 1 format and cannot yet be directly read by
 MetReader.  They must first be converted to NetCDF and placed as described above.
 
-\paragraph{Step 3:} Once the names of the wind files are specified, the files must
+\paragraph{Step 3:} Once the names of the NWP files are specified, the files must
 be queried to determine the scope of the available data.
 \begin{verbatim}
      call MR_Read_Met_DimVars([iyear])
 \end{verbatim}
 The \texttt{iyear} argument is optional, but is expected for \texttt{iwf}=25 or 27
 since MetReader needs to know whether to allocate space for 365 or 366 days.
-Once the subroutine is called, each of the windfiles is checked for existence, then
+Once the subroutine is called, each of the NWP files is checked for existence, then
 the following public variables are set:
 \begin{itemize}
 \item All the projection parameters for the NWP grid.
-\item \texttt{Met\_dim\_names} :: The names of the dimensions in the file in the order of: time,
+\item \texttt{Met\_dim\_names()} :: The names of the dimensions in the file in the order of: time,
 pressure1, y, x, pressure2 (for Vz), pressure3 (for RH)
-\item \texttt{Met\_var\_names} :: The names of the variables in the file according to the
+\item \texttt{Met\_var\_names()} :: The names of the variables in the file according to the
 Table \ref{TabVar} of Appendix \ref{ApVar}:
-\item \texttt{Met\_var\_conversion\_factor} :: For each of the variables, if the units
+\item \texttt{Met\_var\_conversion\_factor()} :: For each of the variables, if the units
 is not as listed above, then the correpsonding factor is set that converts to the
 expected units.  For example, if precipitation rate is given in $\mathrm{mm/hr}$, then
 the conversion factor to the expected units ($\mathrm{kg/m^2s}$) is $1/3600$ or
 $2.778 \times 10^{-4}$.
-\item \texttt{Met\_var\_IsAvailable} :: set to \texttt{.true.} if the NWP file
+\item \texttt{Met\_var\_IsAvailable()} :: set to \texttt{.true.} if the NWP file
 provides this variable.
 \item \texttt{nx\_fullmet,ny\_fullmet,np\_fullmet} :: lengths of grid for x (lon), y (lat) and p
 \item \texttt{x\_fullmet\_sp,y\_fullmet\_sp,p\_fullmet\_sp} :: values of the grid in km (degrees) and hPa
@@ -271,7 +271,7 @@ mapping across the poles is not yet implemented).
 \paragraph{Step 4:} Next, the calling program needs to define the type of grid onto which MetReader 
 will interpolate values.  Namely, whether or not the computational grid is projectected, and if so,
 which projection and associated values.  This grid used by the calling program can be independent
-of the grid used by the NWP files.  The parameter list for the subroutine below are the values
+of the grid used by the NWP files.  The parameters in the list for the subroutine below are the values
 needed by the \texttt{libprojection.a} library.  Below is an example call from Ash3d.
 \begin{verbatim}
      call MR_Set_CompProjection(IsLatLon,A3d_iprojflag,A3d_lam0,           &
@@ -287,7 +287,7 @@ UTM (\texttt{iprojflag=3}),
 Lambert conformal conic (\texttt{iprojflag=4}),
 and Mercator (\texttt{iprojflag=5}).
 
-\paragraph{Step 5:} The final prepatory step is the evaluate the windfiles provided
+\paragraph{Step 5:} The final prepatory step is to evaluate the windfiles provided
 with the spatial and temporal requirements of the calling program.
 \begin{verbatim}
      call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,                &
@@ -305,7 +305,8 @@ Here \texttt{SimStartHour} and \texttt{SimDuration} give the initial time (in ho
 other base year)) and the length of time needed in hours.  This subroutine opens all the
 files listed in \texttt{MR\_windfiles()} and verifies that the files provided cover the requested
 time span.  Then a list is prepared of all the time steps and files needed to fully cover the 
-requested time with the step index \texttt{istep=1} the step at or just prior to \texttt{SimStartHour}.
+requested time with the step index (\texttt{istep=1}) corresponding to the step at or
+just prior to \texttt{SimStartHour}.
 The hours between time steps is saved in \texttt{MR\_MetStep\_Interval()} and does not need to
 be constant.
 
@@ -342,20 +343,20 @@ To read data from the meteorological files, the fundamental subroutine is
 \begin{verbatim}
      call MR_Read_3d_MetP_Variable(ivar,istep)
 \end{verbatim}
-where \texttt{ivar} is the code for the variable of interests (see table %\ref{TabVar}
-) and
+where \texttt{ivar} is the code for the variable of interests
+(see Table \ref{TabVar}) and
 \texttt{istep} is the index of the sequence of time steps set up based on
 \texttt{SimStartHour} and \texttt{SimDuration} in Step 5 above.  This subroutine provides
 a common interface regardless of the data format (ASCII, NetCDF, GRIB2, etc.), data
 structure (latitude might be top-to-bottom or bottom-to-top, pressure might be surface-to-top
 or top-down, grid might be staggered, longitude might be $-180 \rightarrow 180$ or $0 \rightarrow 360$).
-In all cases for 3-d variables, what is returned is the public work array
+In all cases for 3-D variables, what is returned is the public work array
 \texttt{MR\_dum3d\_metP}.
 This array is consistantly ordered such that \texttt{x}
 and \texttt{y} (or \texttt{lon} and \texttt{lat}) increase with index (North to South NWP grids
 are flipped) and with \texttt{p} ordered from the surface to top (pressure is high to low).
 
-If 3-d data is needed on the \texttt{metH} grid,
+If 3-D data is needed on the \texttt{metH} grid,
 \begin{verbatim}
      call MR_Read_3d_MetH_Variable(ivar,istep)
 \end{verbatim}
@@ -373,7 +374,7 @@ finally interpolating onto \texttt{MR\_dum3d\_compH}.  The optional argument
 and need to be saved.  \texttt{IsNext} indicates that the velocity values
 \texttt{MR\_v[x,y]\_metP\_next} should be copied to \texttt{MR\_v[x,y]\_metP\_last.}
 
-To interpolate 3-d data onto the altitude levels of the computational grid, first
+To interpolate 3-D data onto the altitude levels of the computational grid, first
 the geopotential height data must be read.  This could be achieved by the subroutine
 \texttt{MR\_Read\_3d\_MetP\_Variable} described above, but as a simulation advances, we
 typically need to have the geopotential height data for the previous and the next time
@@ -389,11 +390,11 @@ the next values from \texttt{istep+1}.  If the optional argument \texttt{reset\_
 is given, both \texttt{istep} and \texttt{istep+1} are directly read.
 
 
-Similar read subroutines are available for 2d variables.
+Similar read subroutines are available for 2-D variables.
 \begin{verbatim}
      call MR_Read_2d_Met_Variable(ivar,istep)
 \end{verbatim}
-Given a 2-d variable identified with \texttt{ivar}, this populates the public
+Given a 2-D variable identified with \texttt{ivar}, this populates the public
 work array \texttt{MR\_dum2d\_met}, where again,
 \texttt{1:nx\_submet,1:ny\_submet} corresponds to the subset of nodes of the NWP
 file that is needed to span the computational grid.
@@ -456,9 +457,9 @@ subsequently decomposed into grid-relative components on the computational grid 
 This subroutine returns the U and V components on the \texttt{compH} grid through the two
 dummy work space variables \texttt{MR\_dum3d\_compH} and \texttt{MR\_dum3d\_compH\_2}
 
-\subsection{Additional Funtions}
+\subsection{Additional Functions}
 \paragraph{Horizontal derivatives}
-MetReader has subroutines for calculating horizontal derivitives of variables on the
+MetReader has subroutines for calculating horizontal derivatives of variables on the
 \texttt{metP} grid.  This is used for calculating velocity gradients for diffusivity
 calculations, but could be applied to any variable.  The two subroutines are
 \texttt{MR\_DelMetP\_Dx} and \texttt{MR\_DelMetP\_Dy}.  Both read the values from
@@ -480,27 +481,28 @@ a height in $\mathrm{km}$.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Supported types of meteorological data}
 MetReader can read meteorological data in a variety of different formats.  
-\subsection{1-d ASCII data}
-The simplest format for meteorological data is just a 1-d wind profile in ASCII
-format.  To read this type, set \texttt{MR\_iwind = 1}.  The particular format
-of the 1-d data can be specified by the \texttt{MR\_iwindformat}, where 1 indicates a
+\subsection{1-D ASCII data}
+The simplest format for meteorological data is just a 1-D wind profile in ASCII
+format.  To read this type, set \texttt{iw = 1}.  The particular format
+of the 1-D data can be specified by the \texttt{iwf}, where 1 indicates a
 user-specified column of values and 2 indicates that the files are from 
 the global radiosonde data available from \texttt{https://ruc.noaa.gov/raobs/} or
 from \texttt{http://weather.uwyo.edu}.
 In both these cases, there is no NCEP grid ID associated with the sonde points so
 \texttt{MR\_iGridCode} is interpreted as the number of profile points.  Each point at each
 time must have its own file containing the profile data.
-\texttt{MR\_idataFormat} is not needed (ASCII is assumed from \texttt{MR\_iwind = 1}).
+\texttt{MR\_idataFormat} is not needed (ASCII is assumed from \texttt{iw = 1}).
 Profiles at multiple times can be included by repeating the sequence of profile
 locations at the later times.  All points must have profiles for all times and files
 for subsequent time steps must be given in the same order.
 Also, all profile files must be in the same format (projection, columns of data).
 For example:
 
+\small
 \begin{verbatim}
-MR_iwind = 1
-MR_iwindformat = 2
-MR_iGrid = 3
+iw    = 1
+iwf   = 2
+igrid = 3
 MR_iwindfiles = 6     # This must be an even multiple of MR_iGrid
 PADQ_2018060100.dat   # 00Z radio sonde at Kodiak, AK
 PAKN_2018060100.dat   # 00Z radio sonde at King Salmon, AK
@@ -509,12 +511,14 @@ PADQ_2018060112.dat   # 12Z radio sonde at Kodiak, AK
 PAKN_2018060112.dat   # 12Z radio sonde at King Salmon, AK
 PANC_2018060112.dat   # 12Z radio sonde at Anchorage, 
 \end{verbatim}
+\normalsize
 
 \subsubsection{User-specified profiles}
 User-specified profiles describe minimally, the horizontal velocity as a function
 of height at a point (or points) in the domain.  Beyond this constraint,
 the format is fairly
 general.  The format is as follows.
+\small
 \begin{verbatim}
 L01 string header line
 L02 time(hr) nlev [ncol] [ivar(ncol)]
@@ -523,12 +527,13 @@ L04 data
     :
 Ln  EOF
 \end{verbatim}
+\normalsize
 
 Line 1 is a header line that is ignored
 
 Line 2 contains at least the time of the profiles and the number of lines of data
 to read.  Optionally, the number of columns of data can be specified followed by 
-a sequence of integers specifiying the variable ID's (see Table ) for the corresponding
+a sequence of integers specifiying the variable ID's (see Table \ref{ApVar}) for the corresponding
 columns.  If neither of these optional arguments \texttt{ncol ivar(ncol)} are given,
 then MetReader tests for the number of columns present.  If there are 3, then
 the data are read in as altitude (in $\mathrm{m}$), wind speed (in $\mathrm{m/s}$), and 
@@ -543,7 +548,7 @@ Atmosphere.  The measure of the wind vector can be given either in U and V, or s
 If temperature is not provided, it is calculated from the pressure or altitude using the
 U.S. Standard atmosphere.
 
-Line 3 contains the coordinate of the 1-d profile.  If two values are given, the coordinate
+Line 3 contains the coordinate of the 1-D profile.  If two values are given, the coordinate
 system is assumed to be that of the computational grid (either in projected or lon/lat grids).
 If more that two parameters are given, then the parameters beyond 2 are interpreted to be the list
 of parameters required by \texttt{libprojection.a}.
@@ -560,23 +565,22 @@ Here is an example of a user-specified number of columns with data on a
 projected grid.
 \small \verbatiminput{windfiles/Hanford_Ncol.txt} \normalsize
 
-\subsubsection{1-d radiosonde profiles (single or multiple times)}
+\subsubsection{1-D radiosonde profiles (single or multiple times)}
 Instead of user-specified profiles, MetReader can also read radiosonde data.
 Both the global archive as well as the 00Z and 12Z radiosonde data are
 available from the NOAA Earth System Research Laboratory Rapid Update Cycle
 Radiosonde Database (\texttt{https://ruc.noaa.gov/raobs/}).  These data
 are also archived at the University of Wyoming\\
 (\texttt{http://weather.uwyo.edu/upperair/sounding.html}).
-To use data in this format, set \texttt{MR\_iwindformat = 2}.
+To use data in this format, set \texttt{iwf = 2}.
 From both these sites, radiosonde data are availalbe in a variety of formats.
 The default format for the UW site is "Text: List``
 
-\clearpage
 \small \verbatiminput{windfiles/SLE_20180620_00Z_TextList.dat} \normalsize
 
 This file contains many pressure levels, but the radiosonde standard include
 a limited set of "required`` pressure levels (1000, 925, 850, 700, 500,
-400, 300, 250, 200, 150, and 100 $\mathrm{mbar}$; and suplimentally
+400, 300, 250, 200, 150, and 100 $\mathrm{mbar}$; and supplementally 
 70, 50, 30, 20, 10 if the probe reaches those heights.).
 When MetReader reads a file of this format, only these mandatory pressure levels are
 read.  Only the pressure, height, temperature, wind direction and wind speed are read.
@@ -584,14 +588,13 @@ After the columnar data are read, the \texttt{Station number} is read.  From thi
 ($72694$ in the above example), the station longitude, latitude and elevation are
 automatically populated from internally stored station
 metadata available from \texttt{https://ruc.noaa.gov/raobs/General\_Information.html}.  The
-station list is truncated to just what is currently operationa and to just current
+station list is truncated to just what is currently operational and to just current
 coordinates (some stations have been moved or deactivated).
 Next the \texttt{Observation time} is read.  
 
 An alternative format is the FAA604 WMO/GTS format from \texttt{https://ruc.noaa.gov/raobs/}
 or the nearly identical "Text:Raw`` format from the University of Wyoming.
 
-\clearpage
 \small \verbatiminput{windfiles/SLE_20180620_00Z_TextRaw.dat} \normalsize
 
 This format contains nearly the same information as the previous example, but 
@@ -607,7 +610,7 @@ If this format is detected, the year and month of the at
 execution time is assumed unless otherwise
 specified by the calling program.
 
-\subsection{Network of 1-d radiosonde profiles}
+\subsection{Network of 1-D radiosonde profiles}
 In most of the world, the radiosonde launch sites are too dispers to form
 a meaningful network across which we can interpolate values.  The radiosonde
 data is most useful for the regions of interest proximal to launch sites.
@@ -625,15 +628,15 @@ versions of this library.
 %6-10    -> LS plane
 %> 10 error
 
-\subsection{3-d forecast or reanalysis data}
-MetReader's preferred format for 3-d forecast and reanalysis files is netcdf.  Many
-products are available directly in netcdf format such as NCEP/NCAR Reanalysis 1 or
-NASA GEOS-5.  These products generally require netcdf version 4.  Most of the NCEP
-forecast products are provided in grib2 format.  To convert these forecast products
-to netcdf format, MetReader relies on the netcdf java package\\
+\subsection{3-D forecast or reanalysis data}
+MetReader's preferred format for 3-D forecast and reanalysis files is NetCDF.  Many
+products are available directly in NetCDF. format such as NCEP/NCAR Reanalysis 1 or
+NASA GEOS-5.  These products generally require NetCDF version 4.  Most of the NCEP
+forecast products are provided in GRIB2 format.  To convert these forecast products
+to NetCDF format, MetReader relies on the NetCDF. java package\\
 (\texttt{https://www.unidata.ucar.edu/software/thredds/current/netcdf-java/}).  The
 conversion script in the \texttt{autorun\_scripts} folder are linked to \texttt{netcdfAll-4.5}
-however any recent version should work.  Older versions create netcdf files with
+however any recent version should work.  Older versions create NetCDF files with
 different variable names.
 
 Many of the forecast and reanalysis products are built in to MetReader where the
@@ -643,28 +646,27 @@ products change such that the pressure levels differ or if variable names change
 then the source code will need to be modified to account for the changes.
 Alternatively, a template file could be used as described in section \ref{SecCust} below.
 
-MetReader can also read grib2 files directly for certain forecast products, including the
+MetReader can also read GRIB2 files directly for certain forecast products, including the
 NAM 196 grid over HI (\texttt{iwf=11}), the NAM 91 grid over AK
 (\texttt{iwf=13}) and the GFS $0.25 \, ^{\circ}$ and $0.5 \, ^{\circ}$
-products (\texttt{iwf=22,20}).  To read these grib2 files, an index
+products (\texttt{iwf=22,20}).  To read these GRIB2 files, an index
 file containing the locations of all the records must be created.
 This index file can be created 
 by the utility \texttt{gen\_GRIB2\_index}, or if the file does not exist at
 run-time, can be generated through the subroutine call
 \texttt{MR\_Set\_Gen\_Index\_GRIB(filename)}.  In practice, if windfiles will be used
-more than a few times, it is generally worthwhile to convert them to netcdf prior
+more than a few times, it is generally worthwhile to convert them to NetCDF prior
 to usage by MetReader.  The current
-implementation of the grib2 reader will read each of the required grib records into
+implementation of the GRIB2 reader will read each of the required GRIB2 records into
 memory, decompress the full gridded data, then extract the needed sub-grid; whereas the 
-netcdf interface allows a more natural direct access to sub-grids.  For high resolution,
+NetCDF interface allows a more natural direct access to sub-grids.  For high resolution,
 global grids where only a small sub-grid is needed, the impact of reading and uncompressing
 full grids will be noticable.
 
-\clearpage
-\section{Custom meteorlogical file specification}\label{SecCust}
+\section{Custom meteorological file specification}\label{SecCust}
 As an alternative to using a particular forecast or reanalysis product with
 hard-coded file structure, a template file can be used the allows a custom
-specification of a netcdf file.
+specification of a NetCDF file.
 The custom template is indicated by \texttt{iwf=0} and setting \texttt{MR\_iwf\_template}
 to the name of the template file.  The template file has the following format.
 
@@ -723,12 +725,12 @@ It is assumed that the variable
 is a function of x, y, and t, but if also a function of pressure, the vertical dimension
 needs to be specified.  The next integer indicated which of the vertical dimensions listed
 earlier in the file are used for this variable.  The fourth item on the line (third integer)
-is the variable ID according to Table \ref{VarIDs}.  Next is the scaling factor to convert
+is the variable ID according to Table \ref{ApVar}.  Next is the scaling factor to convert
 the provided values to the units expected for the variable.  The next two fields are the
-WMO variable name and the variable name given in the netcdf file.
+WMO variable name and the variable name given in the NetCDF file.
 
 There are several limitations of the template for the custom NWP reader.  Firstly, only
-the netcdf reader is currently implemented.  Secondly, currently all variables are
+the NetCDF reader is currently implemented.  Secondly, currently all variables are
 assumed to be transient; so land-use or topography cannot be read with this scheme.
 Variables that cannot be simply scaled to the expected units cannot be 
 described in this template.  For example, WRF files (\verb|iwf=50|) uses a staggered
@@ -749,7 +751,7 @@ cases, the downloading of files might be interupted or the files on the
 NCEP server might be incomplete or corrupt.  This utility opens each of the files
 and reads the full grid for the variables: geopotential height, Vx, Vy, Vz, and
 temperature.  If any values are outside of expected ranges, then the program
-stops returning a non-zero stop-code (1).
+stops returning a non-zero stop-code (\verb|stop 1|).
 Usage:\\
 \verb|  MetCheck iwf idf filename [year]|
 
@@ -762,14 +764,14 @@ Usage:\\
 The program assumes that the GFS and NCEP files are placed in the default directory, or
 at least in default subdirectories off of \texttt{WIND\_ROOT}.  Values are interpolated
 onto the requested point and time and are writen to a file (\texttt{GFS\_prof.dat}) in
-the current working directory.  This 3-column file contains the height (in $\mathrm{km}$,
-pressure (in $\mathrm{Pa}$) and temperature (in $^{\circ}\mathrm{C}$))
+the current working directory.  This 3-column file contains the height (in $\mathrm{km}$),
+pressure (in $\mathrm{Pa}$) and temperature (in $^{\circ}\mathrm{C}$).
 
 \subsection{\texttt{MetTraj}}
 This utility takes a similar argument list as \texttt{MetSonde}, but instead of
-probing a single point and time, this utility calculates trajectories withing
+probing a single point and time, this utility calculates trajectories within
 either a GFS forecast package or the NCEP reanalysis files.
-This utility can be compiled with either a \texttt{-DFORWARD} or \texttt{-DBACKWARD}
+This utility must be compiled with either a \texttt{-DFORWARD} or \texttt{-DBACKWARD}
 preprocessor flag to generate separate executables for forward or backward trajectories.
 The location of the windfiles is assumed to be the default for GFS and NCEP.  For 
 forward trajectories, forecast package beginning most closely prior to the requested
@@ -794,12 +796,13 @@ Usage:\\
 Scripts used to manage GFS and NCEP Reanalysis files are provided in the
 folder \texttt{autorun\_scripts}.
 The script \texttt{autorun\_gfs0.5deg\_00} (and the dependent scripts
-\texttt{get\_gfs0.5deg.sh} and \texttt{convert\_gfs0.5deg.sh}) is used for downloading and
+\texttt{get\_gfs0.5deg.sh} and\\
+\texttt{convert\_gfs0.5deg.sh}) is used for downloading and
 converting the $0.5^{\circ}$ GFS files from NCEP.  This script is intended to be
 run from a cron job and take as a parameter, the hour of the forecast package.  For example
 \texttt{autorun\_gfs0.5deg.sh 0} will download for 00Z for the current date.  These 
 scripts use a default root download directory of \texttt{/data/WindFiles}, but this can
-be modified within the scripts.  The GFS files will be downloaded to
+be modified within the scripts.  The GFS files will be downloaded to\\
 \texttt{/data/WindFiles/gfs/gfs.YYYYMMDDHH} where \texttt{HH} is the forecast hour
 (00, 06, 12, or 18).  The forecast files from hours 0-99 are downloaded then converted using
 netcdf-java 4.5.  The path this package is set to \texttt{~/ncj/netcdfAll-4.5.jar} but can be
@@ -818,8 +821,8 @@ crontab to download the files once they are available.
 \end{verbatim}
 \normalsize
 
-Included in \texttt{autorun\_scripts} is a simple stand-alone script (\texttt{grib2nc.sh})
-for converting grib files to netcdf using \texttt{netcdf-java}
+Also included in \texttt{autorun\_scripts} is a simple stand-alone script (\texttt{grib2nc.sh})
+for converting GRIB2 files to NetCDF using \texttt{netcdf-java}.
 
 \clearpage
 
@@ -884,11 +887,11 @@ Variable type & ID & Name & dimensions \\
 \clearpage
 \subsection{NWP product ID (\texttt{iwf})}\label{Apiwf}
 Several NWP product (both reanalysis and forecast) are recognized
-and do not template files.  These are listed in the table below
+and do not need template files.  These are listed in the table below
 by the format code.  \texttt{iwf=1,2} are ASCII files.
 \texttt{iwf=3-19} are reserved for products with projected grids.
 \texttt{iwf=20-49} are reserved for global (lon/lat) grids.
-\texttt{iwf=50} is for netcdf output from Weather Research and 
+\texttt{iwf=50} is for NetCDF output from Weather Research and 
 Forecasting (WRF) simulations.
 
 \begin{table}[h]\label{Tabiwf}
@@ -906,18 +909,18 @@ iwf & Product & NCEP Grid & resolution \\
   5 & NAM Regional Alaska & 216 & 45 km \\
   6 & NAM N. Hemisphere & 104 & 90 km \\
   7 & NAM Regional CONUS & 212 & 40 km \\
-  8 & NAM Regional CONUS & 218 & 12km \\
+  8 & NAM Regional CONUS & 218 & 12 km \\
  10 & NAM Regional Alaska & 242 & 11.25 km \\
  11 & NAM Regional Hawaii & 196 & 2.5 km \\
  12 & NAM Regional Alaska & 198 & 5.953 km \\
  13 & NAM Regional Alaska & 91 & 2.976 km \\
 \hline
- 20 & GFS & 4 & 0.5-degree \\
- 21 & GFS & 3 & 1.0-degree \\
- 22 & GFS & 193 & 0.25-degree \\
- 23 & NCEP-DOE Reanalysis 2 & 2  & 2.5-degree \\
+ 20 & GFS & 4   & $ 0.5 \, ^{\circ}$ \\
+ 21 & GFS & 3   & $ 1.0 \, ^{\circ}$ \\
+ 22 & GFS & 193 & $0.25 \, ^{\circ}$ \\
+ 23 & NCEP-DOE Reanalysis 2 & 2  & $2.5 \, ^{\circ}$ \\
  24 & NASA-MERRA-2 Reanalysis & None & $0.625 \, \times \,0.5^{\circ}$ \\
- 25 & NCEP/NCAR Reanalysis 1 & 2 & 2.5-degree \\
+ 25 & NCEP/NCAR Reanalysis 1 & 2 & $2.5 \, ^{\circ}$ \\
  27 & NOAA-CIRES 20th Century Reanalysis & 2 & $2.5^{\circ}$ \\
  28 & ECMWF ERA-Interim Reanalysis & 170 & $\sim 0.7^{\circ}$-Gaussian \\
 \hline
@@ -926,7 +929,7 @@ iwf & Product & NCEP Grid & resolution \\
 \hline
  40 & NASA GEOS-5 Cp & None & $0.625 \, \times \,0.5^{\circ}$ \\
  41 & NASA GEOS-5 Np & None & $0.3125 \, \times \,0.25^{\circ}$\\
- 50 & WRF - output & & \\
+ 50 & WRF - output & None & \\
 \hline
 \end{tabular}
 \end{table}
@@ -935,7 +938,7 @@ iwf & Product & NCEP Grid & resolution \\
 \begin{figure}[htbp]\begin{center}
  \includegraphics[angle=-90,scale=0.7]{Figs/Overview_NCEP-Grids.pdf}
 \parbox{15cm}{\caption{\label{FigNAMs}
-Outlines of North America Mesoscale (NAM) and Global Forecase System (GFS)
+Outlines of North America Mesoscale (NAM) and Global Forecast System (GFS)
 models from NCEP that are compatible with MetReader template files.
 }}
 \end{center}\end{figure}
@@ -987,7 +990,7 @@ models from NCEP that are compatible with MetReader template files.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\subsection{NAM 221 Regional N.America 32.5 km)}
+\subsection{NAM 221 Regional N.America (32.5 km)}
 
 \verb|nam.t00z.awip3200.tm00|\\
 Available from:\\
@@ -1069,7 +1072,7 @@ NAM 91, AK 2.95 km Polar Stereographic (previously NAM 198, AK 5.9 km)
 % North Pacific / Hawaii
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\subsection{NAM 243 Eastern N. Pac./HI (0.40 degrees)}
+\subsection{NAM 243 Eastern N. Pac./HI ($0.40  \, ^{\circ}$)}
 
 \verb|nam.t00z.awiphi00.tm00|\\
 Available from:\\
@@ -1078,7 +1081,7 @@ Available from:\\
 \begin{figure}[htbp]\begin{center}
  \includegraphics[angle=-90,scale=0.9]{Figs/n243.pdf}
 \parbox{15cm}{\caption{\label{FigNAM243}
-NAM 243, Eastern N. Pac./HI 0.4-degrees
+NAM 243, Eastern N. Pac./HI $0.4 \, ^{\circ}$
 }}
 \end{center}\end{figure}
 \clearpage
@@ -1087,7 +1090,7 @@ NAM 243, Eastern N. Pac./HI 0.4-degrees
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\subsection{NAM 182 HI (0.108 degrees)}
+\subsection{NAM 182 HI ($0.108  \, ^{\circ}$)}
 
 \verb|nam.t00z.afwahi00.grb2.tm00|\\
 Available from:\\
@@ -1096,7 +1099,7 @@ Available from:\\
 \begin{figure}[htbp]\begin{center}
  \includegraphics[angle=-90,scale=0.9]{Figs/n182.pdf}
 \parbox{15cm}{\caption{\label{FigNAM182}
-NAM 182, HI 0.108-degrees
+NAM 182, HI $0.108  \, ^{\circ}$
 }}
 \end{center}\end{figure}
 \clearpage
@@ -1160,7 +1163,7 @@ NAM 227 CONUS (5.1 km)  :: \verb|nam.t00z.conusnest.hiresf00.tm00|\\
 % Eastern U.S, / Caribbean
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\subsection{NAM 181 Caribbean (0.108 degrees)}
+\subsection{NAM 181 Caribbean ($0.108  \, ^{\circ}$)}
 
 \verb|nam.t00z.afwaca00.grb2.tm00|\\
 Available from:\\
@@ -1169,7 +1172,7 @@ Available from:\\
 \begin{figure}[htbp]\begin{center}
  \includegraphics[angle=-90,scale=0.9]{Figs/n181.pdf}
 \parbox{15cm}{\caption{\label{FigNAM181}
-NAM 181, Caribbean 0.108-degrees
+NAM 181, Caribbean $0.108  \, ^{\circ}$
 }}
 \end{center}\end{figure}
 \clearpage
@@ -1186,7 +1189,7 @@ NAM 181, Caribbean 0.108-degrees
 \begin{figure}[htbp]\begin{center}
  \includegraphics[angle=0,scale=0.95]{Figs/n003.pdf}
 \parbox{15cm}{\caption{\label{FigNAM003}
-GFS 3,4,193, (dots correspond to the 1.0 degree NAM 3 grid)
+GFS 3,4,193, (dots correspond to the $1.0 \, ^{\circ}$ NAM 3 grid)
 }}
 \end{center}\end{figure}
 \clearpage
@@ -1194,14 +1197,14 @@ GFS 3,4,193, (dots correspond to the 1.0 degree NAM 3 grid)
 Available from:\\
 \verb|ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.YYYYMDD/|
 
-GFS NCEP Grid 3 (1-degree) :: \verb|gfs.t00z.pgrb2.1p00.f000.nc|\\
+GFS NCEP Grid 3 ($1.0  \, ^{\circ}$) :: \verb|gfs.t00z.pgrb2.1p00.f000.nc|\\
 \verb|n003_template.txt| \\
 \tiny \verbatiminput{n003_template.txt} \normalsize
 
-GFS NCEP grid 4 (0.5-degrees) :: \verb|n004_template.txt| \\
+GFS NCEP grid 4 ($0.5 \, ^{\circ}$) :: \verb|n004_template.txt| \\
 \tiny \verbatiminput{n004_template.txt} \normalsize
 
-GFS NCEP grid 193 (0.25-degrees) :: \verb|n193_template.txt| \\
+GFS NCEP grid 193 ($0.25 \, ^{\circ}$) :: \verb|n193_template.txt| \\
 \tiny \verbatiminput{n193_template.txt} \normalsize
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1211,7 +1214,7 @@ GFS NCEP grid 193 (0.25-degrees) :: \verb|n193_template.txt| \\
 \begin{figure}[htbp]\begin{center}
  \includegraphics[angle=0,scale=0.95]{Figs/nGCp.pdf}
 \parbox{15cm}{\caption{\label{FigGCp}
-NASA GEOS-5, 0.625/0.5-degrees
+NASA GEOS-5, $0.625/0.5 \, ^{\circ}$
 }}
 \end{center}\end{figure}
 \clearpage
@@ -1219,12 +1222,12 @@ NASA GEOS-5, 0.625/0.5-degrees
 Available from:\\
 \verb|ftp://gmao_ops@ftp.nccs.nasa.gov/fp/forecast//|
 
-NASA GEOS-5 Cp (0.625/0.5-degrees) :: \\
+NASA GEOS-5 Cp ($0.625/0.5  \, ^{\circ}$) :: \\
 \verb|GEOS.fp.fcst.inst3_3d_asm_Cp.YYYYMMDD_00+YYYYMMDD_mmmm.V01.nc4|\\
 \verb|nGCp_template.txt| \\
 \tiny \verbatiminput{nGCp_template.txt} \normalsize
 
-NASA GEOS-5 Np (0.25/0.3125-degrees) :: \\
+NASA GEOS-5 Np ($0.25/0.3125  \, ^{\circ}$) :: \\
 \verb|GEOS.fp.fcst.inst3_3d_asm_Np.YYYYMMDD_00+YYYYMMDD_mmmm.V01.nc4|\\
 \verb|nGNp_template.txt| \\
 \tiny \verbatiminput{nGNp_template.txt} \normalsize
