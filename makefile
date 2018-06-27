@@ -36,7 +36,7 @@ SYSTEM = gfortran
 #      PROF  : includes profiling flags with some optimization
 #      OPT   : includes optimizations flags for fastest runtime
 #    This variable cannot be left blank
-RUN = DEBUG
+RUN = OPT
 #
 INSTALLDIR=/opt/USGS
 #INSTALLDIR=~/gcc
@@ -97,10 +97,10 @@ USGSLIB = $(USGSLIBDIR) $(USGSINC) -lhourssince -lprojection
 
 EXEC = \
  gen_GRIB2_index   \
- tools/ncMetSonde  \
- tools/ncMetTraj_F \
- tools/ncMetTraj_B \
- tools/ncMet_check
+ tools/MetSonde  \
+ tools/MetTraj_F \
+ tools/MetTraj_B \
+ tools/MetCheck
 
 ###############################################################################
 ###############################################################################
@@ -165,18 +165,18 @@ else
   GRIBTOOL =
 endif
 
-tools: ncMetSonde ncMetTraj_F ncMetTraj_B ncMet_check $(GRIBTOOL)
+tools: MetSonde MetTraj_F MetTraj_B MetCheck $(GRIBTOOL)
 
-ncMetSonde: tools/ncMetSonde.f90 makefile libMetReader.a
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/ncMetSonde.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) ncMetSonde.o $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB) -o tools/ncMetSonde
-ncMetTraj_F: tools/ncMetTraj.F90 makefile libMetReader.a
-	$(FC) -x f95-cpp-input -DFORWARD  $(FFLAGS) $(EXFLAGS) tools/ncMetTraj.F90 -o tools/ncMetTraj_F $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
-ncMetTraj_B: tools/ncMetTraj.F90 makefile libMetReader.a
-	$(FC) -x f95-cpp-input -DBACKWARD $(FFLAGS) $(EXFLAGS) tools/ncMetTraj.F90 -o tools/ncMetTraj_B $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
-ncMet_check: tools/ncMet_check.f90 makefile libMetReader.a
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/ncMet_check.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) ncMet_check.o $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB) -o tools/ncMet_check
+MetSonde: tools/MetSonde.f90 makefile libMetReader.a
+	$(FC) $(FFLAGS) $(EXFLAGS) -L./ -lMetReader $(LIBS) $(nclib) $(grblib) -c tools/MetSonde.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) MetSonde.o  -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB) -o tools/MetSonde
+MetTraj_F: tools/MetTraj.F90 makefile libMetReader.a
+	$(FC) -x f95-cpp-input -DFORWARD  $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_F $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
+MetTraj_B: tools/MetTraj.F90 makefile libMetReader.a
+	$(FC) -x f95-cpp-input -DBACKWARD $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_B $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
+MetCheck: tools/MetCheck.f90 makefile libMetReader.a
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/MetCheck.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) MetCheck.o $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB) -o tools/MetCheck
 
 clean:
 	rm -f *.o

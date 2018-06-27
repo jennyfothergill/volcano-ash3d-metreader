@@ -6,12 +6,12 @@
       real(kind=sp), parameter :: RAD_EARTH_MET = 6371.229_sp ! Radius of Earth in km
       real(kind=sp), parameter :: DEG2RAD_MET   = 1.7453292519943295e-2_sp
 
-      integer        :: MR_global_essential    = 6
-      integer        :: MR_global_production   = 6
-      integer        :: MR_global_debug        = 6
-      integer        :: MR_global_info         = 6
-      integer        :: MR_global_log          = 9
-      integer        :: MR_global_error        = 0
+      integer,public :: MR_global_essential    = 6
+      integer,public :: MR_global_production   = 6
+      integer,public :: MR_global_debug        = 6
+      integer,public :: MR_global_info         = 6
+      integer,public :: MR_global_log          = 9
+      integer,public :: MR_global_error        = 0
 
       logical        :: MR_useCompGrid         = .true. ! Reset this to .false. if you only need the Met grid
       logical        :: MR_useCompTime         = .true. ! Reset this to .false. if you only need the time of the file

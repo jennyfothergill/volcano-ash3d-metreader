@@ -36,13 +36,13 @@
 !     TEST READ COMMAND LINE ARGUMENTS
       nargs = iargc()
       if (nargs.lt.6) then
-        write(MR_global_info,*)"Enter lon lat YYYY MM DD HH [WIND_ROOT]"
+        write(6,*)"Enter lon lat YYYY MM DD HH [WIND_ROOT]"
         stop 1
       else
         call get_command_argument(1, arg, status)
         read(arg,*)inlon
         if(inlon.lt.-360.0)then
-          write(MR_global_info,*)"ERROR: Longitude must be gt -360"
+          write(6,*)"ERROR: Longitude must be gt -360"
           stop 1
         endif
         if(inlon.lt.0.0_4.or.inlon.gt.360.0_4)inlon=mod(inlon+360.0_4,360.0_4)
@@ -62,9 +62,9 @@
         endif
       endif
 
-      write(MR_global_info,*)"Interpolating profile onto ",inlon,inlat
+      write(6,*)"Interpolating profile onto ",inlon,inlat
 
-      write(MR_global_info,*)"Set up winfile data structure"
+      write(6,*)"Set up winfile data structure"
       call GetWindFile_FC(inyear,inmonth,inday,inhour,WINDROOT,FC_freq)
 
       nxmax = 3 ! 
@@ -87,7 +87,7 @@
       call MR_Set_CompProjection(IsLatLon,iprojflag,lambda0,phi0,phi1,phi2,&
                                  k0,radius_earth)
 
-      write(MR_global_info,*)"Setting up wind grids"
+      write(6,*)"Setting up wind grids"
       call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,&
                               lon_grid(1:nxmax), &
                               lat_grid(1:nymax), &
@@ -98,7 +98,7 @@
 
       !call WriteGnuplotScript(inlon,inlat,inyear,inmonth,inday,inhour)
 
-      write(MR_global_info,*)"Program ended normally."
+      write(6,*)"Program ended normally."
 
       end program MetSonde
 
@@ -223,7 +223,7 @@
 
       elseif(RunStartHour-Probe_StartHour.lt.-90)then
         ! Run is too far in the future
-        write(MR_global_info,*)"ERROR: run is too far in future"
+        write(6,*)"ERROR: run is too far in future"
         stop 1
       else
         ! Run is newer than 2 weeks, use GFS winds
@@ -253,9 +253,9 @@
       call MR_Set_Met_Times(Probe_StartHour, Simtime_in_hours)
 
 
-      write(MR_global_info,*)"Traj time: ",inyear,inmonth,inday,inhour
-      write(MR_global_info,*)"Now      : ",RunStartYear,RunStartMonth,RunStartDay,RunStartHr
-      write(MR_global_info,*)"FC  time : ",inyear,inmonth,inday,FC_Package_hour
+      write(6,*)"Traj time: ",inyear,inmonth,inday,inhour
+      write(6,*)"Now      : ",RunStartYear,RunStartMonth,RunStartDay,RunStartHr
+      write(6,*)"FC  time : ",inyear,inmonth,inday,FC_Package_hour
 
       end subroutine GetWindFile_FC
 
@@ -296,7 +296,7 @@
       allocate(tempprof1(np_fullmet))
       allocate(tempprof2(np_fullmet))
 
-      write(MR_global_info,*)" Inside GetMetProfile"
+      write(6,*)" Inside GetMetProfile"
 
       ! First load the Met grids for Geopotential
       MR_iMetStep_Now = 1 ! This is initialized to 0
@@ -343,12 +343,12 @@
                   a3*AirTemp_meso_next_step_MetP_sp(2,2,:) + &
                   a4*AirTemp_meso_next_step_MetP_sp(1,2,:)
 
-      write(MR_global_info,*)x_submet_sp
-      write(MR_global_info,*)y_submet_sp
-      write(MR_global_info,*)"t frac comp",tfrac,tc
-      write(MR_global_info,*)"x frac comp",xfrac,xc
-      write(MR_global_info,*)"y frac comp",yfrac,yc
-      write(MR_global_info,*)a1,a2,a3,a4
+      write(6,*)x_submet_sp
+      write(6,*)y_submet_sp
+      write(6,*)"t frac comp",tfrac,tc
+      write(6,*)"x frac comp",xfrac,xc
+      write(6,*)"y frac comp",yfrac,yc
+      write(6,*)a1,a2,a3,a4
 
       open(unit=20,file='GFS_prof.dat')
       do i = 1,np_fullmet
@@ -372,8 +372,8 @@
           exit
         endif
       enddo
-      write(MR_global_info,*)"Tropopause Height, Temp, Pressure"
-      write(MR_global_info,*)TropoH,TropoT,TropoP
+      write(6,*)"Tropopause Height, Temp, Pressure"
+      write(6,*)TropoH,TropoT,TropoP
 
 
       end subroutine GetMetProfile
@@ -397,7 +397,7 @@
         ihour = 12
       endif
 
-      write(MR_global_info,*)"WARNING:  Assuming sonde data in /data/WindFiles/MetProfiles/"
+      write(6,*)"WARNING:  Assuming sonde data in /data/WindFiles/MetProfiles/"
 
       write(string1,'(a33,i4,3i2.2,4a)')"/data/WindFiles/MetProfiles/PASY_",&
                                         inyear,inmonth,inday,ihour,".dat"

@@ -360,7 +360,7 @@
 
       if(RunStartHour-Probe_StartHour.gt.(GFS_Archive_Days*24))then
         ! Run is older than 2 weeks, use NCEP winds
-      bbbbbbb(MR_global_info,*)"Start time is older than the hardwired threshold of ",&
+        write(MR_global_info,*)"Start time is older than the hardwired threshold of ",&
                   GFS_Archive_Days," days"
         write(MR_global_info,*)"Using the NCEP reanalysis"
         iw  = 5
