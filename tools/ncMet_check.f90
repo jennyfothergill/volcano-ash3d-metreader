@@ -1,6 +1,6 @@
 !##############################################################################
 !##############################################################################
-      PROGRAM ncMet_check
+      program MetCheck
 
       use MetReader
 
@@ -54,42 +54,41 @@
 !     TEST READ COMMAND LINE ARGUMENTS
       nargs = iargc()
       if (nargs.lt.3) then
-        write(6,*)"ERROR: not enough command-line arguments."
-        write(6,*)"  Usage: ncMet_check iwf idf filename [year]"
-        write(6,*)"   where "
-        write(6,*)"     iwf =  3 NARR3D NAM221 32 km North America files"
-        write(6,*)"     iwf =  4 NARR3D NAM221 32 km North America files"
-        write(6,*)"     iwf =  5 NAM216 AK 45km"
-        write(6,*)"     iwf =  6 NAM Regional 90 km grid 104"
-        write(6,*)"     iwf =  7 CONUS 212 40km"
-        write(6,*)"     iwf =  8 CONUS 218 (12km)"
-        write(6,*)"     iwf =  9 Unassigned"
-        write(6,*)"     iwf = 10 NAM 242 11.25 km AK"
-        write(6,*)"     iwf = 11 NAM 196 2.5 km HI"
-        write(6,*)"     iwf = 12 NAM 198 5.953 km AK"
-        write(6,*)"     iwf = 13 NAM 91 2.976 km AK"
-        write(6,*)"     iwf = 20 GFS 0.5"
-        write(6,*)"     iwf = 21 Old format GFS 0.5-degree"
-        write(6,*)"     iwf = 22 GFS 0.25"
-        write(6,*)"     iwf = 23 NCEP / DOE reanalysis 2.5 degree files"
-        write(6,*)"     iwf = 24 NASA-MERRA reanalysis 1.25 degree files"
-        write(6,*)"     iwf = 25 NCEP/NCAR reanalysis 2.5 degree files"
-        write(6,*)"     iwf = 27 NOAA-CIRES reanalysis 2.5 degree files"
-        write(6,*)"     iwf = 28 ECMWF Interim Reanalysis (ERA-Interim)"
-        write(6,*)"     iwf = 31 Catania forecast"
-        write(6,*)"     iwf = 32 Air Force Weather Agency subcenter = 0"
-        write(6,*)"     iwf = 33 CCSM3.0 Community Atmosphere Model (CAM)"
-        write(6,*)"     iwf = 40 NASA-GEOS Cp"
-        write(6,*)"     iwf = 41 NASA-GEOS Np"
-        write(6,*)"     "
-        write(6,*)"     idf = 2 NetCDF"
-        write(6,*)"     idf = 3 grib"
-        write(6,*)"     "
-        write(6,*)"     filename = name of file of root directory for NCEP"
-        write(6,*)"     "
-        write(6,*)"     [year] = year for NCEP tests"
-        write(6,*)"               This is optional and defaults to current year"
-        write(6,*)"               is not provided."
+        write(MR_global_info,*)"ERROR: not enough command-line arguments."
+        write(MR_global_info,*)"  Usage: MetCheck iwf idf filename [year]"
+        write(MR_global_info,*)"   where "
+        write(MR_global_info,*)"     iwf =  3 NARR3D NAM221 32 km North America files"
+        write(MR_global_info,*)"     iwf =  4 NARR3D NAM221 32 km North America files"
+        write(MR_global_info,*)"     iwf =  5 NAM216 AK 45km"
+        write(MR_global_info,*)"     iwf =  6 NAM Regional 90 km grid 104"
+        write(MR_global_info,*)"     iwf =  7 CONUS 212 40km"
+        write(MR_global_info,*)"     iwf =  8 CONUS 218 (12km)"
+        write(MR_global_info,*)"     iwf = 10 NAM 242 11.25 km AK"
+        write(MR_global_info,*)"     iwf = 11 NAM 196 2.5 km HI"
+        write(MR_global_info,*)"     iwf = 12 NAM 198 5.953 km AK"
+        write(MR_global_info,*)"     iwf = 13 NAM 91 2.976 km AK"
+        write(MR_global_info,*)"     iwf = 20 GFS 0.5"
+        write(MR_global_info,*)"     iwf = 21 GFS 1.0"
+        write(MR_global_info,*)"     iwf = 22 GFS 0.25"
+        write(MR_global_info,*)"     iwf = 23 NCEP / DOE reanalysis 2.5 degree files"
+        write(MR_global_info,*)"     iwf = 24 NASA-MERRA-2 reanalysis 0.625x0.5 degree files"
+        write(MR_global_info,*)"     iwf = 25 NCEP/NCAR reanalysis 2.5 degree files"
+        write(MR_global_info,*)"     iwf = 27 NOAA-CIRES reanalysis 2.5 degree files"
+        write(MR_global_info,*)"     iwf = 28 ECMWF Interim Reanalysis (ERA-Interim)"
+        write(MR_global_info,*)"     iwf = 32 Air Force Weather Agency subcenter = 0"
+        write(MR_global_info,*)"     iwf = 33 CCSM3.0 Community Atmosphere Model (CAM)"
+        write(MR_global_info,*)"     iwf = 40 NASA-GEOS Cp"
+        write(MR_global_info,*)"     iwf = 41 NASA-GEOS Np"
+        write(MR_global_info,*)"     iwf = 50 WRF"
+        write(MR_global_info,*)"     "
+        write(MR_global_info,*)"     idf = 2 NetCDF"
+        write(MR_global_info,*)"     idf = 3 grib"
+        write(MR_global_info,*)"     "
+        write(MR_global_info,*)"     filename = name of file of root directory for NCEP"
+        write(MR_global_info,*)"     "
+        write(MR_global_info,*)"     [year] = year for NCEP tests"
+        write(MR_global_info,*)"               This is optional and defaults to current year"
+        write(MR_global_info,*)"               is not provided."
 
         stop 1
       else
@@ -101,7 +100,6 @@
            iwf.ne.6.and.&
            iwf.ne.7.and.&
            iwf.ne.8.and.&
-           iwf.ne.9.and.&
            iwf.ne.10.and.&
            iwf.ne.11.and.&
            iwf.ne.12.and.&
@@ -115,18 +113,18 @@
            iwf.ne.26.and.&
            iwf.ne.27.and.&
            iwf.ne.28.and.&
-           iwf.ne.31.and.&
            iwf.ne.32.and.&
+           iwf.ne.33.and.&
            iwf.ne.41.and.&
            iwf.ne.42)then
-          write(*,*)"ERROR: windformat not recognized"
+          write(MR_global_info,*)"ERROR: windformat not recognized"
           stop 1
         endif
         call get_command_argument(2, arg, status)
         read(arg,*)idf
         if(idf.ne.2.and.&
            idf.ne.3)then
-          write(*,*)"ERROR: Only netcdf (2) and grib (3) supported"
+          write(MR_global_info,*)"ERROR: Only netcdf (2) and grib (3) supported"
           stop 1
         endif
 
@@ -144,7 +142,7 @@
         endif
       endif
 
-      write(*,*)"Set up windfile data structure"
+      write(MR_global_info,*)"Set up windfile data structure"
       iw      = 4
       igrid   = 0  ! this will get reset in MR_Allocate_FullMetFileList
       iwfiles = 1
@@ -195,10 +193,10 @@
 
       do imetstep = 1,nt_fullmet
         if(iwf.eq.25)then
-          write(*,*)"Met_DoY : ",iy," : ",real((imetstep-1),kind=4)*6.0_4/24_4
+          write(MR_global_info,*)"Met_DoY : ",iy," : ",real((imetstep-1),kind=4)*6.0_4/24_4
         else
           hsince = MR_windfile_starthour(1)+MR_windfile_stephour(1,imetstep)
-          write(*,*)"Met_DoY : ",HS_YearOfEvent(hsince,MR_BaseYear,MR_useLeap)," : ",&
+          write(MR_global_info,*)"Met_DoY : ",HS_YearOfEvent(hsince,MR_BaseYear,MR_useLeap)," : ",&
                                  real(HS_DayOfYear(hsince,MR_BaseYear,MR_useLeap)+ &
                                     HS_HourOfDay(hsince,MR_BaseYear,MR_useLeap)/24.0_8,kind=4)
         endif
@@ -217,10 +215,10 @@
                 do p=1,np
                   tmp=MR_dum3d_metP(i,j,p)
                   if(tmp.lt.v1.or.tmp.gt.v2)then
-                    write(*,*)"ERROR reading value for ivar=",ivar
-                    write(*,*)"      at i,j,p = ",i,j,p
-                    write(*,*)"      Value read = ",tmp
-                    write(*,*)"      Min / Max = ",v1,v2
+                    write(MR_global_info,*)"ERROR reading value for ivar=",ivar
+                    write(MR_global_info,*)"      at i,j,p = ",i,j,p
+                    write(MR_global_info,*)"      Value read = ",tmp
+                    write(MR_global_info,*)"      Min / Max = ",v1,v2
                     stop 1
                   endif
                 enddo
@@ -232,15 +230,15 @@
 
       ! For the NCEP case, give the last time step checked
       if(iwf.eq.25)then
-        write(*,*)"Met_DoY : ",iy," : ",real((nt_fullmet-1),kind=4)*6.0_4/24_4
+        write(MR_global_info,*)"Met_DoY : ",iy," : ",real((nt_fullmet-1),kind=4)*6.0_4/24_4
       else
         hsince = MR_windfile_starthour(1)+MR_windfile_stephour(1,1)
-        write(*,*)"Met_DoY : ",HS_YearOfEvent(hsince,MR_BaseYear,MR_useLeap)," : ",&
+        write(MR_global_info,*)"Met_DoY : ",HS_YearOfEvent(hsince,MR_BaseYear,MR_useLeap)," : ",&
                                real(HS_DayOfYear(hsince,MR_BaseYear,MR_useLeap)+ &
                                   HS_HourOfDay(hsince,MR_BaseYear,MR_useLeap)/24.0_8,kind=4)
       endif 
 
-      write(*,*)"Program ended normally."
+      write(MR_global_info,*)"Program ended normally."
 
-      END PROGRAM ncMet_check
+      end program MetCheck
 

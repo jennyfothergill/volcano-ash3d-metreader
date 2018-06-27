@@ -38,10 +38,10 @@
                                        ! 12 NAM 198 5.953 km AK
                                        ! 13 NAM 91 2.976 km AK
                                        ! 20 GFS 0.5
-                                       ! 21 Old format GFS 0.5-degree
+                                       ! 21 GFS 1.0
                                        ! 22 GFS 0.25
                                        ! 23 NCEP / DOE reanalysis 2.5 degree files
-                                       ! 24 NASA-MERRA reanalysis 1.25 degree files
+                                       ! 24 NASA-MERRA-2 reanalysis 0.625/0.5 degree files
                                        ! 25 NCEP/NCAR reanalysis 2.5 degree files
                                        ! 27 NOAA-CIRES reanalysis 2.5 degree files
                                        ! 28 ECMWF Interim Reanalysis (ERA-Interim)
@@ -60,7 +60,6 @@
                                     !    =2 netcdf
                                     !    =3 grib2
                                     !    =4 grib1
-                                    !    =5 hdf
 
         ! These variables describe the full list of windfiles read
       integer                                       ,public :: MR_iwindfiles           ! number of files provided
@@ -389,7 +388,6 @@
 
       integer :: istart, iend
       integer :: jstart, jend
-      !integer :: ilhalf,irhalf
       integer :: ilhalf_fm_l, ilhalf_fm_r
       integer :: irhalf_fm_l, irhalf_fm_r
       integer :: ilhalf_nx, irhalf_nx
@@ -612,13 +610,13 @@
         MR_iGridCode = 91
       elseif (iwf.eq.20)then  ! GFS 0.5
         MR_iGridCode = 4
-      elseif (iwf.eq.21)then  ! Old format GFS 0.5-degree
+      elseif (iwf.eq.21)then  ! GFS 1.0
         MR_iGridCode = 4
       elseif (iwf.eq.22)then  ! GFS 0.25
         MR_iGridCode = 193
       elseif (iwf.eq.23)then  ! NCEP / DOE reanalysis 2.5 degree files
         MR_iGridCode = 2
-      elseif (iwf.eq.24)then  ! NASA-MERRA reanalysis 1.25 degree files
+      elseif (iwf.eq.24)then  ! NASA-MERRA-2 reanalysis 0.625/0.5 degree files
         MR_iGridCode = 1024
       elseif (iwf.eq.25)then  ! NCEP/NCAR reanalysis 2.5 degree files
         MR_iGridCode = 2
@@ -731,7 +729,7 @@
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "GFS 0.5"
-      elseif (MR_iwindformat.eq.21)then  ! Old format GFS 0.5-degree
+      elseif (MR_iwindformat.eq.21)then  ! GFS 1.0
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "GFS 0.5-degree"
@@ -743,10 +741,10 @@
         MR_Reannalysis = .true.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NCEP / DOE reanalysis 2.5 degree files"
-      elseif (MR_iwindformat.eq.24)then  ! NASA-MERRA reanalysis 1.25 degree files
+      elseif (MR_iwindformat.eq.24)then  ! NASA-MERRA-2 reanalysis 0.625/0.5 degree files
         MR_Reannalysis = .true.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "NASA-MERRA reanalysis 1.25 degree files"
+                  "NASA-MERRA-2 reanalysis 0.625/0.5 degree files"
       elseif (MR_iwindformat.eq.25)then  ! NCEP/NCAR reanalysis 2.5 degree files
         MR_Reannalysis = .true.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
@@ -823,14 +821,6 @@
         write(MR_global_error,*)"MR ERROR: Met files are grib1, but MetReader was not"
         write(MR_global_error,*)"          compiled with grib1 support."
         write(MR_global_error,*)"          Please recompile MetReader with grib1 support"
-        stop 1
-#endif
-      case(5)
-        write(MR_global_info,*)"            data format = ",MR_idataFormat,"HDF"
-#ifndef USEHDF
-        write(MR_global_error,*)"MR ERROR: Met files are hdf, but MetReader was not"
-        write(MR_global_error,*)"          compiled with hdf support."
-        write(MR_global_error,*)"          Please recompile MetReader with hdf support"
         stop 1
 #endif
       case default
@@ -1034,26 +1024,20 @@
 #endif
         elseif(MR_idataFormat.eq.3)then
 #ifdef USEGRIB2
-          call MR_Read_Met_DimVars_GRIB
-          call MR_Read_Met_Times_GRIB
+          call MR_Read_Met_DimVars_GRIB2
+          call MR_Read_Met_Times_GRIB2
 #endif
         elseif(MR_idataFormat.eq.4)then
 #ifdef USEGRIB1
-          !call MR_Read_Met_DimVars_GRIB
-          !call MR_Read_Met_Times_GRIB
+          !call MR_Read_Met_DimVars_GRIB1
+          !call MR_Read_Met_Times_GRIB1
 #endif
-        elseif(MR_idataFormat.eq.5)then
-#ifdef USEHDF
-          !call MR_Read_Met_DimVars_HDF
-#endif
-          write(MR_global_error,*)"MR ERROR: HDF reader not yet implemented"
-          stop 1
         else
           write(MR_global_error,*)"MR ERROR: Unknown MR_idataFormat:",MR_idataFormat
           stop 1
         endif
       case default
-        write(MR_global_error,*)"MR ERROR:  MR_iwind not 1:5."
+        write(MR_global_error,*)"MR ERROR:  MR_iwind not 1-4."
         write(MR_global_error,*)"           Exiting in MR_Read_Met_DimVars"
         stop 1
       end select
@@ -1700,7 +1684,6 @@
 
  !     MAKE SURE THE WIND MODEL TIME WINDOW COVERS THE ENTIRE SUMULATION TIME
       write(MR_global_info,99)
-      !write(MR_global_log ,99)
 99    format(/,4x,'Making sure the mesoscale model time covers the simulation time . . . ')
       if (MR_MetStep_Hour_since_baseyear(1).gt.MR_Comp_StartHour) then
         write(MR_global_error,*)"MR ERROR:  Wind data starts after SimStartHour"
@@ -1714,7 +1697,7 @@
         !write(MR_global_log ,101)
 !101     format(4x,'Error.  The model starts after the first eruption. Program stopped.')
         stop 1
-      else if (MR_MetStep_Hour_since_baseyear(MR_MetSteps_Total).lt.(MR_Comp_StartHour+MR_Comp_Time_in_hours)) then
+      elseif (MR_MetStep_Hour_since_baseyear(MR_MetSteps_Total).lt.(MR_Comp_StartHour+MR_Comp_Time_in_hours)) then
         write(MR_global_error,*)"MR ERROR:  Last met time is earlier than simulation time"
         write(MR_global_error,*)"MR_MetSteps_Total     = ",MR_MetSteps_Total
         write(MR_global_error,*)"Last time step       = ",MR_MetStep_Hour_since_baseyear(MR_MetSteps_Total)
@@ -1795,15 +1778,11 @@
 #endif
         elseif(MR_idataFormat.eq.3)then
 #ifdef USEGRIB2
-          call MR_Read_MetP_Variable_GRIB(ivar,istep)
+          call MR_Read_MetP_Variable_GRIB2(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.4)then
 #ifdef USEGRIB1
-          !call MR_Read_MetP_Variable_GRIB(ivar,istep)
-#endif
-        elseif(MR_idataFormat.eq.5)then
-#ifdef USEHDF
-          !call MR_Read_MetP_Variable_HDF(ivar,istep)
+          !call MR_Read_MetP_Variable_GRIB1(ivar,istep)
 #endif
         endif
         MR_geoH_metP_last(:,:,:) = MR_dum3d_metP(:,:,:)
@@ -1822,15 +1801,11 @@
 #endif
       elseif(MR_idataFormat.eq.3)then
 #ifdef USEGRIB2
-        call MR_Read_MetP_Variable_GRIB(ivar,istep+1)
+        call MR_Read_MetP_Variable_GRIB2(ivar,istep+1)
 #endif
       elseif(MR_idataFormat.eq.4)then
 #ifdef USEGRIB1
-        !call MR_Read_MetP_Variable_GRIB(ivar,istep+1)
-#endif
-      elseif(MR_idataFormat.eq.5)then
-#ifdef USEHDF
-        !call MR_Read_MetP_Variable_HDF(ivar,istep+1)
+        !call MR_Read_MetP_Variable_GRIB1(ivar,istep+1)
 #endif
       endif
       MR_geoH_metP_next(:,:,:) = MR_dum3d_metP(:,:,:)
@@ -1905,15 +1880,11 @@
 #endif
         elseif(MR_idataFormat.eq.3)then
 #ifdef USEGRIB2
-          call MR_Read_MetP_Variable_GRIB(ivar,istep)
+          call MR_Read_MetP_Variable_GRIB2(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.4)then
 #ifdef USEGRIB1
-          !call MR_Read_MetP_Variable_GRIB(ivar,istep)
-#endif
-        elseif(MR_idataFormat.eq.5)then
-#ifdef USEHDF
-          !call MR_Read_MetP_Variable_HDF(ivar,istep)
+          !call MR_Read_MetP_Variable_GRIB1(ivar,istep)
 #endif
         endif
 
@@ -2076,7 +2047,7 @@
 !       Read_3d_MetH_Variable                   (gets variable on Met_x, Met_y, Comp_z)
 !        -> Read_3d_MetP_Variable               (gets variable on native Met subgrid)
 !            -> Read_3d_MetP_Variable_[format]  (direct read of variable in
-!                                                whatever format : nc,hdf,grib1/2,ascii)
+!                                                whatever format : nc,grib1/2,ascii)
 !
 !     Takes as input :: ivar  :: specifies which variable to read
 !                       istep :: specified the met step
@@ -2227,15 +2198,11 @@
 #endif
         elseif(MR_idataFormat.eq.3)then
 #ifdef USEGRIB2
-          call MR_Read_MetP_Variable_GRIB(ivar,istep)
+          call MR_Read_MetP_Variable_GRIB2(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.4)then
 #ifdef USEGRIB1
-          !call MR_Read_MetP_Variable_GRIB(ivar,istep)
-#endif
-        elseif(MR_idataFormat.eq.5)then
-#ifdef USEHDF
-          !call MR_Read_MetP_Variable_HDF(ivar,istep)
+          !call MR_Read_MetP_Variable_GRIB1(ivar,istep)
 #endif
         endif
       case default
@@ -2257,7 +2224,7 @@
 !       Read_2d_Met_Variable                   (gets variable on Met_x, Met_y)
 !          -> Read_Met_Variable_[format]       (direct read of variable in
 !                                                whatever format :
-!                                                nc,hdf,grib1/2,ascii)
+!                                                nc,grib1/2,ascii)
 !
 !     Takes as input :: ivar  :: specifies which variable to read
 !                       istep :: specified the met step

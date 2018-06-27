@@ -1,6 +1,6 @@
 !##############################################################################
 !##############################################################################
-      PROGRAM ncMetSonde
+      program MetSonde
 
       use MetReader
 
@@ -20,7 +20,6 @@
       real(kind=4),dimension(:)    ,allocatable :: lon_grid
       real(kind=4),dimension(:)    ,allocatable :: lat_grid
       real(kind=4),dimension(:)    ,allocatable :: z_cc
-      !real(kind=4),dimension(:)    ,allocatable :: gsdiam
       logical             :: IsPeriodic
 
       integer :: iprojflag
@@ -30,23 +29,23 @@
       integer :: BaseYear = 1900
       logical :: useLeap  = .true.
 
-      ! Make user MetReader is using the same calendar
+      ! Make sure user MetReader is using the same calendar
       MR_BaseYear = BaseYear
       MR_useLeap  = useLeap
 
 !     TEST READ COMMAND LINE ARGUMENTS
       nargs = iargc()
       if (nargs.lt.6) then
-        write(6,*)"Enter lon,lat,YYYY MM DD HH (WIND_ROOT)"
+        write(MR_global_info,*)"Enter lon lat YYYY MM DD HH [WIND_ROOT]"
         stop 1
       else
         call get_command_argument(1, arg, status)
         read(arg,*)inlon
-        IF(inlon.lt.-360.0)THEN
-          write(*,*)"ERROR: Longitude must be gt -360"
+        if(inlon.lt.-360.0)then
+          write(MR_global_info,*)"ERROR: Longitude must be gt -360"
           stop 1
-        ENDIF
-        IF(inlon.lt.0.0_4.or.inlon.gt.360.0_4)inlon=mod(inlon+360.0_4,360.0_4)
+        endif
+        if(inlon.lt.0.0_4.or.inlon.gt.360.0_4)inlon=mod(inlon+360.0_4,360.0_4)
         call get_command_argument(2, arg, status)
         read(arg,*)inlat
         call get_command_argument(3, arg, status)
@@ -57,27 +56,23 @@
         read(arg,*)inday
         call get_command_argument(6, arg, status)
         read(arg,*)inhour
-        IF(nargs.ge.7)THEN
+        if(nargs.ge.7)then
           call get_command_argument(7, arg, status)
-          !infile1 = TRIM(arg)
           WINDROOT = TRIM(arg)
-        ENDIF
+        endif
       endif
 
-      write(*,*)"Interpolating profile onto ",inlon,inlat
-      !write(*,*)"-------------------------------------------------"
+      write(MR_global_info,*)"Interpolating profile onto ",inlon,inlat
 
-      write(*,*)"Set up winfile data structure"
+      write(MR_global_info,*)"Set up winfile data structure"
       call GetWindFile_FC(inyear,inmonth,inday,inhour,WINDROOT,FC_freq)
 
       nxmax = 3 ! 
       nymax = 3 ! 
       nzmax = 2 ! This is not really used in this utility
-      !nsize = 1 ! This is also not really used in this utility
       allocate(lon_grid(nxmax)); lon_grid(1:3) = (/inlon-0.5_4,inlon,inlon+0.5_4/)
       allocate(lat_grid(nymax)); lat_grid(1:3) = (/inlat-0.5_4,inlat,inlat+0.5_4/)
       allocate(z_cc(nzmax))    ; z_cc(1:2) = (/0.0_4, 10.0_4/)
-      !allocate(gsdiam(nsize))  ; gsdiam(1) = 1.0_4
       IsPeriodic = .false.
 
       IsLatLon = .true.
@@ -92,7 +87,7 @@
       call MR_Set_CompProjection(IsLatLon,iprojflag,lambda0,phi0,phi1,phi2,&
                                  k0,radius_earth)
 
-      write(*,*)"Setting up wind grids"
+      write(MR_global_info,*)"Setting up wind grids"
       call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,&
                               lon_grid(1:nxmax), &
                               lat_grid(1:nymax), &
@@ -103,9 +98,9 @@
 
       !call WriteGnuplotScript(inlon,inlat,inyear,inmonth,inday,inhour)
 
-      write(*,*)"Program ended normally."
+      write(MR_global_info,*)"Program ended normally."
 
-      END PROGRAM ncMetSonde
+      end program MetSonde
 
 !##############################################################################
 !
@@ -164,7 +159,6 @@
 
       integer      :: iw,iwf,igrid,iwfiles
       real(kind=8)      :: Simtime_in_hours = 0.0
-      !character(len=100) :: WINDROOT = '/data/WindFiles'
       character(len=47) :: string1,string2
 
       integer :: i
@@ -196,7 +190,7 @@
       Probe_StartHour = HS_hours_since_baseyear(inyear,inmonth,inday,inhour,&
                                                 MR_BaseYear,MR_useLeap)
 
-      IF(RunStartHour-FC_Package_StartHour.lt.GFS_Avail_Delay)THEN
+      if(RunStartHour-FC_Package_StartHour.lt.GFS_Avail_Delay)then
         ! The closest forecast package to the probe time is too close to
         ! the current (real) time.  The GFS files are probably not yet
         ! available.  Decrement the forecast package.
@@ -206,44 +200,41 @@
         FC_day  = HS_DayOfEvent(FC_Package_StartHour,MR_BaseYear,MR_useLeap)
         FC_hour = HS_HourOfDay(FC_Package_StartHour,MR_BaseYear,MR_useLeap)
         FC_Package_hour = floor(FC_hour/FC_freq) * FC_freq
-      ELSE
+      else
         FC_year = inyear
         FC_mon  = inmonth
         FC_day  = inday
         FC_hour = inhour
-      ENDIF
+      endif
 
-      IF(RunStartHour-Probe_StartHour.gt.(GFS_Archive_Days*24))THEN
+      if(RunStartHour-Probe_StartHour.gt.(GFS_Archive_Days*24))then
         ! Run is older than 2 weeks, use NCEP winds
         iw  = 5
         iwf = 25
         igrid   = 0
         iwfiles = 1
-        !MR_ForecastInterval = 6.0
 
         call MR_Allocate_FullMetFileList(iw,iwf,igrid,2,iwfiles)
                            !     Probe_StartHour,Simtime_in_hours)
-        DO i=1,MR_iwindfiles
+        do i=1,MR_iwindfiles
           write(MR_windfiles(i),*)trim(ADJUSTL(infile1)), &
                                '/NCEP'
-        ENDDO
+        enddo
 
-      ELSEIF(RunStartHour-Probe_StartHour.lt.-90)THEN
+      elseif(RunStartHour-Probe_StartHour.lt.-90)then
         ! Run is too far in the future
-        write(*,*)"ERROR: run is too far in future"
+        write(MR_global_info,*)"ERROR: run is too far in future"
         stop 1
-      ELSE
+      else
         ! Run is newer than 2 weeks, use GFS winds
         iw      = 4
         iwf     = 20
         igrid   = 0
         iwfiles = 34
-        !MR_ForecastInterval = 3.0
-         FC_intvl = 3.0
+        FC_intvl = 3.0
 
         call MR_Allocate_FullMetFileList(iw,iwf,igrid,2,iwfiles)
-        DO i=1,MR_iwindfiles
-          !FC_hour_int = nint((i-1)*MR_ForecastInterval)
+        do i=1,MR_iwindfiles
           FC_hour_int = nint((i-1)*FC_intvl)
           write(string1,'(a9,I4.4,I2.2,I2.2,I2.2,a1)')'/gfs/gfs.', &
                         FC_year,FC_mon,FC_day,FC_Package_hour,'/'
@@ -253,18 +244,18 @@
           write(MR_windfiles(i),*)trim(ADJUSTL(infile1)), &
                                trim(ADJUSTL(string1)), &
                                trim(ADJUSTL(string2))
-        ENDDO
+        enddo
 
-      ENDIF
+      endif
         ! Check for existance and compatibility with simulation time requirements
       call MR_Read_Met_DimVars(FC_year)
 
       call MR_Set_Met_Times(Probe_StartHour, Simtime_in_hours)
 
 
-      write(*,*)"Traj time: ",inyear,inmonth,inday,inhour
-      write(*,*)"Now      : ",RunStartYear,RunStartMonth,RunStartDay,RunStartHr
-      write(*,*)"FC  time : ",inyear,inmonth,inday,FC_Package_hour
+      write(MR_global_info,*)"Traj time: ",inyear,inmonth,inday,inhour
+      write(MR_global_info,*)"Now      : ",RunStartYear,RunStartMonth,RunStartDay,RunStartHr
+      write(MR_global_info,*)"FC  time : ",inyear,inmonth,inday,FC_Package_hour
 
       end subroutine GetWindFile_FC
 
@@ -305,7 +296,7 @@
       allocate(tempprof1(np_fullmet))
       allocate(tempprof2(np_fullmet))
 
-      write(*,*)" Inside GetMetProfile"
+      write(MR_global_info,*)" Inside GetMetProfile"
 
       ! First load the Met grids for Geopotential
       MR_iMetStep_Now = 1 ! This is initialized to 0
@@ -352,19 +343,19 @@
                   a3*AirTemp_meso_next_step_MetP_sp(2,2,:) + &
                   a4*AirTemp_meso_next_step_MetP_sp(1,2,:)
 
-      write(*,*)x_submet_sp
-      write(*,*)y_submet_sp
-      write(*,*)"t frac comp",tfrac,tc
-      write(*,*)"x frac comp",xfrac,xc
-      write(*,*)"y frac comp",yfrac,yc
-      write(*,*)a1,a2,a3,a4
+      write(MR_global_info,*)x_submet_sp
+      write(MR_global_info,*)y_submet_sp
+      write(MR_global_info,*)"t frac comp",tfrac,tc
+      write(MR_global_info,*)"x frac comp",xfrac,xc
+      write(MR_global_info,*)"y frac comp",yfrac,yc
+      write(MR_global_info,*)a1,a2,a3,a4
 
       open(unit=20,file='GFS_prof.dat')
-      DO i = 1,np_fullmet
+      do i = 1,np_fullmet
         GPHprof(i) = tc*GPHprof1(i) + tfrac*GPHprof2(i)
         tempprof(i) = tc*tempprof1(i) + tfrac*tempprof2(i)
         write(20,*)GPHprof(i),p_fullmet_sp(i),tempprof(i)-273.0
-      ENDDO
+      enddo
       close(20)
 
       ! Get Height of tropopause by calculating lapse rate
@@ -372,17 +363,17 @@
         lapse_1 = (tempprof(i-1)-tempprof(i  ))/(GPHprof(i  )-GPHprof(i-1))
         lapse_2 = (tempprof(i  )-tempprof(i+1))/(GPHprof(i+1)-GPHprof(i  ))
         lapse_3 = (tempprof(i+1)-tempprof(i+2))/(GPHprof(i+2)-GPHprof(i+1))
-        IF(lapse_1.gt.0.002.and.&
+        if(lapse_1.gt.0.002.and.&
            lapse_2.lt.0.002.and.&
-           lapse_3.lt.0.002)THEN
+           lapse_3.lt.0.002)then
           TropoH = GPHprof(i)
           TropoT = tempprof(i)
           TropoP = p_fullmet_sp(i)
           exit
-        ENDIF
+        endif
       enddo
-      write(*,*)"Tropopause Height, Temp, Pressure"
-      write(*,*)TropoH,TropoT,TropoP
+      write(MR_global_info,*)"Tropopause Height, Temp, Pressure"
+      write(MR_global_info,*)TropoH,TropoT,TropoP
 
 
       end subroutine GetMetProfile
@@ -400,13 +391,13 @@
       integer :: ihour
       character(len=47) :: string1,string2,string3,string4,string5
 
-      IF(inhour.lt.12)THEN
+      if(inhour.lt.12)then
         ihour = 0
-      ELSE
+      else
         ihour = 12
-      ENDIF
+      endif
 
-      write(*,*)"WARNING:  Assuming sonde data in /data/WindFiles/MetProfiles/"
+      write(MR_global_info,*)"WARNING:  Assuming sonde data in /data/WindFiles/MetProfiles/"
 
       write(string1,'(a33,i4,3i2.2,4a)')"/data/WindFiles/MetProfiles/PASY_",&
                                         inyear,inmonth,inday,ihour,".dat"

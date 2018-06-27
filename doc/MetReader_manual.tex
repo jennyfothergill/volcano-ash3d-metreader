@@ -4,6 +4,7 @@
 \usepackage{mathtools}
 \usepackage{graphicx}
 \usepackage{verbatim}
+\usepackage{multirow}
 
 \setlength{\textwidth}{15.5cm}
 \setlength{\oddsidemargin}{1.0cm}
@@ -16,7 +17,7 @@
 
 \title{MetReader: Documentation and User's Guide}   % type title between braces
 \author{Hans F. Schwaiger}
-\date{June 1, 2018}    % type date between braces
+\date{June 26, 2018}    % type date between braces
 \maketitle
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -40,7 +41,6 @@ the native grid of the NWP product, or on any grid needed by the calling
 program.  Projection and interpolation of NWP data to the required grid, along
 with any rotation of velocity vectors to grid-relative, is calculated internally by
 MetReader.
-%\clearpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Installation}
@@ -136,47 +136,15 @@ data to be read.
  \item 4 : multiple 3-D datafiles, one per timestep
  \item 5 : special case for NCEP 50-year reanalysis and NOAA reanalysis
  \end{itemize}
-\item \texttt{iwf} :: windfile format number (linked to specific products)
- \begin{itemize}
- \item   0 : Custom format based on template
- \item   1 : ASCII profile
- \item   2 : Radiosonde data
- \item   3 : North American Regional Reanalysis NARR-A (NCEP Grid 221; 32 km)
- \item   4 : North American Regional Reanalysis NARR-A+B (NCEP Grid 221; 32 km)
- \item   5 : NAM Regional Alaska (NCEP AWIPS Grid 216; 45 km)
- \item   6 : NAM N. Hemisphere (NCEP AWIPS Grid 104; 90 km)
- \item   7 : NAM Regional CONUS (NCEP AWIPS Grid 212; 40 km)
- \item   8 : NAM Regional CONUS (NCEP AWIPS Grid 218; 12km)
- \item   9 : Unassigned
- \item  10 : NAM Regional Alaska (NCEP AWIPS Grid 242; 11.25 km)
- \item  11 : NAM Regional Hawaii (NCEP Grid 196; 2.5 km)
- \item  12 : NAM Regional Alaska (NCEP Grid 198; 5.953 km)
- \item  13 : NAM Regional Alaska (NCEP Grid 91; 2.976 km)
- \item  20 : GFS (NCEP Grid 4; 0.5-degree)
- \item  21 : Unassigned
- \item  22 : GFS (NCEP Grid 193; 0.25-degree)
- \item  23 : NCEP-DOE Reanalysis 2 (NCEP Grid 2; 2.5-degree)
- \item  24 : NASA-MERRA Reanalysis (No NCEP Grid ID; 1.25-degree)
- \item  25 : NCEP/NCAR Reanalysis 1 (NCEP Grid 2; 2.5-degree)
- \item  27 : NOAA-CIRES 20th Century Reanalysis (NCEP Grid 2; 2.5-degree)
- \item  26 : Unassigned
- \item  28 : ECMWF ERA-Interim Reanalysis (NCEP Grid 170; Gaussian grid)
- \item  31 : Unassigned
- \item  32 : Air Force Weather Agency subcenter = 0 (No NCEP Grid ID; 0.25-degree)
- \item  33 : CCSM3.0 Community Atmosphere Model (No NCEP Grid ID; 3.75$\times$3.7-degree)
- \item  40 : NASA GEOS-5 Cp (No NCEP Grid ID; 0.625$\times$0.5-degree)
- \item  41 : NASA GEOS-5 Np (No NCEP Grid ID; 0.3125$\times$0.25-degree)
- \item  50 : WRF - output
- \item  51 : Unassigned
- \end{itemize}
+\item \texttt{iwf} :: windfile format number (linked to specific product in Table
+  \ref{Tabiwf} of Appendix \ref{Apiwf})
 \item \texttt{igrid} :: NCEP Grid ID
 \item \texttt{idf} :: Data file format code (ascii, netcdf, grib, etc)
  \begin{itemize}
  \item   1 : ASCII
  \item   2 : NetCDF
  \item   3 : GRIB Edition 2
- \item   4 : GRIB Edition 1 (Not implemented; used by NARR)
- %\item   5 : HDF (Not implemented; used by older NASA MERRA)
+ \item   4 : GRIB Edition 1 (Not implemented; used by NARR and NOAA-CIRES)
  \end{itemize}
 \item \texttt{iwfiles} :: number of windfiles to be read
 %\item iy      ::   year of start time needed (integer)
@@ -283,59 +251,8 @@ the following public variables are set:
 \item All the projection parameters for the NWP grid.
 \item \texttt{Met\_dim\_names} :: The names of the dimensions in the file in the order of: time,
 pressure1, y, x, pressure2 (for Vz), pressure3 (for RH)
-\item \texttt{Met\_var\_names} :: The names of the variables in the file according the the
-following list:
-\\
- Mechanical / State variables
- \begin{itemize}
-  \item 1 = Geopotential Height ($\mathrm{gmp}$ or $\mathrm{m^2/s^2}$)
-  \item 2 = Vx ($\mathrm{m/s}$)
-  \item 3 = Vy ($\mathrm{m/s}$)
-  \item 4 = Vz ($\mathrm{Pa/s}$)
-  \item 5 = Temperature ($\mathrm{K}$)
-  \item 6 = Wind speed ($\mathrm{m/s}$)
-  \item 7 = Wind direction (deg East of North)
- \end{itemize}
- Surface
- \begin{itemize}
-  \item 10 = Planetary Boundary Layer Height ($\mathrm{m}$)
-  \item 11 = U @ 10m ($\mathrm{m/s}$)
-  \item 12 = V @ 10m ($\mathrm{m/s}$)
-  \item 13 = Friction velocity ($\mathrm{m/s}$)
-  \item 14 = Displacement Height ($\mathrm{m}$)
-  \item 15 = Snow cover (\%)
-  \item 16 = Soil moisture ($\mathrm{kg/m2}$)
-  \item 17 = Surface Roughness ($\mathrm{m}$)
-  \item 18 = Wind gust speed ($\mathrm{m/s}$)
-  \item 19 = surface temperature ($\mathrm{K}$)
- \end{itemize}
- Atmospheric Structure
- \begin{itemize}
-  \item 20 = pressure at lower cloud base ($\mathrm{Pa}$)
-  \item 21 = pressure at lower cloud top ($\mathrm{Pa}$)
-  \item 22 = temperature at lower cloud top ($\mathrm{K}$)
-  \item 23 = Total Cloud cover (\%)
-  \item 24 = Cloud cover (low) (\%)
-  \item 25 = Cloud cover (convective) (\%)
- \end{itemize}
- Moisture
- \begin{itemize}
-  \item 30 = Rel. Hum (\%)
-  \item 31 = QV (specific humidity) ($\mathrm{kg/kg}$)
-  \item 32 = QL (liquid) ($\mathrm{kg/kg}$)
-  \item 33 = QI (ice) ($\mathrm{kg/kg}$)
- \end{itemize}
- Precipitation
- \begin{itemize}
-  \item 40 = Categorical rain (0 or 1)
-  \item 41 = Categorical snow (0 or 1)
-  \item 42 = Categorical frozen rain (0 or 1)
-  \item 43 = Categorical ice (0 or 1)
-  \item 44 = Precipitation rate large-scale (liquid) ($\mathrm{kg/m^2s}$)
-  \item 45 = Precipitation rate convective  (liquid) ($\mathrm{kg/m^2s}$)
-  \item 46 = Precipitation rate large-scale (ice) ($\mathrm{kg/m^2s}$)
-  \item 47 = Precipitation rate convective  (ice) ($\mathrm{kg/m^2s}$)
- \end{itemize}
+\item \texttt{Met\_var\_names} :: The names of the variables in the file according to the
+Table \ref{TabVar} of Appendix \ref{ApVar}:
 \item \texttt{Met\_var\_conversion\_factor} :: For each of the variables, if the units
 is not as listed above, then the correpsonding factor is set that converts to the
 expected units.  For example, if precipitation rate is given in $\mathrm{mm/hr}$, then
@@ -654,6 +571,7 @@ To use data in this format, set \texttt{MR\_iwindformat = 2}.
 From both these sites, radiosonde data are availalbe in a variety of formats.
 The default format for the UW site is "Text: List``
 
+\clearpage
 \small \verbatiminput{windfiles/SLE_20180620_00Z_TextList.dat} \normalsize
 
 This file contains many pressure levels, but the radiosonde standard include
@@ -673,6 +591,7 @@ Next the \texttt{Observation time} is read.
 An alternative format is the FAA604 WMO/GTS format from \texttt{https://ruc.noaa.gov/raobs/}
 or the nearly identical "Text:Raw`` format from the University of Wyoming.
 
+\clearpage
 \small \verbatiminput{windfiles/SLE_20180620_00Z_TextRaw.dat} \normalsize
 
 This format contains nearly the same information as the previous example, but 
@@ -707,12 +626,6 @@ versions of this library.
 %> 10 error
 
 \subsection{3-d forecast or reanalysis data}
-%\subsubsection{ASCII input}
-%3-d ASCII input files was originally designed around a particular tool for
-%converting netcdf forecast files to ASCII.  This input format
-%( \texttt{MR\_iwind=2} and \texttt{MR\_iwindformat=1}) has since been
-%depreciated until a more general input format can be designed.
-%\subsubsection{netcdf}
 MetReader's preferred format for 3-d forecast and reanalysis files is netcdf.  Many
 products are available directly in netcdf format such as NCEP/NCAR Reanalysis 1 or
 NASA GEOS-5.  These products generally require netcdf version 4.  Most of the NCEP
@@ -747,15 +660,6 @@ netcdf interface allows a more natural direct access to sub-grids.  For high res
 global grids where only a small sub-grid is needed, the impact of reading and uncompressing
 full grids will be noticable.
 
-
-%\section{Usage: For programs with no computational grid}
-
-%\clearpage
-%\section{Usage: For programs with a separate computational grid}
-
-%\clearpage
-%\section{Supported meteorological files / grids}
-
 \clearpage
 \section{Custom meteorlogical file specification}\label{SecCust}
 As an alternative to using a particular forecast or reanalysis product with
@@ -767,11 +671,13 @@ to the name of the template file.  The template file has the following format.
 Line 1: The line of projection parameters as expected by \texttt{libprojection.a}.
 e.g.
 \\
-Polar-stereographic; Grid 91: \verb|0 1 -150.0 90.0 0.933 6371.229| \\
-Polar-stereographic; Grid 216: \verb|0 1 -135.0 90.0 0.933 6371.229| \\
-Mercator; Grid 196: \verb|0 5 198.475 20.0 0.933 6371.229| \\
-Lambert Conformal, Grid 212: \verb|0 4 265.0 25.0 25.0 25.0 6371.229| \\
-Lambert Conformal, Grid 221: \verb| 0 4 -107.0 50.0 50.0 50.0 6371.229| \\
+\begin{tabular}{ l  l  l }
+Polar-stereographic & Grid 91  & \verb|0 1 -150.0 90.0 0.933 6371.229| \\
+Polar-stereographic & Grid 216 & \verb|0 1 -135.0 90.0 0.933 6371.229| \\
+Mercator            & Grid 196 & \verb|0 5 198.475 20.0 0.933 6371.229| \\
+Lambert Conformal   & Grid 212 & \verb|0 4 265.0 25.0 25.0 25.0 6371.229| \\
+Lambert Conformal   & Grid 221 & \verb|0 4 -107.0 50.0 50.0 50.0 6371.229| \\
+\end{tabular}
 
 Line 2: \verb|StepInterval   [T/F]| :: time interval in hours, and flag indicating
 whether or not to use leap years (Assumed \verb|T| if not provided)
@@ -780,10 +686,12 @@ Line 3: \verb|ndims nvars| :: number of dimensions and variable that will be lis
 
 Line 4-: list of dimensions where each row specifies the information about the dimension.
 For example
+\small
 \begin{verbatim}
 d      1  1.6667e-2 time                         hours since
 d      2      100.0 lev                          Pa
 \end{verbatim}
+\normalsize
 In this example, the \verb|d| signifies that the row describes a dimension, \verb|1| is
 the dimension number, \verb|1.6667e-2| is a scaling factor, and
 \verb|time| is the name of the dimension.  The dimensions should be listed in the
@@ -798,6 +706,7 @@ $\mathrm{Pa}$.
 
 Line 4+\verb|ndims|- : list of variables where each row specifies the information about
 the variable.
+\small
 \begin{verbatim}
 v 4  2 1        1.0    HGT   H                              gpm
 v 4  2 2        1.0   UGRD   U                              m/s
@@ -807,6 +716,7 @@ v 4  2 5        1.0    TMP   T                              K
 v 4  6 30       1.0     RH   RH                             %
 v 4  6 31       1.0   SPFH   SH                             kg/kg
 \end{verbatim}
+\normalsize
 In this example, the first character, \verb|v|, signifies that the row describes a variable.
 The next integer is the dimensionality of the variable (\verb|3| or \verb|4|).
 It is assumed that the variable
@@ -827,11 +737,203 @@ Lastly, to determine the start time of the data, a reference time must be read. 
 the time variable is checked for the \texttt{GRIB\_orgReferenceTime} attribute.  If this
 is not found, then the variable \texttt{reftime} is checked, if it exists.
 
-The next section shows several examples of these template files used with NAM and GFS
-forecast products.
+Several examples of these template files used with NAM and GFS
+forecast products are shown in Apendix \ref{ApTemplate}.
 
+\section{Additional tools/Examples}
+In the \texttt{tools} folder, three programs are included the illustrate the
+use of the library.
+\subsection{\texttt{MetCheck}}
+This utility is used for checking the validity of the NWP files.  In some
+cases, the downloading of files might be interupted or the files on the
+NCEP server might be incomplete or corrupt.  This utility opens each of the files
+and reads the full grid for the variables: geopotential height, Vx, Vy, Vz, and
+temperature.  If any values are outside of expected ranges, then the program
+stops returning a non-zero stop-code (1).
+Usage:\\
+\verb|  MetCheck iwf idf filename [year]|
+
+\subsection{\texttt{MetSonde}}
+This utility is used for probing the NWP files and returing the temperature as a function
+of height.  
+Usage:\\
+\verb|  MetSonde lon lat YYYY MM DD HH [WIND_ROOT]|
+
+The program assumes that the GFS and NCEP files are placed in the default directory, or
+at least in default subdirectories off of \texttt{WIND\_ROOT}.  Values are interpolated
+onto the requested point and time and are writen to a file (\texttt{GFS\_prof.dat}) in
+the current working directory.  This 3-column file contains the height (in $\mathrm{km}$,
+pressure (in $\mathrm{Pa}$) and temperature (in $^{\circ}\mathrm{C}$))
+
+\subsection{\texttt{MetTraj}}
+This utility takes a similar argument list as \texttt{MetSonde}, but instead of
+probing a single point and time, this utility calculates trajectories withing
+either a GFS forecast package or the NCEP reanalysis files.
+This utility can be compiled with either a \texttt{-DFORWARD} or \texttt{-DBACKWARD}
+preprocessor flag to generate separate executables for forward or backward trajectories.
+The location of the windfiles is assumed to be the default for GFS and NCEP.  For 
+forward trajectories, forecast package beginning most closely prior to the requested
+start time is used unless the start time is greater than two weeks from present.  If
+so, the NCEP files are used.  For the backward trajectories, the forecast package
+chosen is that which can accommodate the default 24-hours of backward integration.
+
+For each of the trajectory calculations, files are writen to the current working directory
+with the longitude and latitude of the trajectory in 1-hour increments at various
+elevations.  The default elevations are 5000, 10000, 20000, 30000, 40000, and
+50000 $\mathrm{ft}$.  Files for forward trajectories are named \texttt{ftraj[1-6].dat}
+while the backward trajectories are  \texttt{btraj[1-6].dat}.
+
+Optionally, the length of time to integrate and a user-specified list of output
+elevations can be given.  Elevations are given on the command line must be in
+$\mathrm{km}$.
+Usage:\\
+\verb|  MetTraj_F lon lat YYYY MM DD HH [FC_hours nlev lev1 lev2 ...]|
+
+
+\section{Windfile managment scripts}
+Scripts used to manage GFS and NCEP Reanalysis files are provided in the
+folder \texttt{autorun\_scripts}.
+The script \texttt{autorun\_gfs0.5deg\_00} (and the dependent scripts
+\texttt{get\_gfs0.5deg.sh} and \texttt{convert\_gfs0.5deg.sh}) is used for downloading and
+converting the $0.5^{\circ}$ GFS files from NCEP.  This script is intended to be
+run from a cron job and take as a parameter, the hour of the forecast package.  For example
+\texttt{autorun\_gfs0.5deg.sh 0} will download for 00Z for the current date.  These 
+scripts use a default root download directory of \texttt{/data/WindFiles}, but this can
+be modified within the scripts.  The GFS files will be downloaded to
+\texttt{/data/WindFiles/gfs/gfs.YYYYMMDDHH} where \texttt{HH} is the forecast hour
+(00, 06, 12, or 18).  The forecast files from hours 0-99 are downloaded then converted using
+netcdf-java 4.5.  The path this package is set to \texttt{~/ncj/netcdfAll-4.5.jar} but can be
+modified in \texttt{convert\_gfs0.5deg.sh}.
+
+Similarly, the script \texttt{get\_NCEP\_50YearReanalysis.sh} manages the downloading of 
+the NCEP reanalysis files.  These are placed in \texttt{/data/WindFiles/NCEP/YYYY/}
+
+These scripts are intended to be run as cron jobs.  The following line can be added to the
+crontab to download the files once they are available.
+\footnotesize
+\begin{verbatim}
+01 22 * * *   /opt/USGS/Ash3d/bin/autorun_scripts/autorun_gfs0.5deg.sh 0  > gfs00_log 2>&1
+01 11 * * *   /opt/USGS/Ash3d/bin/autorun_scripts/autorun_gfs0.5deg.sh 12 > gfs12_log 2>&1
+01 01 * * Sun /opt/USGS/Ash3d/bin/autorun_scripts/autorun_NCEP_50YearReanalysis.sh > NCEP_50yr_log   2>&1
+\end{verbatim}
+\normalsize
+
+Included in \texttt{autorun\_scripts} is a simple stand-alone script (\texttt{grib2nc.sh})
+for converting grib files to netcdf using \texttt{netcdf-java}
+
+\clearpage
+
+\section{Appendix}
+\subsection{Variable codes}\label{ApVar}
+\begin{table}[h]\label{TabVar}
+\caption{Variable codes}
+\small
+\begin{tabular}{| r | l | l | l |}
+\hline
+Variable type & ID & Name & dimensions \\
+\hline
+\multirow{7}{*}{3d Mechanical} 
+ &  1 & Geopotential Height & $\mathrm{gmp}$ or $\mathrm{m^2/s^2}$ \\
+ &  2 & Vx & $\mathrm{m/s}$ \\
+ &  3 & Vy & $\mathrm{m/s}$ \\
+ &  4 & Vz & $\mathrm{Pa/s}$ \\
+ &  5 & Temperature  & $\mathrm{K}$ \\
+ &  6 & Wind speed & $\mathrm{m/s}$ \\
+ &  7 & Wind direction &deg East of North \\
+\hline
+\multirow{10}{*}{Surface}
+ &  10 & Planetary Boundary Layer Height & $\mathrm{m}$ \\
+ &  11 & U @ 10m & $\mathrm{m/s}$ \\
+ &  12 & V @ 10m & $\mathrm{m/s}$ \\
+ &  13 & Friction velocity & $\mathrm{m/s}$ \\
+ &  14 & Displacement Height & $\mathrm{m}$ \\
+ &  15 & Snow cover & \% \\
+ &  16 & Soil moisture & $\mathrm{kg/m2}$ \\
+ &  17 & Surface Roughness & $\mathrm{m}$ \\
+ &  18 & Wind gust speed & $\mathrm{m/s}$ \\
+ &  19 & surface temperature & $\mathrm{K}$ \\
+\hline
+\multirow{6}{*}{Atmospheric Structure}
+ &  20 & pressure at lower cloud base & $\mathrm{Pa}$ \\
+ &  21 & pressure at lower cloud top & $\mathrm{Pa}$ \\
+ &  22 & temperature at lower cloud top & $\mathrm{K}$ \\
+ &  23 & Total Cloud cover & \% \\
+ &  24 & Cloud cover (low) & \% \\
+ &  25 & Cloud cover (convective) & \% \\
+\hline
+\multirow{4}{*}{Moisture}
+  & 30 & Rel. Hum & \% \\
+  & 31 & QV (specific humidity) & $\mathrm{kg/kg}$ \\
+  & 32 & QL (liquid) & $\mathrm{kg/kg}$ \\
+  & 33 & QI (ice) & $\mathrm{kg/kg}$ \\
+\hline
+\multirow{8}{*}{Precipitation}
+  & 40 & Categorical rain & 0 or 1 \\
+  & 41 & Categorical snow & 0 or 1 \\
+  & 42 & Categorical frozen rain & 0 or 1 \\
+  & 43 & Categorical ice & 0 or 1 \\
+  & 44 & Precipitation rate large-scale (liquid) & $\mathrm{kg/m^2s}$ \\
+  & 45 & Precipitation rate convective  (liquid) & $\mathrm{kg/m^2s}$ \\
+  & 46 & Precipitation rate large-scale (ice) & $\mathrm{kg/m^2s}$ \\
+  & 47 & Precipitation rate convective  (ice) & $\mathrm{kg/m^2s}$ \\
+\hline
+\end{tabular}
+\normalsize
+\end{table}
+
+\clearpage
+\subsection{NWP product ID (\texttt{iwf})}\label{Apiwf}
+Several NWP product (both reanalysis and forecast) are recognized
+and do not template files.  These are listed in the table below
+by the format code.  \texttt{iwf=1,2} are ASCII files.
+\texttt{iwf=3-19} are reserved for products with projected grids.
+\texttt{iwf=20-49} are reserved for global (lon/lat) grids.
+\texttt{iwf=50} is for netcdf output from Weather Research and 
+Forecasting (WRF) simulations.
+
+\begin{table}[h]\label{Tabiwf}
+\caption{NWP product ID}
+\begin{tabular}{| r | l | l | l |}
+\hline
+iwf & Product & NCEP Grid & resolution \\
+\hline
+  0 & Custom format based on template & & \\
+  1 & ASCII profile & & \\
+  2 & Radiosonde data & & \\
+\hline
+  3 & North American Regional Reanalysis NARR-A & 221 & 32 km \\
+  4 & North American Regional Reanalysis NARR-A+B &221 & 32 km \\
+  5 & NAM Regional Alaska & 216 & 45 km \\
+  6 & NAM N. Hemisphere & 104 & 90 km \\
+  7 & NAM Regional CONUS & 212 & 40 km \\
+  8 & NAM Regional CONUS & 218 & 12km \\
+ 10 & NAM Regional Alaska & 242 & 11.25 km \\
+ 11 & NAM Regional Hawaii & 196 & 2.5 km \\
+ 12 & NAM Regional Alaska & 198 & 5.953 km \\
+ 13 & NAM Regional Alaska & 91 & 2.976 km \\
+\hline
+ 20 & GFS & 4 & 0.5-degree \\
+ 21 & GFS & 3 & 1.0-degree \\
+ 22 & GFS & 193 & 0.25-degree \\
+ 23 & NCEP-DOE Reanalysis 2 & 2  & 2.5-degree \\
+ 24 & NASA-MERRA-2 Reanalysis & None & $0.625 \, \times \,0.5^{\circ}$ \\
+ 25 & NCEP/NCAR Reanalysis 1 & 2 & 2.5-degree \\
+ 27 & NOAA-CIRES 20th Century Reanalysis & 2 & $2.5^{\circ}$ \\
+ 28 & ECMWF ERA-Interim Reanalysis & 170 & $\sim 0.7^{\circ}$-Gaussian \\
+\hline
+ 32 & Air Force Weather Agency subcenter = 0 & None & $0.25^{\circ}$ \\
+ 33 & CCSM3.0 Community Atmosphere Model &None & $3.75 \, \times \,3.7^{\circ}$\\
+\hline
+ 40 & NASA GEOS-5 Cp & None & $0.625 \, \times \,0.5^{\circ}$ \\
+ 41 & NASA GEOS-5 Np & None & $0.3125 \, \times \,0.25^{\circ}$\\
+ 50 & WRF - output & & \\
+\hline
+\end{tabular}
+\end{table}
+\clearpage
+\subsection{Example Template files}\label{ApTemplate}
 \begin{figure}[htbp]\begin{center}
- \includegraphics[angle=-90,scale=1.0]{Figs/Overview_NCEP-Grids.pdf}
+ \includegraphics[angle=-90,scale=0.7]{Figs/Overview_NCEP-Grids.pdf}
 \parbox{15cm}{\caption{\label{FigNAMs}
 Outlines of North America Mesoscale (NAM) and Global Forecase System (GFS)
 models from NCEP that are compatible with MetReader template files.
@@ -1185,15 +1287,4 @@ NASA GEOS-5 Np (0.25/0.3125-degrees) :: \\
 %REFTIME=time:units  "..YYYY.MM.DD.HH.MM.SS"
 %        reftime
 
-\clearpage
-\section{Examples}
-\subsection{MetSonde}
-\subsection{MetTraj}
-\subsection{ncMetcheck}
-
-\clearpage
-
-\section{Appendix}
-\subsection{Met file codes}
-\subsection{Variable codes}
 \end{document}

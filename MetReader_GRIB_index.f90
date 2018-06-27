@@ -1,4 +1,4 @@
-      subroutine MR_Set_Gen_Index_GRIB(grib2_file)
+      subroutine MR_Set_Gen_Index_GRIB2(grib2_file)
 
       use grib_api
 
@@ -167,5 +167,5 @@
       
         call grib_index_release(idx)
 
-      end subroutine MR_Set_Gen_Index_GRIB
+      end subroutine MR_Set_Gen_Index_GRIB2
 

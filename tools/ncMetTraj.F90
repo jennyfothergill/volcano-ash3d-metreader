@@ -1,6 +1,6 @@
 !##############################################################################
 !##############################################################################
-      PROGRAM ncMetTraj
+      program ncMetTraj
 
       use MetReader
 
@@ -46,16 +46,16 @@
 !     TEST READ COMMAND LINE ARGUMENTS
       nargs = iargc()
       if (nargs.lt.6) then
-        write(6,*)"Enter lon,lat,YYYY MM DD HH (FC_hours nlev lev1 lev2 ...)"
+        write(MR_global_info,*)"Enter lon,lat,YYYY MM DD HH (FC_hours nlev lev1 lev2 ...)"
         stop 1
       else
         call get_command_argument(1, arg, status)
         read(arg,*)inlon
-        IF(inlon.lt.-360.0)THEN
-          write(*,*)"ERROR: Longitude must be gt -360"
+        if(inlon.lt.-360.0)then
+          write(MR_global_info,*)"ERROR: Longitude must be gt -360"
           stop 1
-        ENDIF
-        IF(inlon.lt.0.0_8.or.inlon.gt.360.0_8)inlon=mod(inlon+360.0_8,360.0_8)
+        endif
+        if(inlon.lt.0.0_8.or.inlon.gt.360.0_8)inlon=mod(inlon+360.0_8,360.0_8)
         call get_command_argument(2, arg, status)
         read(arg,*)inlat
         call get_command_argument(3, arg, status)
@@ -67,46 +67,46 @@
         call get_command_argument(6, arg, status)
         read(arg,*)inhour
 
-        IF(nargs.gt.6)THEN
+        if(nargs.gt.6)then
           call get_command_argument(7, arg, status)
           read(arg,*)Simtime_in_hours
-          write(*,*)"Calculating trajectories for ",&
+          write(MR_global_info,*)"Calculating trajectories for ",&
                      Simtime_in_hours," hours."
-          IF(nargs.gt.7)THEN
+          if(nargs.gt.7)then
             call get_command_argument(8, arg, status)
             read(arg,*)ntraj
-            IF(ntraj.le.0)THEN
-              write(*,*)"Error reading ntraj."
-              write(*,*)"ntraj = ",ntraj
-              write(*,*)"ntraj must be positive."
+            if(ntraj.le.0)then
+              write(MR_global_info,*)"Error reading ntraj."
+              write(MR_global_info,*)"ntraj = ",ntraj
+              write(MR_global_info,*)"ntraj must be positive."
               stop 1
-            ELSEIF(ntraj.gt.9)THEN
-              write(*,*)"ERROR: ntraj is currently limited to 9"
+            elseif(ntraj.gt.9)then
+              write(MR_global_info,*)"ERROR: ntraj is currently limited to 9"
               stop 1
-            ENDIF
+            endif
             allocate(OutputLevels(ntraj))
-            IF(nargs-8.lt.ntraj)THEN
-              write(*,*)"ERROR:  There are not enough arguments for ",&
+            if(nargs-8.lt.ntraj)then
+              write(MR_global_info,*)"ERROR:  There are not enough arguments for ",&
                         ntraj," levels"
-            ELSEIF(nargs-8.gt.ntraj)THEN
-              write(*,*)"WARNING:  There are more trajectory levels given than needed"
-              write(*,*)"  Expected ntraj = ",ntraj
-              write(*,*)"  Extra sommand line arguments = ",nargs-8
-            ENDIF
-            DO i=1,ntraj
+            elseif(nargs-8.gt.ntraj)then
+              write(MR_global_info,*)"WARNING:  There are more trajectory levels given than needed"
+              write(MR_global_info,*)"  Expected ntraj = ",ntraj
+              write(MR_global_info,*)"  Extra sommand line arguments = ",nargs-8
+            endif
+            do i=1,ntraj
               call get_command_argument(8+i, arg, status)
               read(arg,*)OutputLevels(i)
-              IF(OutputLevels(i).le.0.0.or.OutputLevels(i).gt.30.0)THEN
-                write(*,*)"ERROR: trajectory levels must be in range 0-30 km"
-                write(*,*)"Failing on trajectory ",i,OutputLevels(i)
+              if(OutputLevels(i).le.0.0.or.OutputLevels(i).gt.30.0)then
+                write(MR_global_info,*)"ERROR: trajectory levels must be in range 0-30 km"
+                write(MR_global_info,*)"Failing on trajectory ",i,OutputLevels(i)
                 stop 1
-              ENDIF
-            ENDDO
-          ENDIF
-        ELSE
+              endif
+            enddo
+          endif
+        else
           Simtime_in_hours = 24.0_8
-        ENDIF
-        IF(ntraj.eq.0)THEN
+        endif
+        if(ntraj.eq.0)then
           ntraj = 6
           allocate(OutputLevels(ntraj))
           OutputLevels(1) =  1.524_4 !  5000 ft
@@ -115,16 +115,13 @@
           OutputLevels(4) =  9.144_4 ! 30000 ft
           OutputLevels(5) = 12.192_4 ! 40000 ft
           OutputLevels(6) = 15.240_4 ! 50000 ft
-        ENDIF
+        endif
 
-        write(*,*)"Calculating ",ntraj," trajectories:"
-        DO i=1,ntraj
+        write(MR_global_info,*)"Calculating ",ntraj," trajectories:"
+        do i=1,ntraj
           tmp_4 = real(OutputLevels(i),kind=4)
-          write(*,*)i," at ",tmp_4,"km (",tmp_4*3280.8_4," ft)."
-        ENDDO
-
-        !call get_command_argument(8, arg, status)
-        !read(arg,*)TrajFlag
+          write(MR_global_info,*)i," at ",tmp_4,"km (",tmp_4*3280.8_4," ft)."
+        enddo
 
       endif
 
@@ -136,96 +133,92 @@
       TrajFlag = -1
 #endif
 
-      IF(TrajFlag.eq.0)THEN
-        write(*,*)"ERROR: Forward/Backward not specified."
-        write(*,*)"       Recompile with preprocessor flags"
-        write(*,*)"         FORWARD for forward trajectories"
-        write(*,*)"         BACKWARD for backward trajectories"
+      if(TrajFlag.eq.0)then
+        write(MR_global_info,*)"ERROR: Forward/Backward not specified."
+        write(MR_global_info,*)"       Recompile with preprocessor flags"
+        write(MR_global_info,*)"         FORWARD for forward trajectories"
+        write(MR_global_info,*)"         BACKWARD for backward trajectories"
         stop 1
-      ELSEIF(TrajFlag.lt.0)THEN
-        write(*,*)"Calculating Backward trajectories from "
-      ELSEIF(TrajFlag.gt.0)THEN
-        write(*,*)"Calculating Forward trajectories from "
-      ENDIF
-      write(*,*)"Longitude = ",inlon
-      write(*,*)"Latitude  = ",inlat
-      write(*,*)"Year      = ",inyear
-      write(*,*)"Month     = ",inmonth
-      write(*,*)"Day       = ",inday
-      write(*,*)"Hour      = ",inhour
-      !!write(*,*)"HoursSince1900  = ",
-
-
-      !write(*,*)"-------------------------------------------------"
+      elseif(TrajFlag.lt.0)then
+        write(MR_global_info,*)"Calculating Backward trajectories from "
+      elseif(TrajFlag.gt.0)then
+        write(MR_global_info,*)"Calculating Forward trajectories from "
+      endif
+      write(MR_global_info,*)"Longitude = ",inlon
+      write(MR_global_info,*)"Latitude  = ",inlat
+      write(MR_global_info,*)"Year      = ",inyear
+      write(MR_global_info,*)"Month     = ",inmonth
+      write(MR_global_info,*)"Day       = ",inday
+      write(MR_global_info,*)"Hour      = ",inhour
 
       nzmax = ntraj
       ! Define grid padding based on the integration time
-      IF(Simtime_in_hours.le.8)THEN
+      if(Simtime_in_hours.le.8)then
         ! +-15 in lon ; +-10 in lat
         nxmax =  61; dx = 0.5_4
         nymax =  41; dy = 0.5_4
-      ELSEIF(Simtime_in_hours.le.16)THEN
+      elseif(Simtime_in_hours.le.16)then
         ! +-25 in lon ; +-15 in lat
         nxmax = 101; dx = 0.5_4
         nymax =  61; dy = 0.5_4
-      ELSEIF(Simtime_in_hours.le.24)THEN
+      elseif(Simtime_in_hours.le.24)then
         ! +-35 in lon ; +-20 in lat
         nxmax = 141; dx = 0.5_4
         nymax =  81; dy = 0.5_4
-      ELSE
-        write(*,*)"ERROR:  Simulation times greater that 24 hours are"
-        write(*,*)"        currently disallowed."
+      else
+        write(MR_global_info,*)"ERROR:  Simulation times greater that 24 hours are"
+        write(MR_global_info,*)"        currently disallowed."
         stop 1
-      ENDIF
+      endif
       nsize = 1 ! This is also not really used in this utility
       allocate(lon_grid(nxmax))
       allocate(lat_grid(nymax))
       allocate(z_cc(nzmax))
       allocate(gsdiam(nsize))  ; gsdiam(1) = 1.0_4
-      DO i=1,nxmax
+      do i=1,nxmax
         lon_grid(i) = real(inlon - 0.5*(nxmax-1) * dx + (i-1) * dx,kind=4)
-      ENDDO
+      enddo
       ! We can specify the longitude grid with no problems, but the latitude
       ! grid might be padded up across the pole.  We need to set the cap at
       ! an extreme point (89 degrees N or S)
-      IF((inlat + (nymax-1)/2 * dy).gt.89.0)THEN
+      if((inlat + (nymax-1)/2 * dy).gt.89.0)then
         ! Start from 89.0 N and count down nymax
         starty = 89.0 - (nymax-1) * dy
-        DO i=1,nymax
+        do i=1,nymax
           lat_grid(i) = real(starty + (i-1) * dy,kind=4)
-        ENDDO
-      ELSEIF((inlat - (nymax-1)/2 * dy).lt.-89.0)THEN
+        enddo
+      elseif((inlat - (nymax-1)/2 * dy).lt.-89.0)then
         ! Start from 89.0 N and count down nymax
         starty = -89.0
-        DO i=1,nymax
+        do i=1,nymax
           lat_grid(i) = real(starty + (i-1) * dy,kind=4)
-        ENDDO
-      ELSE
+        enddo
+      else
         ! lat grid doesn't involve poles; center grid over inlat
-        DO i=1,nymax
+        do i=1,nymax
           lat_grid(i) = real(inlat - 0.5*(nymax-1) * dy + (i-1) * dy,kind=4)
-        ENDDO
-      ENDIF
+        enddo
+      endif
       IsPeriodic = .false.
-      DO i = 1,ntraj
+      do i = 1,ntraj
         z_cc(i) = real(OutputLevels(i),4)
-      ENDDO
+      enddo
 
       ! Need to modify this to start correctly for backtrajectories
       call GetWindFile_FC(inyear,inmonth,inday,inhour,FC_freq, &
                           Simtime_in_hours,TrajFlag)
 
-      IsLatLon = .true.
+      IsLatLon  = .true.
       iprojflag = 1
-      lambda0      = -105.0
-      phi0         = 90.0
-      phi1         = 90.0
-      phi2         = 90.0
-      k0           = 0.933
+      lambda0   = -105.0
+      phi0      = 90.0
+      phi1      = 90.0
+      phi2      = 90.0
+      k0        = 0.933
       radius_earth = 6371.229
       call MR_Set_CompProjection(IsLatLon,iprojflag,lambda0,phi0,phi1,phi2,&
                                  k0,radius_earth)
-      write(*,*)"Setting up wind grids"
+      write(MR_global_info,*)"Setting up wind grids"
       call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,&
                               lon_grid(1:nxmax), &
                               lat_grid(1:nymax), &
@@ -235,11 +228,9 @@
       call Integrate_Trajectory(inlon,inlat,inyear,inmonth,inday,inhour,&
                                 Simtime_in_hours,TrajFlag,ntraj,OutputLevels)
 
-      !call GetGFSProfile(inlon,inlat,inyear,inmonth,inday,inhour,infile2,TrajFlag)
+      write(MR_global_info,*)"Program ended normally."
 
-      write(*,*)"Program ended normally."
-
-      END PROGRAM ncMetTraj
+      end program ncMetTraj
 
 !##############################################################################
 !
@@ -330,11 +321,11 @@
       Probe_StartHour = HS_hours_since_baseyear(inyear,inmonth,inday,inhour,&
                                                 MR_BaseYear,MR_useLeap)
       ! Calculate the earliest Met data needed
-      IF(TrajFlag.gt.0)THEN
+      if(TrajFlag.gt.0)then
         Met_needed_StartHour = Probe_StartHour
-      ELSE
+      else
         Met_needed_StartHour = Probe_StartHour - Simtime_in_hours
-      ENDIF
+      endif
       ! Now find the Forecast block that starts immediately before the
       ! called time
       FC_Package_year    = HS_YearOfEvent(Met_needed_StartHour,MR_BaseYear,MR_useLeap)
@@ -346,64 +337,61 @@
                                 FC_Package_month,FC_Package_day,real(FC_Package_hour,kind=8),&
                                 MR_BaseYear,MR_useLeap)
 
-      write(*,*)"Probe_StartHour      = ",Probe_StartHour
-      write(*,*)"Met_needed_StartHour = ",Met_needed_StartHour
-      write(*,*)"FC_Package_year    = ",FC_Package_year
-      write(*,*)"FC_Package_month   = ",FC_Package_month
-      write(*,*)"FC_Package_day     = ",FC_Package_day
-      write(*,*)"FC_Package_hour_dp = ",FC_Package_hour_dp
-      write(*,*)"FC_Package_hour    = ",FC_Package_hour
-      write(*,*)"FC_Package_StartHour = ",FC_Package_StartHour
+      write(MR_global_info,*)"Probe_StartHour      = ",Probe_StartHour
+      write(MR_global_info,*)"Met_needed_StartHour = ",Met_needed_StartHour
+      write(MR_global_info,*)"FC_Package_year    = ",FC_Package_year
+      write(MR_global_info,*)"FC_Package_month   = ",FC_Package_month
+      write(MR_global_info,*)"FC_Package_day     = ",FC_Package_day
+      write(MR_global_info,*)"FC_Package_hour_dp = ",FC_Package_hour_dp
+      write(MR_global_info,*)"FC_Package_hour    = ",FC_Package_hour
+      write(MR_global_info,*)"FC_Package_StartHour = ",FC_Package_StartHour
 
-      IF(RunStartHour-FC_Package_StartHour.lt.GFS_Avail_Delay)THEN
+      if(RunStartHour-FC_Package_StartHour.lt.GFS_Avail_Delay)then
         ! The closest forecast package to the probe time is too close to
         ! the current (real) time.  The GFS files are probably not yet
         ! available.  Decrement the forecast package.
         FC_Package_StartHour = FC_Package_StartHour - real(FC_freq,kind=8)
-      ENDIF
+      endif
       FC_year = HS_YearOfEvent(FC_Package_StartHour,MR_BaseYear,MR_useLeap)
       FC_mon  = HS_MonthOfEvent(FC_Package_StartHour,MR_BaseYear,MR_useLeap)
       FC_day  = HS_DayOfEvent(FC_Package_StartHour,MR_BaseYear,MR_useLeap)
       FC_hour = HS_HourOfDay(FC_Package_StartHour,MR_BaseYear,MR_useLeap)
       FC_Package_hour = floor(FC_hour/FC_freq) * FC_freq
 
-      IF(RunStartHour-Probe_StartHour.gt.(GFS_Archive_Days*24))THEN
+      if(RunStartHour-Probe_StartHour.gt.(GFS_Archive_Days*24))then
         ! Run is older than 2 weeks, use NCEP winds
-        write(*,*)"Start time is older than the hardwired threshold of ",&
+      bbbbbbb(MR_global_info,*)"Start time is older than the hardwired threshold of ",&
                   GFS_Archive_Days," days"
-        write(*,*)"Using the NCEP reanalysis"
+        write(MR_global_info,*)"Using the NCEP reanalysis"
         iw  = 5
         iwf = 25
         igrid   = 0
         iwfiles = 1
-        !MR_ForecastInterval = 6.0
 
          !  Gather all the time slices needed in chronological order
         call MR_Allocate_FullMetFileList(iw,iwf,igrid,2,iwfiles) !,FC_year
                   !Met_needed_StartHour,Simtime_in_hours)
-        DO i=1,MR_iwindfiles
+        do i=1,MR_iwindfiles
           write(MR_windfiles(i),*)trim(ADJUSTL(WINDROOT)), &
                                '/NCEP'
-        ENDDO
+        enddo
 
-      ELSEIF(RunStartHour-Probe_StartHour.lt.-90)THEN
+      elseif(RunStartHour-Probe_StartHour.lt.-90)then
         ! Run is too far in the future
-        write(*,*)"ERROR: run is too far in future"
+        write(MR_global_info,*)"ERROR: run is too far in future"
         stop 1
-      ELSE
+      else
         ! Run is newer than 2 weeks, use GFS winds
         iw      = 4
         iwf     = 20
         igrid   = 0
         iwfiles = 34
-        !MR_ForecastInterval = 3.0
         FC_intvl = 3.0
 
           !  Gather all the time slices needed in chronological order
         call MR_Allocate_FullMetFileList(iw,iwf,igrid,2,iwfiles) !,FC_year,   &
                   !Met_needed_StartHour,Simtime_in_hours)
-        DO i=1,MR_iwindfiles
-          !FC_hour_int = nint((i-1)*MR_ForecastInterval)
+        do i=1,MR_iwindfiles
           FC_hour_int = nint((i-1)*FC_intvl)
           write(string1,'(a9,I4.4,I2.2,I2.2,I2.2,a1)')'/gfs/gfs.', &
                         FC_year,FC_mon,FC_day,FC_Package_hour,'/'
@@ -414,18 +402,18 @@
           write(MR_windfiles(i),*)trim(ADJUSTL(WINDROOT)), &
                                trim(ADJUSTL(string1)), &
                                trim(ADJUSTL(string2))
-        ENDDO
+        enddo
 
-      ENDIF
+      endif
         ! Check for existance and compatibility with simulation time requirements
       call MR_Read_Met_DimVars(FC_year)
 
       call MR_Set_Met_Times(Met_needed_StartHour, Simtime_in_hours)
 
 
-      write(*,*)"Traj time: ",inyear,inmonth,inday,inhour
-      write(*,*)"Now      : ",RunStartYear,RunStartMonth,RunStartDay,RunStartHr
-      write(*,*)"FC  time : ",FC_year,FC_mon,FC_day,FC_Package_hour
+      write(MR_global_info,*)"Traj time: ",inyear,inmonth,inday,inhour
+      write(MR_global_info,*)"Now      : ",RunStartYear,RunStartMonth,RunStartDay,RunStartHr
+      write(MR_global_info,*)"FC  time : ",FC_year,FC_mon,FC_day,FC_Package_hour
 
       end subroutine GetWindFile_FC
 
@@ -517,13 +505,13 @@
 
        ! Load the full sub-grid for all times
         ! First load the Met grids for Geopotential
-      IF(TrajFlag.gt.0)THEN
+      if(TrajFlag.gt.0)then
         ! Foreward trajectory
         MR_iMetStep_Now = 1
-      ELSE
+      else
         ! Backward trajectory
         MR_iMetStep_Now = MR_MetSteps_Total-1 
-      ENDIF
+      endif
       call MR_Read_HGT_arrays(MR_iMetStep_Now)
 
       ! Get the fractional time between forecast steps
@@ -535,12 +523,12 @@
       tc    = 1.0_8-tfrac
       ! Get the fractional position in cell and corner weights
         ! First get indicies of LL of strat point
-      DO i = 1,nx_submet-1
+      do i = 1,nx_submet-1
         if(inlon.ge.x_submet_sp(i).and.inlon.lt.x_submet_sp(i+1))ix=i
-      ENDDO
-      DO i = 1,ny_submet-1
+      enddo
+      do i = 1,ny_submet-1
         if(inlat.ge.y_submet_sp(i).and.inlat.lt.y_submet_sp(i+1))iy=i
-      ENDDO
+      enddo
       xfrac=(inlon - x_submet_sp(ix))/dx_met_const
       yfrac=(inlat - y_submet_sp(iy))/dy_met_const
       xc = 1.0_4-xfrac
@@ -557,31 +545,30 @@
                   a2*MR_geoH_metP_next(ix+1,iy  ,:) + &
                   a3*MR_geoH_metP_next(ix+1,iy+1,:) + &
                   a4*MR_geoH_metP_next(ix  ,iy+1,:)
-      DO k = 1,np_fullmet
+      do k = 1,np_fullmet
         Hinit(k) = (GPHprof1(k)*tc + GPHprof2(k)*tfrac)
-      ENDDO
+      enddo
 
       ! The mapping should vary in space and time, but we'll just use
       ! the mapping at the start point/time for now
-      !DO i = 1,nx_met_per
-      !  DO j = 1,ny_met
-          DO kk = 1,ntraj
-            DO k = 1,np_fullmet-1
-              IF(kk.eq.1.and.k.eq.1.and.Hinit(k).ge.OutputLevels(kk))THEN
+      !do i = 1,nx_met_per
+      !  do j = 1,ny_met
+          do kk = 1,ntraj
+            do k = 1,np_fullmet-1
+              if(kk.eq.1.and.k.eq.1.and.Hinit(k).ge.OutputLevels(kk))then
                 OutLev_indx(kk) = k
                 zfrac(kk)    = 1.0
-                write(*,*)kk,OutputLevels(kk),OutLev_indx(kk),zfrac(kk)
+                write(MR_global_info,*)kk,OutputLevels(kk),OutLev_indx(kk),zfrac(kk)
                 exit
-              ELSEIF(Hinit(k).lt.OutputLevels(kk).and.Hinit(k+1).gt.OutputLevels(kk))THEN
+              elseif(Hinit(k).lt.OutputLevels(kk).and.Hinit(k+1).gt.OutputLevels(kk))then
                 OutLev_indx(kk) = k
                 zfrac(kk)    = (OutputLevels(kk)-Hinit(k))/(Hinit(k+1)-Hinit(k))
-                !write(*,*)OutputLevels(kk),OutLev_indx(kk),zfrac(kk)
                 exit
-              ENDIF
-            ENDDO
-          ENDDO
-      !  ENDDO
-      !ENDDO
+              endif
+            enddo
+          enddo
+      !  enddo
+      !enddo
 
       ! We need to reset the iMetStep_Now since we are now loading all
       ! the wind values and back trajectories will have iMetStep_Now at
@@ -601,43 +588,43 @@
 
       ! Now interpolate onto the first few steps of the trajectory level
       ! array
-      IF(TrajFlag.gt.0)THEN
+      if(TrajFlag.gt.0)then
         istep = 1
-      ELSE
+      else
         istep = MR_MetSteps_Total
-      ENDIF
+      endif
       Step_Time_since1900(1) = MR_MetStep_Hour_since_baseyear(istep)
-      DO kk = 1,ntraj
+      do kk = 1,ntraj
         k  = OutLev_indx(kk)
         zc = 1.0_4-zfrac(kk)
         Vx_full(:,:,kk,istep) = Vx_meso_last_step_MetP_sp(:,:,k  )*zc + &
                                 Vx_meso_last_step_MetP_sp(:,:,k+1)*zfrac(kk)
         Vy_full(:,:,kk,istep) = Vy_meso_last_step_MetP_sp(:,:,k  )*zc + &
                                 Vy_meso_last_step_MetP_sp(:,:,k+1)*zfrac(kk)
-      ENDDO
-      IF(TrajFlag.gt.0)THEN
+      enddo
+      if(TrajFlag.gt.0)then
         istep = 2
-      ELSE
+      else
         istep = MR_MetSteps_Total-1
-      ENDIF
+      endif
       Step_Time_since1900(2) = MR_MetStep_Hour_since_baseyear(istep)
-      DO kk = 1,ntraj
+      do kk = 1,ntraj
         k  = OutLev_indx(kk)
         zc = 1.0_4-zfrac(kk)
         Vx_full(:,:,kk,istep) = Vx_meso_next_step_MetP_sp(:,:,k  )*zc + &
                                 Vx_meso_next_step_MetP_sp(:,:,k+1)*zfrac(kk)
         Vy_full(:,:,kk,istep) = Vy_meso_next_step_MetP_sp(:,:,k  )*zc + &
                                 Vy_meso_next_step_MetP_sp(:,:,k+1)*zfrac(kk)
-      ENDDO
+      enddo
 
       ! And now fill in all the remaining steps
-      IF(MR_MetSteps_Total.ge.3)THEN
-        DO istep = 3,MR_MetSteps_Total
-          IF(TrajFlag.gt.0)THEN
+      if(MR_MetSteps_Total.ge.3)then
+        do istep = 3,MR_MetSteps_Total
+          if(TrajFlag.gt.0)then
             stepindx=istep
-          ELSE
+          else
             stepindx=MR_MetSteps_Total-istep+1
-          ENDIF
+          endif
           Step_Time_since1900(istep) = MR_MetStep_Hour_since_baseyear(stepindx)
           MR_iMetStep_Now = MR_iMetStep_Now + 1
           ivar = 2 ! Vx
@@ -646,21 +633,16 @@
           ivar = 3 ! Vy
           call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
           Vy_meso_next_step_MetP_sp = MR_dum3d_MetP
-          DO kk = 1,ntraj
+          do kk = 1,ntraj
             k  = OutLev_indx(kk)
             zc = 1.0_4-zfrac(kk)
             Vx_full(:,:,kk,stepindx) = Vx_meso_next_step_MetP_sp(:,:,k  )*zc + &
                                        Vx_meso_next_step_MetP_sp(:,:,k+1)*zfrac(kk)
             Vy_full(:,:,kk,stepindx) = Vy_meso_next_step_MetP_sp(:,:,k  )*zc + &
                                        Vy_meso_next_step_MetP_sp(:,:,k+1)*zfrac(kk)
-          ENDDO
-        ENDDO
-      ENDIF
-
-      !IF(TrajFlag.lt.0)THEN
-      !  Vx_full(:,:,:,:) = -1.0_4 * Vx_full(:,:,:,:)
-      !  Vy_full(:,:,:,:) = -1.0_4 * Vy_full(:,:,:,:)
-      !ENDIF
+          enddo
+        enddo
+      endif
 
       ! We now have the full x,y,z,vx,vy data needed from the Met file
       ! for the full forward/backward simulation
@@ -672,94 +654,82 @@
       it    = 1
 
       ! Assume an integration step of 1min and a max v of around 100m/s
-      IF(TrajFlag.ge.0)THEN
+      if(TrajFlag.ge.0)then
         dt = 1.0_8/60.0_8
-      ELSE
+      else
         dt = -1.0_8/60.0_8
-      ENDIF
+      endif
 
       mstodeghr = 3600.0_8*360.0_8/(2.0_8*PI*RAD_EARTH*KM_2_M)
-      !mstodeghr = HR_2_S/(DEG2RAD*2.0*PI*RAD_EARTH*KM_2_M)
 
-      IF(TrajFlag.ge.0)THEN
-        IF(ntraj.ge.1)open(unit=21,file='ftraj1.dat')
-        IF(ntraj.ge.2)open(unit=22,file='ftraj2.dat')
-        IF(ntraj.ge.3)open(unit=23,file='ftraj3.dat')
-        IF(ntraj.ge.4)open(unit=24,file='ftraj4.dat')
-        IF(ntraj.ge.5)open(unit=25,file='ftraj5.dat')
-        IF(ntraj.ge.6)open(unit=26,file='ftraj6.dat')
-        IF(ntraj.ge.7)open(unit=27,file='ftraj7.dat')
-        IF(ntraj.ge.8)open(unit=28,file='ftraj8.dat')
-        IF(ntraj.ge.9)open(unit=29,file='ftraj9.dat')
-      ELSE
-        IF(ntraj.ge.1)open(unit=21,file='btraj1.dat')
-        IF(ntraj.ge.2)open(unit=22,file='btraj2.dat')
-        IF(ntraj.ge.3)open(unit=23,file='btraj3.dat')
-        IF(ntraj.ge.4)open(unit=24,file='btraj4.dat')
-        IF(ntraj.ge.5)open(unit=25,file='btraj5.dat')
-        IF(ntraj.ge.6)open(unit=26,file='btraj6.dat')
-        IF(ntraj.ge.7)open(unit=27,file='btraj7.dat')
-        IF(ntraj.ge.8)open(unit=28,file='btraj8.dat')
-        IF(ntraj.ge.9)open(unit=29,file='btraj9.dat')
-      ENDIF
+      if(TrajFlag.ge.0)then
+        if(ntraj.ge.1)open(unit=21,file='ftraj1.dat')
+        if(ntraj.ge.2)open(unit=22,file='ftraj2.dat')
+        if(ntraj.ge.3)open(unit=23,file='ftraj3.dat')
+        if(ntraj.ge.4)open(unit=24,file='ftraj4.dat')
+        if(ntraj.ge.5)open(unit=25,file='ftraj5.dat')
+        if(ntraj.ge.6)open(unit=26,file='ftraj6.dat')
+        if(ntraj.ge.7)open(unit=27,file='ftraj7.dat')
+        if(ntraj.ge.8)open(unit=28,file='ftraj8.dat')
+        if(ntraj.ge.9)open(unit=29,file='ftraj9.dat')
+      else
+        if(ntraj.ge.1)open(unit=21,file='btraj1.dat')
+        if(ntraj.ge.2)open(unit=22,file='btraj2.dat')
+        if(ntraj.ge.3)open(unit=23,file='btraj3.dat')
+        if(ntraj.ge.4)open(unit=24,file='btraj4.dat')
+        if(ntraj.ge.5)open(unit=25,file='btraj5.dat')
+        if(ntraj.ge.6)open(unit=26,file='btraj6.dat')
+        if(ntraj.ge.7)open(unit=27,file='btraj7.dat')
+        if(ntraj.ge.8)open(unit=28,file='btraj8.dat')
+        if(ntraj.ge.9)open(unit=29,file='btraj9.dat')
+      endif
 
-      IF(ntraj.ge.1)write(21,*)real(x1(1),kind=4),real(y1(1),kind=4)
-      IF(ntraj.ge.2)write(22,*)real(x1(2),kind=4),real(y1(2),kind=4)
-      IF(ntraj.ge.3)write(23,*)real(x1(3),kind=4),real(y1(3),kind=4)
-      IF(ntraj.ge.4)write(24,*)real(x1(4),kind=4),real(y1(4),kind=4)
-      IF(ntraj.ge.5)write(25,*)real(x1(5),kind=4),real(y1(5),kind=4)
-      IF(ntraj.ge.6)write(26,*)real(x1(6),kind=4),real(y1(6),kind=4)
-      IF(ntraj.ge.7)write(27,*)real(x1(7),kind=4),real(y1(7),kind=4)
-      IF(ntraj.ge.8)write(28,*)real(x1(8),kind=4),real(y1(8),kind=4)
-      IF(ntraj.ge.9)write(29,*)real(x1(9),kind=4),real(y1(9),kind=4)
+      if(ntraj.ge.1)write(21,*)real(x1(1),kind=4),real(y1(1),kind=4)
+      if(ntraj.ge.2)write(22,*)real(x1(2),kind=4),real(y1(2),kind=4)
+      if(ntraj.ge.3)write(23,*)real(x1(3),kind=4),real(y1(3),kind=4)
+      if(ntraj.ge.4)write(24,*)real(x1(4),kind=4),real(y1(4),kind=4)
+      if(ntraj.ge.5)write(25,*)real(x1(5),kind=4),real(y1(5),kind=4)
+      if(ntraj.ge.6)write(26,*)real(x1(6),kind=4),real(y1(6),kind=4)
+      if(ntraj.ge.7)write(27,*)real(x1(7),kind=4),real(y1(7),kind=4)
+      if(ntraj.ge.8)write(28,*)real(x1(8),kind=4),real(y1(8),kind=4)
+      if(ntraj.ge.9)write(29,*)real(x1(9),kind=4),real(y1(9),kind=4)
 
       ! Find location of initial trajectory heights
       ! Get interpolation coefficients
-      !it = floor((t1-MetStep_Hour_since_1900(1))/ForecastInterval) + 1
       it = 1
-      IF(TrajFlag.gt.0)THEN
-        !tfrac = (t1-Step_Time_since1900(it))/MR_ForecastInterval
+      if(TrajFlag.gt.0)then
         tfrac = (t1-Step_Time_since1900(it))/MR_MetStep_Interval(it)
-      ELSE
-        !tfrac = -(t1-Step_Time_since1900(it))/MR_ForecastInterval
+      else
         tfrac = -(t1-Step_Time_since1900(it))/MR_MetStep_Interval(it)
-      ENDIF
+      endif
 
       ! integrate out Simtime_in_hours hours
       it = 0
-      !open(unit=51,file='vel.dat',status='replace')
-      DO ti = 1,abs(int(Simtime_in_hours/dt))
-        IF(TrajFlag.gt.0)THEN
-          !iit = floor((t1-Step_Time_since1900(1))/MR_ForecastInterval) + 1
+      do ti = 1,abs(int(Simtime_in_hours/dt))
+        if(TrajFlag.gt.0)then
           ! Get the interval by assuming all MetStep_Intervals are the same
           iit = floor((t1-Step_Time_since1900(1))/MR_MetStep_Interval(1)) + 1
-          !tfrac = (t1-Step_Time_since1900(iit))/MR_ForecastInterval
           tfrac = (t1-Step_Time_since1900(iit))/MR_MetStep_Interval(1)
-        ELSE
-          !iit = floor(-(t1-Step_Time_since1900(1))/MR_ForecastInterval) + 1
+        else
           ! Get the interval by assuming all MetStep_Intervals are the same
           iit = floor(-(t1-Step_Time_since1900(1))/MR_MetStep_Interval(1)) + 1
-          !tfrac = -(t1-Step_Time_since1900(iit))/MR_ForecastInterval
           tfrac = -(t1-Step_Time_since1900(iit))/MR_MetStep_Interval(1)
-        ENDIF
+        endif
 
-        IF(iit.ne.it)THEN
+        if(iit.ne.it)then
           it = iit
            ! Get the change in velocity in m/s/hr
-          !dvxdt(:,:,:) = (Vx_full(:,:,:,it+1)-Vx_full(:,:,:,it))/MR_ForecastInterval
           dvxdt(:,:,:) = (Vx_full(:,:,:,it+1)-Vx_full(:,:,:,it))/MR_MetStep_Interval(it)
-          !dvydt(:,:,:) = (Vy_full(:,:,:,it+1)-Vy_full(:,:,:,it))/MR_ForecastInterval
           dvydt(:,:,:) = (Vy_full(:,:,:,it+1)-Vy_full(:,:,:,it))/MR_MetStep_Interval(it)
-        ENDIF
+        endif
 
-        DO kk = 1,ntraj
-          !k = OutLev_indx(kk)
+        do kk = 1,ntraj
           ! Get current time and position indecies
           ix = floor((x1(kk)-x_submet_sp(1))/dx_met_const) + 1
           iy = floor((y1(kk)-y_submet_sp(1))/dy_met_const) + 1
             ! Skip over points that leave the domain
-          IF(ix.le.0.or.ix.ge.nx_comp)cycle
-          IF(iy.le.0.or.iy.ge.ny_comp)cycle
+          if(ix.le.0.or.ix.ge.nx_comp)cycle
+          if(iy.le.0.or.iy.ge.ny_comp)cycle
 
           ! Get the fractional position within the cell
           xfrac = (x1(kk)-x_submet_sp(ix))/dx_met_const
@@ -789,8 +759,6 @@
           vel_1(1) = vel_1(1)*mstodeghr/sin((90.0_4-y1(kk))*DEG2RAD)
           vel_1(2) = vel_1(2)*mstodeghr
 
-          !write(51,*)vel_1
-
           ! Now advect via Forward Euler
           xstep = vel_1(1) * dt
           ystep = vel_1(2) * dt
@@ -799,43 +767,42 @@
 
           x1(kk) = x_fin
           y1(kk) = y_fin
-        ENDDO
+        enddo
 
         t1 = t1 + dt
-        IF(mod(ti,60).eq.0)THEN
-          DO kk = 1,ntraj
-            IF(kk.eq.1)write(21,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
-            IF(kk.eq.2)write(22,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
-            IF(kk.eq.3)write(23,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
-            IF(kk.eq.4)write(24,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
-            IF(kk.eq.5)write(25,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
-            IF(kk.eq.6)write(26,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
-            IF(kk.eq.7)write(27,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
-            IF(kk.eq.8)write(28,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
-            IF(kk.eq.9)write(29,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
+        if(mod(ti,60).eq.0)then
+          do kk = 1,ntraj
+            if(kk.eq.1)write(21,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
+            if(kk.eq.2)write(22,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
+            if(kk.eq.3)write(23,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
+            if(kk.eq.4)write(24,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
+            if(kk.eq.5)write(25,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
+            if(kk.eq.6)write(26,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
+            if(kk.eq.7)write(27,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
+            if(kk.eq.8)write(28,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
+            if(kk.eq.9)write(29,*)real(x1(kk),kind=4),real(y1(kk),kind=4)
             ! Check min/max of trajectories
 
-            IF(x1(kk).lt.lonmin)lonmin=x1(kk)
-            IF(x1(kk).gt.lonmax)lonmax=x1(kk)
-            IF(y1(kk).lt.latmin)latmin=y1(kk)
-            IF(y1(kk).gt.latmax)latmax=y1(kk)
-          ENDDO
-        ENDIF
-      ENDDO
-      !close(51)
+            if(x1(kk).lt.lonmin)lonmin=x1(kk)
+            if(x1(kk).gt.lonmax)lonmax=x1(kk)
+            if(y1(kk).lt.latmin)latmin=y1(kk)
+            if(y1(kk).gt.latmax)latmax=y1(kk)
+          enddo
+        endif
+      enddo
       open(unit=40,file='map_range_traj.txt')
       write(40,*)lonmin,lonmax,latmin,latmax,inlon,inlat
       close(40)
 
-      IF(ntraj.ge.1)close(21)
-      IF(ntraj.ge.2)close(22)
-      IF(ntraj.ge.3)close(23)
-      IF(ntraj.ge.4)close(24)
-      IF(ntraj.ge.5)close(25)
-      IF(ntraj.ge.6)close(26)
-      IF(ntraj.ge.7)close(27)
-      IF(ntraj.ge.8)close(28)
-      IF(ntraj.ge.9)close(29)
+      if(ntraj.ge.1)close(21)
+      if(ntraj.ge.2)close(22)
+      if(ntraj.ge.3)close(23)
+      if(ntraj.ge.4)close(24)
+      if(ntraj.ge.5)close(25)
+      if(ntraj.ge.6)close(26)
+      if(ntraj.ge.7)close(27)
+      if(ntraj.ge.8)close(28)
+      if(ntraj.ge.9)close(29)
 
        end subroutine Integrate_Trajectory
 

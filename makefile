@@ -36,7 +36,7 @@ SYSTEM = gfortran
 #      PROF  : includes profiling flags with some optimization
 #      OPT   : includes optimizations flags for fastest runtime
 #    This variable cannot be left blank
-RUN = OPT
+RUN = DEBUG
 #
 INSTALLDIR=/opt/USGS
 #INSTALLDIR=~/gcc
@@ -46,7 +46,8 @@ INSTALLDIR=/opt/USGS
 #  variable below to 'T'.  Set to 'F' any you do not want compiled or any unavailable
 USENETCDF = T
 USEGRIB2 = T
-USEHDF = F   # Note: the hdf reader is not yet functional
+USEGRIB1 = F
+
 
 # MEMORY
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'
@@ -75,10 +76,10 @@ else
  grb2OBJS =
  grblib =
 endif
-ifeq ($(USEHDF), T)
- hdfFPPFLAG = -DUSEHDF
+ifeq ($(USEGRIB1), T)
+ grb1FPPFLAG = -DUSEGRIB1
 else
- hdfFPPFLAG =
+ grb1FPPFLAG =
 endif
 
 ifeq ($(USEPOINTERS), T)
@@ -87,7 +88,7 @@ else
  memFPPFLAG =
 endif
 
-FPPFLAGS = -x f95-cpp-input $(ncFPPFLAG) $(grb2FPPFLAG) $(hdfFPPFLAG) $(memFPPFLAG)
+FPPFLAGS = -x f95-cpp-input $(ncFPPFLAG) $(grb2FPPFLAG) $(grb1FPPFLAG) $(memFPPFLAG)
 
 # location of HoursSince and projection
 USGSLIBDIR = -L$(INSTALLDIR)/lib
@@ -156,10 +157,6 @@ gen_GRIB2_index: gen_GRIB2_index.f90 MetReader_GRIB_index.o makefile libMetReade
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c gen_GRIB2_index.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) MetReader_GRIB_index.o gen_GRIB2_index.o $(LIBS) $(grblib) -o gen_GRIB2_index
 endif
-#ifeq ($(USEHDF), T)
-#MetReader_HDF.o: MetReader_HDF.f90 MetReader.o makefile
-#	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lhdf -Iinclude/ -c MetReader_HDF.f90
-#endif
 
 
 ifeq ($(USEGRIB2), T)
