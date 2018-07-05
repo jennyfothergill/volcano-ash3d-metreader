@@ -18,7 +18,7 @@
       else
         call getarg(1,lllinebuffer)
         read(lllinebuffer,*)grib2_file
-        call MR_Set_Gen_Index_GRIB(grib2_file)
+        call MR_Set_Gen_Index_GRIB2(grib2_file)
       endif
 
       end program

@@ -263,7 +263,7 @@
 
 !##############################################################################
 !
-!     MR_Read_Met_DimVars_GRIB
+!     MR_Read_Met_DimVars_GRIB2
 !
 !     Called once from MR_Read_Met_DimVars 
 !
@@ -280,7 +280,7 @@
 !
 !##############################################################################
 
-      subroutine MR_Read_Met_DimVars_GRIB
+      subroutine MR_Read_Met_DimVars_GRIB2
 
       use MetReader
       use grib_api
@@ -298,7 +298,7 @@
       real(kind=sp) :: yUR_fullmet
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                MR_Read_Met_DimVars_GRIB                    ----------"
+      write(MR_global_production,*)"----------                MR_Read_Met_DimVars_GRIB2                   ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       if(MR_iwindformat.ne.0)then
@@ -439,7 +439,6 @@
           Met_var_IsAvailable(44)      = .true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
       elseif(MR_iwindformat.eq.12)then
           ! NAM 198 5.953 km AK
@@ -544,7 +543,6 @@
           Met_var_IsAvailable(44)      = .true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
       elseif(MR_iwindformat.eq.13)then
           ! NAM 91 2.976 km AK (nam198 at twice the resolution)
@@ -650,7 +648,6 @@
           Met_var_IsAvailable(44)      = .true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
       elseif (MR_iwindformat.eq.20.or.MR_iwindformat.eq.22) then
            ! GFS 0.5 (or 0.25) deg from http://www.nco.ncep.noaa.gov/pmb/products/gfs/
@@ -716,14 +713,13 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 1.0_4
 
       elseif (MR_iwindformat.eq.21) then
            ! Old format GFS 0.5-degree
        elseif (MR_iwindformat.eq.23) then
          ! NCEP / doE reanalysis 2.5 degree files 
        elseif (MR_iwindformat.eq.24) then
-         ! NASA-MERRA reanalysis 1.25 degree files 
+         ! NASA-MERRA-2 reanalysis 0.625/0.5 degree files 
        elseif (MR_iwindformat.eq.25) then
          ! NCEP/NCAR reanalysis 2.5 degree files 
        elseif (MR_iwindformat.eq.27) then
@@ -833,8 +829,6 @@
 
 
         fill_value_sp(MR_iwindformat) = 9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
-
 
        elseif (MR_iwindformat.eq.40) then
          ! NASA-GEOS Cp
@@ -1733,20 +1727,20 @@
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
-      end subroutine MR_Read_Met_DimVars_GRIB
+      end subroutine MR_Read_Met_DimVars_GRIB2
 
 !##############################################################################
 
 !##############################################################################
 !
-!     MR_Read_Met_Times_GRIB
+!     MR_Read_Met_Times_GRIB2
 !
 !     Called once from MR_Read_Met_DimVars 
 !
 !     This subroutine opens each GRIB file and determine the time of each
 !     time step of each file in the number of hours since MR_BaseYear.
 !     In most cases, the length of the time variable (nt_fullmet) will be 
-!     read directly from the file and overwritten (is was set in MR_Read_Met_DimVars_GRIB
+!     read directly from the file and overwritten (is was set in MR_Read_Met_DimVars_GRIB2
 !     above).
 !
 !     After this subroutine completes, the following variables will be set:
@@ -1755,7 +1749,7 @@
 !
 !##############################################################################
 
-      subroutine MR_Read_Met_Times_GRIB
+      subroutine MR_Read_Met_Times_GRIB2
 
       use MetReader
       use grib_api
@@ -1784,7 +1778,7 @@
       integer            :: igrib
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                MR_Read_Met_Times_GRIB                      ----------"
+      write(MR_global_production,*)"----------                MR_Read_Met_Times_GRIB2                     ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       if(.not.Met_dim_IsAvailable(1))then
@@ -1801,11 +1795,11 @@
         stop 1
         ! Here the branch for when MR_iwindformat = 27
         ! First copy path read in to slot 2
-        if(MR_runAsForecast)then
-          write(MR_global_error,*)"MR ERROR: iwf=27 cannot be used for forecast runs."
-          write(MR_global_error,*)"          These are reanalysis files."
-          stop 1
-        endif
+        !if(MR_runAsForecast)then
+        !  write(MR_global_error,*)"MR ERROR: iwf=27 cannot be used for forecast runs."
+        !  write(MR_global_error,*)"          These are reanalysis files."
+        !  stop 1
+        !endif
         dumstr = MR_windfiles(1)
  110    format(a50,a1,i4,a1)
         write(MR_windfiles(1),110)trim(ADJUSTL(dumstr)),'/', &
@@ -1831,9 +1825,8 @@
         allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
 
           ! the interval for iwf27 is 6 hours
-        MR_ForecastInterval = 6.0_4
         do iwstep = 1,nt_fullmet
-          MR_windfile_stephour(:,iwstep) = (iwstep-1)*MR_ForecastInterval
+          MR_windfile_stephour(:,iwstep) = (iwstep-1)*6.0_4
         enddo
       else
         ! For all other formats, try to read the first grib message and get
@@ -1885,7 +1878,7 @@
 
         enddo
       endif
-2100  FORMAT(20x,a11,i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2)
+2100  format(20x,a11,i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2)
 
       ! Finished setting up the start time of each wind file in HoursSince : MR_windfile_starthour(iw)
       !  and the forecast (offset from start of file) for each step        : MR_windfile_stephour(iw,iwstep)
@@ -1901,12 +1894,12 @@
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
-      end subroutine MR_Read_Met_Times_GRIB
+      end subroutine MR_Read_Met_Times_GRIB2
 !##############################################################################
 
 !##############################################################################
 !
-!     MR_Read_MetP_Variable_GRIB
+!     MR_Read_MetP_Variable_GRIB2
 !
 !     Called from Read_HGT_arrays and once from Read_3d_MetP_Variable.
 !
@@ -1914,7 +1907,7 @@
 !
 !##############################################################################
 
-      subroutine MR_Read_MetP_Variable_GRIB(ivar,istep)
+      subroutine MR_Read_MetP_Variable_GRIB2(ivar,istep)
 
       use MetReader
       use grib_api
@@ -2628,5 +2621,5 @@
       endif
       MR_dum3d_metP = MR_dum3d_metP * Met_var_conversion_factor(ivar)
 
-      end subroutine MR_Read_MetP_Variable_GRIB
+      end subroutine MR_Read_MetP_Variable_GRIB2
 

@@ -39,17 +39,19 @@ SYSTEM = gfortran
 RUN = OPT
 #
 INSTALLDIR=/opt/USGS
+#INSTALLDIR=~/gcc
 #
 # DATA FORMATS
 #  For each data format you want to include in the library, set the corresponding
 #  variable below to 'T'.  Set to 'F' any you do not want compiled or any unavailable
 USENETCDF = T
 USEGRIB2 = T
-USEHDF = F   # Note: the hdf reader is not yet functional
+USEGRIB1 = F
+
 
 # MEMORY
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'
-USEPOINTERS = T
+USEPOINTERS = F
 
 ###############################################################################
 #####  END OF USER SPECIFIED FLAGS  ###########################################
@@ -59,20 +61,46 @@ FPPFLAGS =
 ifeq ($(USENETCDF), T)
  ncFPPFLAG = -DUSENETCDF
  ncOBJS = MetReader_NetCDF.o
+ nclib = -lnetcdf -lnetcdff
+else
+ ncFPPFLAG =
+ ncOBJS =
+ nclib =
 endif
 ifeq ($(USEGRIB2), T)
  grb2FPPFLAG = -DUSEGRIB2
  grb2OBJS = MetReader_GRIB.o MetReader_GRIB_index.o
+ grblib = -lgrib_api_f90 -lgrib_api
+else
+ grb2FPPFLAG =
+ grb2OBJS =
+ grblib =
 endif
-ifeq ($(USEHDF), T)
- hdfFPPFLAG = -DUSEHDF
+ifeq ($(USEGRIB1), T)
+ grb1FPPFLAG = -DUSEGRIB1
+else
+ grb1FPPFLAG =
 endif
 
 ifeq ($(USEPOINTERS), T)
  memFPPFLAG = -DUSEPOINTERS
+else
+ memFPPFLAG =
 endif
 
-FPPFLAGS = -x f95-cpp-input $(ncFPPFLAG) $(grb2FPPFLAG) $(hdfFPPFLAG) $(memFPPFLAG)
+FPPFLAGS = -x f95-cpp-input $(ncFPPFLAG) $(grb2FPPFLAG) $(grb1FPPFLAG) $(memFPPFLAG)
+
+# location of HoursSince and projection
+USGSLIBDIR = -L$(INSTALLDIR)/lib
+USGSINC = -I$(INSTALLDIR)/include
+USGSLIB = $(USGSLIBDIR) $(USGSINC) -lhourssince -lprojection
+
+EXEC = \
+ gen_GRIB2_index   \
+ tools/MetSonde  \
+ tools/MetTraj_F \
+ tools/MetTraj_B \
+ tools/MetCheck
 
 ###############################################################################
 ###############################################################################
@@ -104,13 +132,13 @@ endif
 endif
 ###############################################################################
 
-all: libMetReader.a
+all: libMetReader.a tools
 
 libMetReader.a: MetReader.F90 MetReader.o $(ncOBJS) $(grb2OBJS) MetReader_Grids.o MetReader_ASCII.o makefile
 	ar rcs libMetReader.a MetReader.o $(ncOBJS) $(grb2OBJS) MetReader_Grids.o MetReader_ASCII.o
 
 MetReader.o: MetReader.F90 makefile
-	$(FC) $(FPPFLAGS) $(EXFLAGS) -L../lib -c MetReader.F90
+	$(FC) $(FPPFLAGS) $(EXFLAGS) -c MetReader.F90
 MetReader_Grids.o: MetReader_Grids.f90 MetReader.o makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c MetReader_Grids.f90
 MetReader_ASCII.o: MetReader_ASCII.f90 MetReader.o makefile
@@ -118,27 +146,43 @@ MetReader_ASCII.o: MetReader_ASCII.f90 MetReader.o makefile
 
 ifeq ($(USENETCDF), T)
 MetReader_NetCDF.o: MetReader_NetCDF.f90 MetReader.o makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lnetcdf -lnetcdff -c MetReader_NetCDF.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) -c MetReader_NetCDF.f90
 endif
 ifeq ($(USEGRIB2), T)
 MetReader_GRIB_index.o: MetReader_GRIB_index.f90 makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lgrib_api_f90 -lgrib_api -c MetReader_GRIB_index.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c MetReader_GRIB_index.f90
 MetReader_GRIB.o: MetReader_GRIB.f90 MetReader_GRIB_index.o MetReader.o makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lgrib_api_f90 -lgrib_api -c MetReader_GRIB.f90
-gen_GRIB2_index: gen_GRIB2_index.f90 MetReader_GRIB_index.o makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lgrib_api_f90 -lgrib_api -c gen_GRIB2_index.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) MetReader_GRIB_index.o gen_GRIB2_index.o $(LIBS) -lgrib_api_f90 -lgrib_api -Llib -o gen_GRIB2_index
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c MetReader_GRIB.f90
+gen_GRIB2_index: gen_GRIB2_index.f90 MetReader_GRIB_index.o makefile libMetReader.a
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c gen_GRIB2_index.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) MetReader_GRIB_index.o gen_GRIB2_index.o $(LIBS) $(grblib) -o gen_GRIB2_index
 endif
-#ifeq ($(USEHDF), T)
-#MetReader_HDF.o: MetReader_HDF.f90 MetReader.o makefile
-#	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -lhdf -Iinclude/ -c MetReader_HDF.f90
-#endif
+
+
+ifeq ($(USEGRIB2), T)
+  GRIBTOOL = gen_GRIB2_index
+else
+  GRIBTOOL =
+endif
+
+tools: MetSonde MetTraj_F MetTraj_B MetCheck $(GRIBTOOL)
+
+MetSonde: tools/MetSonde.f90 makefile libMetReader.a
+	$(FC) $(FFLAGS) $(EXFLAGS) -L./ -lMetReader $(LIBS) $(nclib) $(grblib) -c tools/MetSonde.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) MetSonde.o  -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB) -o tools/MetSonde
+MetTraj_F: tools/MetTraj.F90 makefile libMetReader.a
+	$(FC) -x f95-cpp-input -DFORWARD  $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_F $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
+MetTraj_B: tools/MetTraj.F90 makefile libMetReader.a
+	$(FC) -x f95-cpp-input -DBACKWARD $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_B $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
+MetCheck: tools/MetCheck.f90 makefile libMetReader.a
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/MetCheck.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) MetCheck.o $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB) -o tools/MetCheck
 
 clean:
 	rm -f *.o
 	rm -f *.mod
 	rm -f lib*.a
-	rm -f gen_GRIB2_index
+	rm -f $(EXEC)
 
 install:
 	install -d $(INSTALLDIR)/lib/
@@ -147,5 +191,5 @@ install:
 	install -d $(INSTALLDIR)/bin/autorun_scripts
 	install -m 644 libMetReader.a $(INSTALLDIR)/lib/
 	install -m 644 *.mod $(INSTALLDIR)/include/
-	install -m 755 gen_GRIB2_index $(INSTALLDIR)/bin/
+	install -m 755 $(EXEC) $(INSTALLDIR)/bin/
 	install -m 755 autorun_scripts/*.sh $(INSTALLDIR)/bin/autorun_scripts/

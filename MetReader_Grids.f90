@@ -113,9 +113,9 @@
         enddo
         MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
-      elseif(igrid.eq.1040)then
+      elseif(igrid.eq.1040.or.igrid.eq.1024)then
          ! Not an NCEP grid
-         !  This grid is for the NASA Cp
+         !  This grid is for the NASA GEOS-5 Cp or MERRA-2
 
         !Met_dim_names(3) = "lat"        ! y        (-90.0 -> 90.0) 361
         !  Met_dim_IsAvailable(3)=.true.
@@ -243,35 +243,35 @@
         enddo
         MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
-      elseif(igrid.eq.1024)then
-         ! Not an NCEP grid
-         !  This grid is for the NASA MERRA files
-        IsLatLon_MetGrid  = .true.
-        IsGlobal_MetGrid  = .true.
-        IsRegular_MetGrid = .true.
-        nx_fullmet = 288
-        ny_fullmet = 144
-        dx_met_const = 1.25_sp
-        dy_met_const = 1.25_sp
-        x_start = -179.375_dp
-        y_start = 89.375_dp
-        allocate(x_fullmet_sp(0:nx_fullmet+1))
-        allocate(y_fullmet_sp(ny_fullmet))
-        allocate(MR_dx_met(nx_fullmet))
-        allocate(MR_dy_met(ny_fullmet))
-        do i = 0,nx_fullmet+1
-          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-        enddo
-        do i = 1,ny_fullmet
-          y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
-        enddo
-        do i = 1,nx_fullmet
-          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-        enddo
-        do i = 1,ny_fullmet-1
-          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-        enddo
-        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+      !elseif(igrid.eq.1024)then
+      !   ! Not an NCEP grid
+      !   !  This grid is for the NASA MERRA files
+      !  IsLatLon_MetGrid  = .true.
+      !  IsGlobal_MetGrid  = .true.
+      !  IsRegular_MetGrid = .true.
+      !  nx_fullmet = 288
+      !  ny_fullmet = 144
+      !  dx_met_const = 1.25_sp
+      !  dy_met_const = 1.25_sp
+      !  x_start = -179.375_dp
+      !  y_start = 89.375_dp
+      !  allocate(x_fullmet_sp(0:nx_fullmet+1))
+      !  allocate(y_fullmet_sp(ny_fullmet))
+      !  allocate(MR_dx_met(nx_fullmet))
+      !  allocate(MR_dy_met(ny_fullmet))
+      !  do i = 0,nx_fullmet+1
+      !    x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
+      !  enddo
+      !  do i = 1,ny_fullmet
+      !    y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
+      !  enddo
+      !  do i = 1,nx_fullmet
+      !    MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+      !  enddo
+      !  do i = 1,ny_fullmet-1
+      !    MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+      !  enddo
+      !  MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
       elseif(igrid.eq.1027)then
          ! Not an NCEP grid
@@ -304,7 +304,7 @@
         MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
       elseif(igrid.eq.2)then
-         ! Used by NCEP doE reanalysis, NCEP-1
+         ! Used by NCEP DOE reanalysis, NCEP-1
         IsLatLon_MetGrid  = .true.
         IsGlobal_MetGrid  = .true.
         IsRegular_MetGrid = .true.
@@ -312,6 +312,35 @@
         ny_fullmet = 73
         dx_met_const = 2.5_sp
         dy_met_const = 2.5_sp
+        x_start =  0.0_dp
+        y_start = 90.0_dp
+        allocate(x_fullmet_sp(0:nx_fullmet+1))
+        allocate(y_fullmet_sp(ny_fullmet))
+        allocate(MR_dx_met(nx_fullmet))
+        allocate(MR_dy_met(ny_fullmet))
+        do i = 0,nx_fullmet+1
+          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
+        enddo
+        do i = 1,ny_fullmet
+          y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
+        enddo
+        do i = 1,nx_fullmet
+          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+        enddo
+        do i = 1,ny_fullmet-1
+          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+        enddo
+        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+
+      elseif(igrid.eq.3)then
+         ! Used by GFS forecast
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        nx_fullmet = 360
+        ny_fullmet = 181
+        dx_met_const = 1.0_sp
+        dy_met_const = 1.0_sp
         x_start =  0.0_dp
         y_start = 90.0_dp
         allocate(x_fullmet_sp(0:nx_fullmet+1))
@@ -1224,7 +1253,7 @@
       real(kind=dp) :: xout,yout
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                          MR_Set_MetComp_Grids              ----------"
+      write(MR_global_production,*)"----------                 MR_Set_MetComp_Grids                       ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       call MR_Set_Comp2Met_Map
@@ -1269,7 +1298,7 @@
       endif
 
       if(IsLatLon_MetGrid)then
-        if(xLL.gt.x_fullmet_sp(nx_fullmet))then
+        if(xLL.gt.x_fullmet_sp(nx_fullmet).and.x_fullmet_sp(nx_fullmet).le.180.0_sp)then
           ! If the comp grid starts in the western himisphere (xLL>180) and if
           ! the global Met grid only extends to 180, then shift the comp grid
           ! into the domain of the met grid
@@ -2073,7 +2102,7 @@
           enddo
         enddo
       elseif(Map_Case.eq.5)then
-          ! Here, we need to map the projected comp grid to a Lon/Lat gird, then
+          ! Here, we need to map the projected comp grid to a Lon/Lat grid, then
           ! map to the projected Met grid
         do i=1,nx_comp
           do j=1,ny_comp
@@ -2294,9 +2323,10 @@
       character(len=30) :: dname
       character(len=71) :: vname
       character(len=5)  :: vname_WMO
+      real(kind=8)      :: StepInterval
 
       write(MR_global_info,*)"Inside MR_Read_Met_Template"
-      INQUIRE( FILE=adjustl(trim(MR_iwf_template)), EXIST=IsThere )
+      inquire( file=adjustl(trim(MR_iwf_template)), exist=IsThere )
       if(.not.IsThere)then
         write(MR_global_info,*)"MR ERROR: Could not find NWP template file ",&
                    adjustl(trim(MR_iwf_template))
@@ -2332,7 +2362,8 @@
       Met_Re        = PJ_radius_earth
 
       read(27,'(a130)')lllinebuffer
-      read(lllinebuffer,*,iostat=ioerr)MR_ForecastInterval,useLeap_str
+      read(lllinebuffer,*,iostat=ioerr)StepInterval,useLeap_str
+
       if (ioerr.eq.0)then
         ! Two values read, process useLeap_str to determine T or F
         if(useLeap_str(1:1).eq.'F'.or.useLeap_str(1:1).eq.'f')then
@@ -2343,7 +2374,7 @@
       else
         ! default will be whatever is set in the host program or in
         ! MetReader.f90 if the calling program doesn't specify
-        read(lllinebuffer,*,iostat=ioerr)MR_ForecastInterval
+        read(lllinebuffer,*,iostat=ioerr)StepInterval
       endif
       read(27,'(a130)')lllinebuffer
       read(lllinebuffer,*,err=2002)ndims_custom,nvars_custom

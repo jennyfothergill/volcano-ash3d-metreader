@@ -6,17 +6,20 @@
       real(kind=sp), parameter :: RAD_EARTH_MET = 6371.229_sp ! Radius of Earth in km
       real(kind=sp), parameter :: DEG2RAD_MET   = 1.7453292519943295e-2_sp
 
-      integer        :: MR_global_essential    = 6
-      integer        :: MR_global_production   = 6
-      integer        :: MR_global_debug        = 6
-      integer        :: MR_global_info         = 6
-      integer        :: MR_global_log          = 9
-      integer        :: MR_global_error        = 0
+      integer,public :: MR_global_essential    = 6
+      integer,public :: MR_global_production   = 6
+      integer,public :: MR_global_debug        = 6
+      integer,public :: MR_global_info         = 6
+      integer,public :: MR_global_log          = 9
+      integer,public :: MR_global_error        = 0
+
+      logical        :: MR_useCompGrid         = .true. ! Reset this to .false. if you only need the Met grid
+      logical        :: MR_useCompTime         = .true. ! Reset this to .false. if you only need the time of the file
 
       integer,public :: MR_iwind       !     MR_IWIND specifies the type of wind input to the model:
                              !   MR_IWIND=1 if a 1-D wind sounding is use, 
                              !           =2 if a 3-D grid is read from a ASCII file.
-                             !           =3 if a single, multistep 3-D NetCDF file is used
+                             !           =3 if a single, multistep 3-D file is used
                              !           =4 if multiple 3-D NetCDF files are used
                              !           =5 if multiple file with multiple steps are used
       integer,public :: MR_iwindformat !      MR_iwindformat specifies the format of the met data
@@ -35,10 +38,10 @@
                                        ! 12 NAM 198 5.953 km AK
                                        ! 13 NAM 91 2.976 km AK
                                        ! 20 GFS 0.5
-                                       ! 21 Old format GFS 0.5-degree
+                                       ! 21 GFS 1.0
                                        ! 22 GFS 0.25
-                                       ! 23 NCEP / doE reanalysis 2.5 degree files
-                                       ! 24 NASA-MERRA reanalysis 1.25 degree files
+                                       ! 23 NCEP / DOE reanalysis 2.5 degree files
+                                       ! 24 NASA-MERRA-2 reanalysis 0.625/0.5 degree files
                                        ! 25 NCEP/NCAR reanalysis 2.5 degree files
                                        ! 27 NOAA-CIRES reanalysis 2.5 degree files
                                        ! 28 ECMWF Interim Reanalysis (ERA-Interim)
@@ -55,14 +58,14 @@
       integer,public :: MR_idataFormat !   Specifies the data model used
                                     !    =1 ASCII
                                     !    =2 netcdf
-                                    !    =3 grib
-                                    !    =4 hdf
+                                    !    =3 grib2
+                                    !    =4 grib1
 
         ! These variables describe the full list of windfiles read
       integer                                       ,public :: MR_iwindfiles           ! number of files provided
 #ifdef USEPOINTERS
 !      character(len=130), allocatable,dimension(:)  ,public :: fc_windfilename
-      character(len=130), pointer ,dimension(:)  ,public :: MR_windfiles            ! name of file
+      character(len=130), pointer    ,dimension(:)  ,public :: MR_windfiles            ! name of file
 #else
       character(len=130), allocatable,dimension(:)  ,public :: MR_windfiles            ! name of file
 #endif
@@ -85,12 +88,11 @@
       integer           , allocatable,dimension(:),public :: MR_MetStep_year
       integer           , allocatable,dimension(:),public :: MR_MetStep_month
       integer           , allocatable,dimension(:),public :: MR_MetStep_day
-      integer           , allocatable,dimension(:),public :: MR_MetStep_doY
+      integer           , allocatable,dimension(:),public :: MR_MetStep_DOY
       real(kind=dp)     , allocatable,dimension(:),public :: MR_MetStep_Hour_Of_Day
 
-      real(kind=dp)                               ,public :: MR_ForecastInterval
-      logical                                             :: MR_runAsForecast = .false.
-      real(kind=dp)                                       :: MR_FC_Offset     = 0.0_dp
+      !logical                                             :: MR_runAsForecast = .false.
+      !real(kind=dp)                                       :: MR_FC_Offset     = 0.0_dp
       logical                                             :: MR_Reannalysis   = .false.
       integer           ,dimension(:), allocatable,public :: MR_iwind5_year
 
@@ -142,6 +144,9 @@
       integer :: MR_Snd_nt_fullmet = 1  ! Number of times at the Sonde locations
       integer :: MR_Snd_nvars      = 5  ! Number of Sonde variables (P,H,U,V,T,+user-specified)
       logical :: Snd_Have_PT = .false.
+      logical :: Snd_Have_Coord = .false.  ! If the 1-d data have the optional projection params
+                                           ! then it will be used, otherwise vel will be relative
+                                           ! to comp grid.
       real(kind=sp),dimension(:,:,:,:),allocatable, public :: MR_SndVars_metP   ! (MR_nSnd_Locs,MR_Snd_nt_fullmet,MR_Snd_nvars,300)
       integer      ,dimension(:,:)    ,allocatable, public :: MR_Snd_np_fullmet ! Number of pressure values for each location/time
       integer      ,dimension(:)      ,allocatable, public :: MR_SndVarsID      ! Lists which vars are in which columns of  MR_SndVars_metP
@@ -262,11 +267,11 @@
       real(kind=sp),dimension(:)       ,allocatable         :: MR_dy_met, MR_dy_submet
 #endif
 
-      logical       :: IsRegular_MetGrid
+      logical       :: IsRegular_MetGrid                ! True if the grid-spacing is uniform
       real(kind=sp) :: dx_met_const, dy_met_const
 
         ! There are some computational grid variables we might need, so make local copies
-      integer       :: MR_BaseYear            = 1900       ! This should be reset in calling program
+      integer       :: MR_BaseYear            = 1900    ! This should be reset in calling program
       logical       :: MR_useLeap             = .true.  ! This too
       integer       :: MR_Comp_StartYear
       real(kind=dp) :: MR_Comp_StartHour
@@ -293,9 +298,24 @@
       integer      ,dimension(:,:,:),allocatable :: CompPoint_on_subMet_idx ! index on met sub-grid of comp point
       real(kind=sp),dimension(:,:,:),allocatable :: bilin_map_wgt
 #endif
+      ! Here are a few variables needed for sigma-altitude coordinates
+      logical        :: MR_use_SigmaAlt   = .false.
+      integer        :: MR_ZScaling_ID    = 0  ! = 0 for no scaling (i.e. s = z)
+                                               ! = 1 for altitude shifting (s=z=zsurf)
+                                               ! = 2 for sigma-altitude (s=(z-surf)/(top-surf))
+      real(kind=sp)  :: MR_ztop
+#ifdef USEPOINTERS
+      real(kind=sp),dimension(:),    pointer :: s_comp_sp => null() ! s-coordinates (scaled z) of computational grid
+      real(kind=sp),dimension(:,:),  pointer :: MR_zsurf  => null() ! surface elevation in km
+      real(kind=sp),dimension(:,:),  pointer :: MR_jacob  => null() ! Jacobian of trans. = MR_ztop-MR_zsurf
+#else
+      real(kind=sp),dimension(:),    allocatable :: s_comp_sp ! s-coordinates (scaled z) of computational grid
+      real(kind=sp),dimension(:,:),  allocatable :: MR_zsurf  ! surface elevation in km
+      real(kind=sp),dimension(:,:),  allocatable :: MR_jacob  ! Jacobian of trans. = MR_ztop-MR_zsurf
+#endif
 
       logical :: Have_Vz = .false.
-      real(kind=sp),dimension(0:100)  :: fill_value_sp = -9999.0_sp
+      real(kind=sp),dimension(0:100) :: fill_value_sp = -9999.0_sp
       character(len=30),dimension(9) :: Met_dim_names
       logical          ,dimension(9) :: Met_dim_IsAvailable
       real(kind=sp)    ,dimension(9) :: Met_dim_fac  = 1.0_sp
@@ -340,12 +360,12 @@
         !  45 = Precipitation rate convective  (liquid)
         !  46 = Precipitation rate large-scale (ice)
         !  47 = Precipitation rate convective  (ice)
-      logical          ,dimension(50)   :: Met_var_IsAvailable
-      character(len=71),dimension(50)   :: Met_var_names
-      character(len=5) ,dimension(50)   :: Met_var_names_WMO
-      integer          ,dimension(50)   :: Met_var_ndim
-      integer          ,dimension(50)   :: Met_var_zdimID
-      integer          ,dimension(50,4) :: Met_var_GRIB2_DPcPnSt
+      logical          ,dimension(50)   :: Met_var_IsAvailable      ! true if iwf contains the var
+      character(len=71),dimension(50)   :: Met_var_names            ! name in the file
+      character(len=5) ,dimension(50)   :: Met_var_names_WMO        ! WMO version of the name
+      integer          ,dimension(50)   :: Met_var_ndim             ! 
+      integer          ,dimension(50)   :: Met_var_zdimID           ! 
+      integer          ,dimension(50,4) :: Met_var_GRIB2_DPcPnSt    ! 
 
       !logical          ,dimension(50) :: Met_var_IsFloat  ! true if kind=4 otherwise false
       real(kind=sp)    ,dimension(50) :: Met_var_conversion_factor
@@ -368,7 +388,6 @@
 
       integer :: istart, iend
       integer :: jstart, jend
-      !integer :: ilhalf,irhalf
       integer :: ilhalf_fm_l, ilhalf_fm_r
       integer :: irhalf_fm_l, irhalf_fm_r
       integer :: ilhalf_nx, irhalf_nx
@@ -383,6 +402,14 @@
 
       real(kind=4),dimension(:,:),allocatable :: Met_Proj_lat
       real(kind=4),dimension(:,:),allocatable :: Met_Proj_lon
+
+      ! Status variables for error-checking
+      logical :: Check_prereq_conditions            = .true.
+      logical :: CALLED_MR_Allocate_FullMetFileList = .false.
+      logical :: CALLED_MR_Read_Met_DimVars         = .false.
+      logical :: CALLED_MR_Set_CompProjection       = .false.
+      logical :: CALLED_MR_Initialize_Met_Grids     = .false.
+      logical :: CALLED_MR_Set_Met_Times            = .false.
 
       contains
 
@@ -416,7 +443,7 @@
        if(allocated(MR_MetStep_year               ))deallocate(MR_MetStep_year)
        if(allocated(MR_MetStep_month              ))deallocate(MR_MetStep_month)
        if(allocated(MR_MetStep_day                ))deallocate(MR_MetStep_day)
-       if(allocated(MR_MetStep_doY                ))deallocate(MR_MetStep_doY)
+       if(allocated(MR_MetStep_DOY                ))deallocate(MR_MetStep_DOY)
        if(allocated(MR_MetStep_Hour_Of_Day        ))deallocate(MR_MetStep_Hour_Of_Day)
        if(allocated(MR_iwind5_year                ))deallocate(MR_iwind5_year)
 
@@ -460,6 +487,9 @@
        if(associated(bilin_map_wgt                 ))deallocate(bilin_map_wgt)
        if(associated(amap_iwf25                    ))deallocate(amap_iwf25)
        if(associated(imap_iwf25                    ))deallocate(imap_iwf25)
+       if(associated(s_comp_sp                     ))deallocate(s_comp_sp)
+       if(associated(MR_zsurf                      ))deallocate(MR_zsurf)
+       if(associated(MR_jacob                      ))deallocate(MR_jacob)
 #else
        if(allocated(MR_windfiles                  ))deallocate(MR_windfiles)
        if(allocated(MR_dum2d_met_int              ))deallocate(MR_dum2d_met_int)
@@ -500,6 +530,9 @@
        if(allocated(bilin_map_wgt                 ))deallocate(bilin_map_wgt)
        if(allocated(amap_iwf25                    ))deallocate(amap_iwf25)
        if(allocated(imap_iwf25                    ))deallocate(imap_iwf25)
+       if(allocated(s_comp_sp                     ))deallocate(s_comp_sp)
+       if(allocated(MR_zsurf                      ))deallocate(MR_zsurf)
+       if(allocated(MR_jacob                      ))deallocate(MR_jacob)
 #endif
        if(allocated(MR_u_ER_metP                  ))deallocate(MR_u_ER_metP)
        if(allocated(MR_v_ER_metP                  ))deallocate(MR_v_ER_metP)
@@ -549,14 +582,72 @@
       integer,intent(in)      :: idf
       integer,intent(in)      :: iwfiles
 
+      integer :: i
+
+      ! Check for igrid and iwf consistancy
+      ! If we are using a known product (i.e. iwf > 0) then overide the provided igrid
+      if (iwf.eq.3) then      ! NARR3D NAM221 32 km North America files
+        MR_iGridCode = 221
+      elseif (iwf.eq.4) then  ! NARR3D NAM221 32 km North America files
+        MR_iGridCode = 221
+      elseif (iwf.eq.5) then  ! NAM216 AK 45km
+        MR_iGridCode = 216
+      elseif (iwf.eq.6) then  ! NAM Regional 90 km grid 104
+        MR_iGridCode = 104
+      elseif (iwf.eq.7) then  ! CONUS 212 40km
+        MR_iGridCode = 212
+      elseif (iwf.eq.8) then  ! CONUS 218 (12km)
+        MR_iGridCode = 218
+      elseif (iwf.eq.9) then  ! CONUS 215 (20km)
+        MR_iGridCode = 215
+      elseif (iwf.eq.10)then  ! NAM 242 11.25 km AK
+        MR_iGridCode = 242
+      elseif (iwf.eq.11)then  ! NAM 196 2.5 km HI
+        MR_iGridCode = 196
+      elseif (iwf.eq.12)then  ! NAM 198 5.953 km AK
+        MR_iGridCode = 198
+      elseif (iwf.eq.13)then  ! NAM 91 2.976 km AK
+        MR_iGridCode = 91
+      elseif (iwf.eq.20)then  ! GFS 0.5
+        MR_iGridCode = 4
+      elseif (iwf.eq.21)then  ! GFS 1.0
+        MR_iGridCode = 4
+      elseif (iwf.eq.22)then  ! GFS 0.25
+        MR_iGridCode = 193
+      elseif (iwf.eq.23)then  ! NCEP / DOE reanalysis 2.5 degree files
+        MR_iGridCode = 2
+      elseif (iwf.eq.24)then  ! NASA-MERRA-2 reanalysis 0.625/0.5 degree files
+        MR_iGridCode = 1024
+      elseif (iwf.eq.25)then  ! NCEP/NCAR reanalysis 2.5 degree files
+        MR_iGridCode = 2
+      elseif (iwf.eq.26)then  ! GFS 0.5 with 47 pressure levels
+        MR_iGridCode = 4
+      elseif (iwf.eq.27)then  ! NOAA-CIRES reanalysis 2.5 degree files
+        MR_iGridCode = 1027
+      elseif (iwf.eq.28)then  ! ECMWF Interim Reanalysis (ERA-Interim)
+        MR_iGridCode = 170
+      elseif (iwf.eq.29)then  ! JMA 25-year reanalysis
+        MR_iGridCode = 2
+      elseif (iwf.eq.31)then  ! Catania forecast
+        MR_iGridCode = 1031
+      elseif (iwf.eq.32)then  ! Air Force Weather Agency subcenter = 0
+        MR_iGridCode = 1032
+      elseif (iwf.eq.33)then  ! CCSM3.0 Community Atmosphere Model (CAM)
+        MR_iGridCode = 1033
+      elseif (iwf.eq.40)then  ! NASA-GEOS Cp
+        MR_iGridCode = 1040
+      elseif (iwf.eq.41)then  ! NASA-GEOS Np
+        MR_iGridCode = 1041
+      elseif (iwf.eq.50)then   ! WRF - output
+        MR_iGridCode = 1050
+      elseif (iwf.eq.51)then   ! SENAMHI - WRF 22km
+        MR_iGridCode = 1051
+      else
+        MR_iGridCode = igrid
+      endif
+
       MR_iwind              = iw
       MR_iwindformat        = iwf
-      if(igrid.eq.0)then
-        MR_iGridCode        = 1000+iwf ! Some grids are not in the NCEP list.  For those, reset igrid to
-                                       ! the iwindformat code + 1000 
-      else
-        MR_iGridCode          = igrid
-      endif
       MR_idataFormat        = idf
       MR_iwindfiles         = iwfiles
 
@@ -638,7 +729,7 @@
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "GFS 0.5"
-      elseif (MR_iwindformat.eq.21)then  ! Old format GFS 0.5-degree
+      elseif (MR_iwindformat.eq.21)then  ! GFS 1.0
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "GFS 0.5-degree"
@@ -646,14 +737,14 @@
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "GFS 0.25"
-      elseif (MR_iwindformat.eq.23)then  ! NCEP / doE reanalysis 2.5 degree files
+      elseif (MR_iwindformat.eq.23)then  ! NCEP / DOE reanalysis 2.5 degree files
         MR_Reannalysis = .true.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "NCEP / doE reanalysis 2.5 degree files"
-      elseif (MR_iwindformat.eq.24)then  ! NASA-MERRA reanalysis 1.25 degree files
+                  "NCEP / DOE reanalysis 2.5 degree files"
+      elseif (MR_iwindformat.eq.24)then  ! NASA-MERRA-2 reanalysis 0.625/0.5 degree files
         MR_Reannalysis = .true.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "NASA-MERRA reanalysis 1.25 degree files"
+                  "NASA-MERRA-2 reanalysis 0.625/0.5 degree files"
       elseif (MR_iwindformat.eq.25)then  ! NCEP/NCAR reanalysis 2.5 degree files
         MR_Reannalysis = .true.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
@@ -717,7 +808,7 @@
         stop 1
 #endif
       case(3)
-        write(MR_global_info,*)"            data format = ",MR_idataFormat,"GRIB"
+        write(MR_global_info,*)"            data format = ",MR_idataFormat,"GRIB2"
 #ifndef USEGRIB2
         write(MR_global_error,*)"MR ERROR: Met files are grib2, but MetReader was not"
         write(MR_global_error,*)"          compiled with grib2 support."
@@ -725,11 +816,11 @@
         stop 1
 #endif
       case(4)
-        write(MR_global_info,*)"            data format = ",MR_idataFormat,"HDF"
-#ifndef USEHDF
-        write(MR_global_error,*)"MR ERROR: Met files are hdf, but MetReader was not"
-        write(MR_global_error,*)"          compiled with hdf support."
-        write(MR_global_error,*)"          Please recompile MetReader with hdf support"
+        write(MR_global_info,*)"            data format = ",MR_idataFormat,"GRIB1"
+#ifndef USEGRIB1
+        write(MR_global_error,*)"MR ERROR: Met files are grib1, but MetReader was not"
+        write(MR_global_error,*)"          compiled with grib1 support."
+        write(MR_global_error,*)"          Please recompile MetReader with grib1 support"
         stop 1
 #endif
       case default
@@ -748,12 +839,19 @@
       endif
 
       allocate (MR_windfiles(MR_iwindfiles))
+      do i=1,MR_iwindfiles
+        write(MR_windfiles(i),'(130x)')
+      enddo
       allocate (MR_windfiles_nt_fullmet(MR_iwindfiles))
+      MR_windfiles_nt_fullmet(:)=0
       if(MR_idataFormat.eq.3)then
         allocate (MR_windfiles_Have_GRIB_index(MR_iwindfiles))
           ! This will be reset to true if the index files are found
         MR_windfiles_Have_GRIB_index = .false.
         allocate (MR_windfiles_GRIB_index(MR_iwindfiles))
+        do i=1,MR_iwindfiles
+          write(MR_windfiles_GRIB_index(i),'(130x)')
+        enddo
       endif
 
       if(MR_iwind.eq.1)then
@@ -784,16 +882,10 @@
           write(MR_global_error,*)"          MR_Snd_nt_fullmet = ",real(MR_iwindfiles)/real(MR_nSnd_Locs)
           stop 1
         endif
-        if(MR_nSnd_Locs.gt.1)then
-          write(MR_global_error,*)"MR ERROR: Currently, only one sonde location is supported."
-          stop 1
-        endif
-        if(MR_Snd_nt_fullmet.gt.1)then
-          write(MR_global_error,*)"MR ERROR: Currently, only one sonde time is supported."
-          stop 1
-        endif
       endif
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+      CALLED_MR_Allocate_FullMetFileList = .true.
 
       return
 
@@ -840,10 +932,19 @@
 
       integer      :: i
       logical      :: IsThere
+      character(len=130) :: tmp_str
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------      MR_Read_Met_DimVars                                   ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .false., &  ! CALLED_MR_Read_Met_DimVars
+                                 .false., &  ! CALLED_MR_Set_CompProjection
+                                 .false., &  ! CALLED_MR_Initialize_Met_Grids
+                                 .false.)    ! CALLED_MR_Set_Met_Times
 
 #ifdef USEPOINTERS
       ! Need to add a check here for the case where MR_windfiles is a pointer, but has not been filled
@@ -872,16 +973,28 @@
           write(MR_global_info,*)"            Reannalysis) are used, then MR_Read_Met_DimVars"
           write(MR_global_info,*)"            should be called with a start year.  This is needed"
           write(MR_global_info,*)"            to allocate the correct number of time steps per file."
-          write(MR_global_info,*)"            Setting MR_Comp_StartYear to 2017 for a non-leap year."
+          write(MR_global_info,*)"            Setting MR_Comp_StartYear to 2018 for a non-leap year."
           write(MR_global_info,*)"            However, MR_Comp_StartYear will be checked later to"
           write(MR_global_info,*)"            verify that the start year is not a leap year."
           write(MR_global_info,*)"            If there is an inconsistancy, the program will stop."
           write(MR_global_info,*)"            If MR_Comp_StartYear is changed to a leap year outside"
           write(MR_global_info,*)"            of MetReader, then the results will be incorrect."
-          MR_Comp_StartYear = 2017
+          MR_Comp_StartYear = 2018
         endif
 
       endif
+
+      ! Verify that the first windfile has been changed from it's initiallized value
+      tmp_str = MR_windfiles(1)
+      if(tmp_str(1:15).eq.'              ')then
+        write(MR_global_error,*)"MR ERROR: The array MR_windfiles appears to not be set."
+        write(MR_global_error,*)"          Please have the calling program write the names of"
+        write(MR_global_error,*)"          the windfiles to MR_windfiles(1:MR_iwindfiles)"
+        write(MR_global_error,*)" "
+        write(MR_global_error,*)"          Contents of the first slot is -",MR_windfiles(1),"-"
+        stop 1
+      endif
+
 
       ! Check the existance of the wind files
       write(MR_global_info,*)"  Verifying existance of windfiles:"
@@ -911,24 +1024,25 @@
 #endif
         elseif(MR_idataFormat.eq.3)then
 #ifdef USEGRIB2
-          call MR_Read_Met_DimVars_GRIB
-          call MR_Read_Met_Times_GRIB
+          call MR_Read_Met_DimVars_GRIB2
+          call MR_Read_Met_Times_GRIB2
 #endif
         elseif(MR_idataFormat.eq.4)then
-#ifdef USEHDF
-          !call MR_Read_Met_DimVars_HDF
+#ifdef USEGRIB1
+          !call MR_Read_Met_DimVars_GRIB1
+          !call MR_Read_Met_Times_GRIB1
 #endif
-          write(MR_global_error,*)"MR ERROR: HDF reader not yet implemented"
-          stop 1
         else
           write(MR_global_error,*)"MR ERROR: Unknown MR_idataFormat:",MR_idataFormat
           stop 1
         endif
       case default
-        write(MR_global_error,*)"MR ERROR:  MR_iwind not 1:5."
+        write(MR_global_error,*)"MR ERROR:  MR_iwind not 1-4."
         write(MR_global_error,*)"           Exiting in MR_Read_Met_DimVars"
         stop 1
       end select
+
+      CALLED_MR_Read_Met_DimVars = .true.
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
@@ -1009,11 +1123,17 @@
         endif
       endif
 
+      !to do: perform a sanity check on these projection parameters
+      ! take a lon/lat, project, then inverse project and check
+
+      CALLED_MR_Set_CompProjection = .true.
+
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       return
 
       end subroutine MR_Set_CompProjection
+
 
 !##############################################################################
 !
@@ -1030,7 +1150,7 @@
 !
 !     In some cases, it is useful to have velocity values saved within MetReader.
 !     For example, velocities might be read to calculate diffusivities, stored
-!     locally, then reused last for advection.  If the calling program sets the
+!     locally, then reused later for advection.  If the calling program sets the
 !     variable MR_Save_Velocities=.true. , then space is allocated for the local
 !     copies of velocity.
 !
@@ -1064,12 +1184,34 @@
       write(MR_global_production,*)"----------      MR_Initialize_Met_Grids                               ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Set_CompProjection          (this check is needed)
+                                 .false., &  ! CALLED_MR_Initialize_Met_Grids
+                                 .false.)    ! CALLED_MR_Set_Met_Times
       nx_comp = nx
       ny_comp = ny
       nz_comp = nz
-      allocate(x_comp_sp(nx_comp)); x_comp_sp = dumx_sp
-      allocate(y_comp_sp(ny_comp)); y_comp_sp = dumy_sp
-      allocate(z_comp_sp(nz_comp)); z_comp_sp = dumz_sp
+      allocate(x_comp_sp(nx_comp))
+      allocate(y_comp_sp(ny_comp))
+      allocate(z_comp_sp(nz_comp))
+      if(MR_useCompGrid.eqv..false.)then
+        ! This is the case where we will not be interpolating to a computational grid, but want access
+        ! to the full met grid.  All parameters to this subroutine should have been dummy values
+        x_comp_sp(1)  = x_fullmet_sp(1)
+        x_comp_sp(nx) = x_fullmet_sp(nx_fullmet)
+        y_comp_sp(1)  = min(y_fullmet_sp(1),y_fullmet_sp(ny_fullmet))
+        y_comp_sp(ny) = max(y_fullmet_sp(1),y_fullmet_sp(ny_fullmet))
+        z_comp_sp(1)  = 0.0_4
+        z_comp_sp(nz) = 1.1_4*MR_Max_geoH_metP_predicted
+      else
+        x_comp_sp = dumx_sp
+        y_comp_sp = dumy_sp
+        z_comp_sp = dumz_sp
+      endif
+
       dx_comp = x_comp_sp(2) - x_comp_sp(1)
       dy_comp = abs(y_comp_sp(2) - y_comp_sp(1))
       MaxZ_comp_sp = maxval(z_comp_sp)
@@ -1080,7 +1222,7 @@
       case(1)   ! if we're using a 1-D wind sounding
         call MR_Set_MetComp_Grids_ASCII_1d
       case(2)
-        !call Set_MetComp_Grids_3dascii
+        !call MR_Set_MetComp_Grids_ASCII_3d
       case (3:5)
         ! Now that we have the full grids defined in MR_Read_Met_DimVars_netcdf,
         ! calculate the subgrid needed for the simulation
@@ -1133,9 +1275,49 @@
         enddo
       endif
 
+      CALLED_MR_Initialize_Met_Grids = .true.
+
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       end subroutine MR_Initialize_Met_Grids
+
+!##############################################################################
+!
+!     MR_Set_SigmaAlt_Scaling
+
+!##############################################################################
+
+      subroutine MR_Set_SigmaAlt_Scaling(nx,ny,nz, &
+                                         dum_sp, dumz_sp, dumxy1_sp, &
+                                         dum_int)
+
+      implicit none
+
+      integer      ,intent(in) :: nx,ny,nz
+      real(kind=sp),intent(in) :: dum_sp
+      real(kind=sp),intent(in) :: dumz_sp(nz)
+      real(kind=sp),intent(in) :: dumxy1_sp(nx,ny)
+      integer      ,intent(in) :: dum_int
+
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"----------      MR_Set_SigmaAlt_Scaling                               ----------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+
+      MR_use_SigmaAlt   = .true.
+      MR_ztop           = dum_sp
+      MR_ZScaling_ID    = dum_int
+      allocate(s_comp_sp(nz));     s_comp_sp(1:nz) = dumz_sp(1:nz)
+      allocate(MR_zsurf(nx,ny));   MR_zsurf(1:nx,1:ny) = dumxy1_sp(1:nx,1:ny)
+      allocate(MR_jacob(nx,ny))
+      if (MR_ZScaling_ID.eq.2)then
+        MR_jacob(1:nx,1:ny) = MR_ztop - MR_zsurf(1:nx,1:ny)
+      else
+        MR_jacob(1:nx,1:ny) = 1.0_sp
+      endif
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+      end subroutine MR_Set_SigmaAlt_Scaling
 
 !##############################################################################
 !
@@ -1144,8 +1326,6 @@
 !     This subroutine opens each file of the MR_windfile list, determines the hour
 !     of each time step and logs the files/time-steps needed to bracket the
 !     simulation duration.
-!
-!     This subroutine is called once from Initialize_Met_Grids.
 !
 !     Sets: MetStep_File(i=1:MR_MetSteps_Total)   :: contains file name for met step i
 !           MetStep_findex(i=1:MR_MetSteps_Total) :: contains the index of the file in
@@ -1178,15 +1358,32 @@
       logical :: Found_First_Step
       logical :: Found_Last_Step
       integer :: nMetSteps_Comp
-      real(kind=8) :: met_t1,met_dt1
+      real(kind=8) :: StepInterval
+      real(kind=8) :: met_t1,met_t2,met_dt1
       logical      :: prestep, poststep
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------      MR_Set_Met_Times                                      ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
-      MR_Comp_StartHour        = eStartHour
-      MR_Comp_Time_in_hours    = Duration
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .false., &  ! CALLED_MR_Set_CompProjection
+                                 .false., &  ! CALLED_MR_Initialize_Met_Grids
+                                 .false.)    ! CALLED_MR_Set_Met_Times
+
+      if(MR_useCompTime.eqv..false.)then
+        ! This is for the case where only one file is provided and steps will be accessed
+        ! through the file step index.  e.g. used for evaluating windfiles
+        ! Here, we assign the start hour to the first step and the duration with the last step
+        MR_Comp_StartHour     = MR_windfile_starthour(1)+MR_windfile_stephour(1,1)
+        MR_Comp_Time_in_hours = MR_windfile_stephour(1,nt_fullmet)
+      else
+        MR_Comp_StartHour        = eStartHour
+        MR_Comp_Time_in_hours    = Duration
+      endif
       MR_Comp_StartYear        = HS_YearOfEvent(MR_Comp_StartHour,MR_BaseYear,MR_useLeap)
 
       ! Now we want to loop through all the steps of each windfile and find the
@@ -1194,7 +1391,41 @@
       !  First, define MR_Comp_StartHour if we are running a forecast run
 
       ! Now is a good time to check to make sure the MR_Comp_StartHour is within
-      ! the range of data
+      !  the range of data
+      ! First we need the step interval for the first step
+      ! This is for checking pre- and post-steps
+      if(MR_iwind.eq.1)then
+        if(MR_iwindformat.eq.1)then
+          ! 1-D ASCII
+          if(MR_Snd_nt_fullmet.eq.1)then
+            StepInterval = 1000.0_8 ! some large number
+          else
+            met_t1 = MR_windfile_starthour(1)
+            met_t2 = MR_windfile_starthour(MR_nSnd_Locs+1)
+            StepInterval = met_t2 - met_t1
+          endif
+        elseif(MR_iwindformat.eq.2)then
+          ! 1-D Radiosonde
+          StepInterval = 12.0_8
+        endif
+      else
+        ! For all other cases, just check the arrays read in MR_Read_Met_DimVars
+        met_t1  = MR_windfile_starthour(1)+MR_windfile_stephour(1,1)
+        if(nt_fullmet.gt.1)then
+            ! If there are multiple steps per file, use the second step
+          met_t2 = MR_windfile_starthour(1)+MR_windfile_stephour(1,2)
+        elseif(MR_iwindfiles.gt.1)then
+            ! If only 1 step/file, use the next file (if present)
+          met_t2 = MR_windfile_starthour(1)+MR_windfile_stephour(2,1)
+        else
+          !
+          write(MR_global_info,*)"WARNING: Only one time step available."
+          write(MR_global_info,*)"         Setting interval step to 1000.0"
+          met_t2 = met_t1 + 1000.0
+        endif
+        StepInterval = met_t2 - met_t1
+      endif
+
       !   Checking if a prestep is needed
       if(MR_iwind.eq.1.and.MR_iwindformat.eq.1)then
         ! For the ASCII profile cases (not the radiosonde), hours are given as offset
@@ -1202,18 +1433,20 @@
         write(MR_global_info,*)"Note:  The hours value in 1d ascii profiles are interpreted as offset"
         write(MR_global_info,*)"       hours.  Shifting the file time to reflect the requested start"
         write(MR_global_info,*)"       time plus offset."
-        MR_windfile_starthour = MR_windfile_starthour + MR_Comp_StartHour
+        do i=1,MR_Snd_nt_fullmet
+          MR_windfile_starthour(i) = MR_windfile_starthour(i) + MR_Comp_StartHour
+        enddo
       endif
       met_t1  = MR_windfile_starthour(1)+MR_windfile_stephour(1,1)
-      met_dt1 = MR_ForecastInterval
+      met_dt1 = StepInterval
       if(MR_Comp_StartHour.lt.met_t1)then
         ! Start time requested is before that available, check if we can extrapolate
         if(MR_Comp_StartHour.ge.met_t1-met_dt1)then
           write(MR_global_info,*)"WARNING: Start time is before the first time step"
           write(MR_global_info,*)"         However, it is within one interval so we will"
           write(MR_global_info,*)"         apply the value at MR_windfile_starthour(1)."
-          write(MR_global_info,*)"         Using a time step interval of ",MR_ForecastInterval
-          if(MR_ForecastInterval.gt.720.0_dp)then
+          write(MR_global_info,*)"         Using a time step interval of ",StepInterval
+          if(StepInterval.gt.720.0_dp)then
             if(MR_iwind.eq.1.and.MR_iwindformat.eq.1.and.nt_fullmet.eq.1)then
               write(MR_global_info,*)"         Note: This interval is set high since only one"
               write(MR_global_info,*)"               sonde file was provided."
@@ -1231,14 +1464,14 @@
       endif
       !   Checking if a poststep is needed
       met_t1  = MR_windfile_starthour(MR_iwindfiles)+MR_windfile_stephour(MR_iwindfiles,nt_fullmet)
-      met_dt1 = MR_ForecastInterval
+      met_dt1 = StepInterval
       if(MR_Comp_StartHour+MR_Comp_Time_in_hours.ge.met_t1)then
         ! Start time requested is after that available, check if we can extrapolate
         if(MR_Comp_StartHour+MR_Comp_Time_in_hours.le.met_t1+met_dt1)then
           write(MR_global_info,*)"WARNING: End time is at or after the last time step."
           write(MR_global_info,*)"         However, it is within one interval so we will"
           write(MR_global_info,*)"         apply the value at MR_windfile_starthour(MR_iwindfiles)"
-          if(MR_ForecastInterval.gt.720.0_dp)then
+          if(StepInterval.gt.720.0_dp)then
             if(MR_iwind.eq.1.and.MR_iwindformat.eq.1.and.nt_fullmet.eq.1)then
               write(MR_global_info,*)"         Note: This interval is set high since only one"
               write(MR_global_info,*)"               sonde file was provided."
@@ -1248,6 +1481,11 @@
         else
           write(MR_global_error,*)"MR ERROR: End time is after the last available data and"
           write(MR_global_error,*)"       cannot be extrapolated."
+          write(MR_global_error,*)"  MR_Comp_StartHour    = ",MR_Comp_StartHour
+          write(MR_global_error,*)"  MR_Comp_Time_in_hours= ",MR_Comp_Time_in_hours
+          write(MR_global_error,*)"  met_t1               = ",met_t1
+          write(MR_global_error,*)"  met_dt1              = ",met_dt1
+
           stop 1
         endif
       else
@@ -1257,14 +1495,14 @@
 
       ! Loop through all the files and steps and count how many are needed to bracket the time
       ! needed (MR_Comp_StartHour -> MR_Comp_StartHour+MR_Comp_Time_in_hours)
-      ! Note: If preset or poststep is needed, istep will be incremented accordingly
+      ! Note: If prestep or poststep is needed, istep will be incremented accordingly
       ! Once we know the number of steps needed, we will allocate space, then fill the variables
       ! with just the step info needed
       write(MR_global_info,*)'    File num  | Step in file  |  stephour   |   SimStartHour   | nMetStep | Note'
       if(prestep)then
         Found_First_Step = .true.
         istep = 1
-        stephour = MR_windfile_starthour(1) + MR_windfile_stephour(1,1) - MR_ForecastInterval
+        stephour = MR_windfile_starthour(1) + MR_windfile_stephour(1,1) - StepInterval
         write(MR_global_info,150)1,1,stephour,MR_Comp_StartHour,istep,"Prestep before MR_Comp_StartHour "
       else
         Found_First_Step = .false.
@@ -1279,13 +1517,21 @@
           if(stephour.lt.MR_Comp_StartHour)then
             Found_First_Step = .false.
             istep = 1
-            write(MR_global_info,150)iw,iwstep,stephour,MR_Comp_StartHour,istep,"Before or at MR_Comp_StartHour."
+            if(MR_windfiles_nt_fullmet(iw).lt.36)then
+              ! This suppresses outputing the windfile step info for the files that contain a year's
+              ! worth of data (NCEP 2.5, etc)
+              write(MR_global_info,150)                    &
+                iw,iwstep,stephour,MR_Comp_StartHour,istep,&
+                "Before or at MR_Comp_StartHour."
+            endif
           else
             !  Otherwise, increment index if we are still in the needed time bracket
             if(.not.Found_Last_Step)then
               Found_First_Step = .true.
               istep = istep + 1
-              write(MR_global_info,150)iw,iwstep,stephour,MR_Comp_StartHour,istep,"After MR_Comp_StartHour "
+              write(MR_global_info,150)                    &
+                iw,iwstep,stephour,MR_Comp_StartHour,istep,&
+                "After MR_Comp_StartHour "
             endif
           endif
 
@@ -1294,8 +1540,12 @@
             if(.not.Found_Last_Step)nMetSteps_Comp=istep
             Found_Last_Step = .true.
           endif
-          if(Found_Last_Step)  &
-            write(MR_global_info,150)iw,iwstep,stephour,MR_Comp_StartHour,nMetSteps_Comp,"At or after END OF SIM  "
+          if(Found_Last_Step &
+             .and.MR_windfiles_nt_fullmet(iw).lt.36)then ! This condition suppressess output for NCEP 2.5
+              write(MR_global_info,150)                    &
+                iw,iwstep,stephour,MR_Comp_StartHour,istep,&
+                "At or after END OF SIM  "
+          endif
         enddo
       enddo
       ! If we went through all the steps and didn't find the last step, and if poststep=T, then
@@ -1305,7 +1555,7 @@
           nMetSteps_Comp = istep+1
           stephour = MR_windfile_starthour(MR_iwindfiles) + &
                        MR_windfile_stephour(MR_iwindfiles,MR_windfiles_nt_fullmet(MR_iwindfiles)) + &
-                       MR_ForecastInterval
+                       StepInterval
           write(MR_global_info,150)MR_iwindfiles,1,stephour,MR_Comp_StartHour,nMetSteps_Comp,"Poststep after END OF SIM  "
 
         else
@@ -1333,7 +1583,7 @@
       allocate(MR_MetStep_year(MR_MetSteps_Total))
       allocate(MR_MetStep_month(MR_MetSteps_Total))
       allocate(MR_MetStep_day(MR_MetSteps_Total))
-      allocate(MR_MetStep_doY(MR_MetSteps_Total))
+      allocate(MR_MetStep_DOY(MR_MetSteps_Total))
       allocate(MR_MetStep_Hour_Of_Day(MR_MetSteps_Total))
       allocate(MR_iwind5_year(MR_MetSteps_Total))
 
@@ -1342,7 +1592,7 @@
       if(prestep)then
         Found_First_Step = .true.
         istep = 1
-        stephour = MR_windfile_starthour(1) + MR_windfile_stephour(1,1) - MR_ForecastInterval
+        stephour = MR_windfile_starthour(1) + MR_windfile_stephour(1,1) - StepInterval
         MR_MetStep_File(istep)            = trim(adjustl(MR_windfiles(1)))
         MR_MetStep_findex(istep)          = 1
         MR_MetStep_tindex(istep)          = 1
@@ -1350,7 +1600,7 @@
         MR_MetStep_year(istep)            = HS_YearOfEvent(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
         MR_MetStep_month(istep)           = HS_MonthOfEvent(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
         MR_MetStep_day(istep)             = HS_DayOfEvent(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
-        MR_MetStep_doY(istep)             = HS_DayOfYear(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
+        MR_MetStep_DOY(istep)             = HS_DayOfYear(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
         MR_MetStep_Hour_Of_Day(istep)     = real(HS_HourOfDay(real(stephour,kind=dp),MR_BaseYear,MR_useLeap),kind=sp)
         MR_iwind5_year(istep)             = MR_Comp_StartYear
       else
@@ -1382,7 +1632,7 @@
             MR_MetStep_year(istep)            = HS_YearOfEvent(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
             MR_MetStep_month(istep)           = HS_MonthOfEvent(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
             MR_MetStep_day(istep)             = HS_DayOfEvent(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
-            MR_MetStep_doY(istep)             = HS_DayOfYear(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
+            MR_MetStep_DOY(istep)             = HS_DayOfYear(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
             MR_MetStep_Hour_Of_Day(istep)     = real(HS_HourOfDay(real(stephour,kind=dp),MR_BaseYear,MR_useLeap),kind=sp)
             MR_iwind5_year(istep)             = MR_MetStep_year(istep)
           endif
@@ -1398,7 +1648,7 @@
       if(.not.Found_Last_Step)then
         if(poststep)then
           istep = istep+1
-          stephour = MR_MetStep_Hour_since_baseyear(istep-1) + MR_ForecastInterval
+          stephour = MR_MetStep_Hour_since_baseyear(istep-1) + StepInterval
           MR_MetStep_File(istep)            = MR_MetStep_File(istep-1)
           MR_MetStep_findex(istep)          = MR_MetStep_findex(istep-1)
           MR_MetStep_tindex(istep)          = MR_MetStep_tindex(istep-1)
@@ -1406,7 +1656,7 @@
           MR_MetStep_year(istep)            = HS_YearOfEvent(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
           MR_MetStep_month(istep)           = HS_MonthOfEvent(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
           MR_MetStep_day(istep)             = HS_DayOfEvent(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
-          MR_MetStep_doY(istep)             = HS_DayOfYear(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
+          MR_MetStep_DOY(istep)             = HS_DayOfYear(real(stephour,kind=dp),MR_BaseYear,MR_useLeap)
           MR_MetStep_Hour_Of_Day(istep)     = real(HS_HourOfDay(real(stephour,kind=dp),MR_BaseYear,MR_useLeap),kind=sp)
           MR_iwind5_year(istep)             = MR_MetStep_year(istep)
         else
@@ -1428,12 +1678,12 @@
         iw       = MR_MetStep_findex(istep)
         iwstep   = MR_MetStep_tindex(istep)
         stephour = MR_MetStep_Hour_since_baseyear(istep)
-        write(MR_global_info,*)istep,trim(adjustl(MR_MetStep_File(istep))),iw,iwstep,real(stephour,kind=4)
+        write(MR_global_info,*)istep,trim(adjustl(MR_MetStep_File(istep))),iw,iwstep,real(stephour,kind=4),&
+                               real(MR_MetStep_Interval(istep),kind=4)
       enddo
 
- !     MAKE SURE THE WIND MODEL TIME WINdoW COVERS THE ENTIRE SUMULATION TIME
+ !     MAKE SURE THE WIND MODEL TIME WINDOW COVERS THE ENTIRE SUMULATION TIME
       write(MR_global_info,99)
-      !write(MR_global_log ,99)
 99    format(/,4x,'Making sure the mesoscale model time covers the simulation time . . . ')
       if (MR_MetStep_Hour_since_baseyear(1).gt.MR_Comp_StartHour) then
         write(MR_global_error,*)"MR ERROR:  Wind data starts after SimStartHour"
@@ -1447,7 +1697,7 @@
         !write(MR_global_log ,101)
 !101     format(4x,'Error.  The model starts after the first eruption. Program stopped.')
         stop 1
-      else if (MR_MetStep_Hour_since_baseyear(MR_MetSteps_Total).lt.(MR_Comp_StartHour+MR_Comp_Time_in_hours)) then
+      elseif (MR_MetStep_Hour_since_baseyear(MR_MetSteps_Total).lt.(MR_Comp_StartHour+MR_Comp_Time_in_hours)) then
         write(MR_global_error,*)"MR ERROR:  Last met time is earlier than simulation time"
         write(MR_global_error,*)"MR_MetSteps_Total     = ",MR_MetSteps_Total
         write(MR_global_error,*)"Last time step       = ",MR_MetStep_Hour_since_baseyear(MR_MetSteps_Total)
@@ -1463,6 +1713,8 @@
       write(MR_global_info,103)
       !write(MR_global_log ,103)
 103   format(4x,'Good.  It does.',/)
+
+      CALLED_MR_Set_Met_Times = .true.
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
@@ -1509,6 +1761,13 @@
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"     Reading HGT array for istep = ",istep
 
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .false., &  ! CALLED_MR_Set_CompProjection
+                                 .false., &  ! CALLED_MR_Initialize_Met_Grids
+                                 .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
       ivar = 1 ! HGT
       if(first_time)then
         if(MR_idataFormat.eq.1)then
@@ -1519,11 +1778,11 @@
 #endif
         elseif(MR_idataFormat.eq.3)then
 #ifdef USEGRIB2
-          call MR_Read_MetP_Variable_GRIB(ivar,istep)
+          call MR_Read_MetP_Variable_GRIB2(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.4)then
-#ifdef USEHDF
-          !call MR_Read_MetP_Variable_HDF(ivar,istep)
+#ifdef USEGRIB1
+          !call MR_Read_MetP_Variable_GRIB1(ivar,istep)
 #endif
         endif
         MR_geoH_metP_last(:,:,:) = MR_dum3d_metP(:,:,:)
@@ -1542,11 +1801,11 @@
 #endif
       elseif(MR_idataFormat.eq.3)then
 #ifdef USEGRIB2
-        call MR_Read_MetP_Variable_GRIB(ivar,istep+1)
+        call MR_Read_MetP_Variable_GRIB2(ivar,istep+1)
 #endif
       elseif(MR_idataFormat.eq.4)then
-#ifdef USEHDF
-        !call MR_Read_MetP_Variable_HDF(ivar,istep+1)
+#ifdef USEGRIB1
+        !call MR_Read_MetP_Variable_GRIB1(ivar,istep+1)
 #endif
       endif
       MR_geoH_metP_next(:,:,:) = MR_dum3d_metP(:,:,:)
@@ -1601,6 +1860,14 @@
       !write(MR_global_production,*)"----------      MR_Read_3d_MetP_Variable                              ----------"
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .false., &  ! CALLED_MR_Set_CompProjection
+                                 .false., &  ! CALLED_MR_Initialize_Met_Grids
+                                 .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
+
       select case (MR_iwind)
       case(1)   ! if we're using a 1-D wind sounding
         call MR_Read_MetP_Variable_ASCII_1d(ivar,istep)
@@ -1613,11 +1880,11 @@
 #endif
         elseif(MR_idataFormat.eq.3)then
 #ifdef USEGRIB2
-          call MR_Read_MetP_Variable_GRIB(ivar,istep)
+          call MR_Read_MetP_Variable_GRIB2(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.4)then
-#ifdef USEHDF
-          !call MR_Read_MetP_Variable_HDF(ivar,istep)
+#ifdef USEGRIB1
+          !call MR_Read_MetP_Variable_GRIB1(ivar,istep)
 #endif
         endif
 
@@ -1659,10 +1926,19 @@
       integer :: i,j,k
       integer :: kc,knext
       integer :: np_fully_padded
+      real(kind=sp),dimension(:),allocatable :: dumVertCoord_sp
 
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
       !write(MR_global_production,*)"----------      MR_Read_3d_MetH_Variable                              ----------"
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Set_CompProjection          (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Initialize_Met_Grids        (this check is needed)
+                                 .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
 
       np_fully_padded = np_fullmet+1+np_fullmet_pad
 
@@ -1677,6 +1953,7 @@
       allocate(  z_col_metP(np_fully_padded))
       allocate(var_col_metP(np_fully_padded))
       allocate(var_col_metH(nz_comp))
+      allocate(dumVertCoord_sp(nz_comp))
 
 !     CREATE 1-D ARRAYS IN P, AND REGRID THEM INTO 1-D ARRAYS IN z
       do i=1,nx_submet
@@ -1733,11 +2010,20 @@
             endif
           endif
 
+
+          if (MR_use_SigmaAlt)then
+              ! this recovers the real-world z coordinate from the sigma level and topography
+            dumVertCoord_sp(1:nz_comp) = MR_zsurf(i,j) + &
+                                           s_comp_sp(1:nz_comp) * MR_jacob(i,j)
+          else
+            dumVertCoord_sp(1:nz_comp) = z_comp_sp(1:nz_comp)
+          endif
+
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           !   Interpolate these values to a regular grid with
           !   spacing equal to the simulation grid
-          call MR_Regrid_P2H_linear(np_fullmet+2, z_col_metP,  var_col_metP, & 
-                                    nz_comp,       z_comp_sp,  var_col_metH)
+          call MR_Regrid_P2H_linear(np_fullmet+2, z_col_metP,       var_col_metP, & 
+                                    nz_comp,      dumVertCoord_sp,  var_col_metH)
 
           MR_dum3d_metH(i,j,:) = var_col_metH
 
@@ -1761,7 +2047,7 @@
 !       Read_3d_MetH_Variable                   (gets variable on Met_x, Met_y, Comp_z)
 !        -> Read_3d_MetP_Variable               (gets variable on native Met subgrid)
 !            -> Read_3d_MetP_Variable_[format]  (direct read of variable in
-!                                                whatever format : nc,hdf,grib,ascii)
+!                                                whatever format : nc,grib1/2,ascii)
 !
 !     Takes as input :: ivar  :: specifies which variable to read
 !                       istep :: specified the met step
@@ -1785,6 +2071,14 @@
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
       !write(MR_global_production,*)"----------      MR_Read_3d_Met_Variable_to_CompGrid                   ----------"
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Set_CompProjection          (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Initialize_Met_Grids        (this check is needed)
+                                 .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
 
         ! First get the variable on the height coordinate
       call MR_Read_3d_MetH_Variable(ivar,istep)
@@ -1824,10 +2118,10 @@
           MR_dum3d_compH(:,:,k) = MR_dum3d_metH(1,1,k)
           cycle
         endif
-
+  
         call MR_Regrid_Met2Comp(nx_submet,ny_submet, MR_dum3d_metH(1:nx_submet,1:ny_submet,k),       &
                                 nx_comp,  ny_comp,   tmp_regrid2d_sp(1:nx_comp,1:ny_comp))
-
+  
         do i = 1,nx_comp
           do j = 1,ny_comp
             if(isnan(tmp_regrid2d_sp(i,j)))tmp_regrid2d_sp(i,j)=0.0_sp
@@ -1835,6 +2129,19 @@
         enddo
         MR_dum3d_compH(:,:,k) = tmp_regrid2d_sp(:,:)
       enddo
+
+      if (MR_use_SigmaAlt) then
+        ! If we are using sigma-altitude coordinates, then MR_dum3d_compH is returned on the
+        ! s-grid, but we might need to scale the variable
+        if(ivar.eq.4)then
+          ! vertical velocity is scaled by jacobian
+          do i=1,nx_comp
+            do j=1,ny_comp
+              MR_dum3d_compH(i,j,:)=MR_dum3d_compH(i,j,:)/MR_jacob(i,j)
+            enddo
+          enddo
+        endif
+      endif
 
       deallocate(tmp_regrid2d_sp)
 
@@ -1871,6 +2178,14 @@
       !write(MR_global_production,*)"----------      MR_Read_2d_Met_Variable                               ----------"
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .false., &  ! CALLED_MR_Set_CompProjection
+                                 .false., &  ! CALLED_MR_Initialize_Met_Grids
+                                 .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
+
       select case (MR_iwind)
       case(1)   ! if we're using a 1-D wind sounding
         !call Read_1d_windfile
@@ -1883,11 +2198,11 @@
 #endif
         elseif(MR_idataFormat.eq.3)then
 #ifdef USEGRIB2
-          call MR_Read_MetP_Variable_GRIB(ivar,istep)
+          call MR_Read_MetP_Variable_GRIB2(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.4)then
-#ifdef USEHDF
-          !call MR_Read_MetP_Variable_HDF(ivar,istep)
+#ifdef USEGRIB1
+          !call MR_Read_MetP_Variable_GRIB1(ivar,istep)
 #endif
         endif
       case default
@@ -1909,7 +2224,7 @@
 !       Read_2d_Met_Variable                   (gets variable on Met_x, Met_y)
 !          -> Read_Met_Variable_[format]       (direct read of variable in
 !                                                whatever format :
-!                                                nc,hdf,grib,ascii)
+!                                                nc,grib1/2,ascii)
 !
 !     Takes as input :: ivar  :: specifies which variable to read
 !                       istep :: specified the met step
@@ -1932,6 +2247,14 @@
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
       !write(MR_global_production,*)"----------      MR_Read_2d_Met_Variable_to_CompGrid                   ----------"
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Set_CompProjection          (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Initialize_Met_Grids        (this check is needed)
+                                 .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
 
       call MR_Read_2d_Met_Variable(ivar,istep)
 
@@ -1983,6 +2306,14 @@
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
       !write(MR_global_production,*)"----------      MR_Rotate_UV_GR2ER_Met                                ----------"
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Set_CompProjection          (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Initialize_Met_Grids        (this check is needed)
+                                 .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
 
       ! Rotate wind vectors on the MetP grid for NARR cases with Map_Case = 2 (both projected)
       ! or rotate to LL on MetP grid for Map_Case = 4 (Met=proj, Comp=LL)
@@ -2065,6 +2396,14 @@
       !write(MR_global_production,*)"----------      MR_Rotate_UV_ER2GR_Met                                ----------"
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Set_CompProjection          (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Initialize_Met_Grids        (this check is needed)
+                                 .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
+
       if(Map_Case.eq.3)then
         ! Met grid is natively LL and Comp grid is projected
         ! Fill the y velocities to spare array (comp_2)
@@ -2140,6 +2479,14 @@
       !write(MR_global_production,*)"----------      MR_Regrid_MetP_to_CompGrid                            ----------"
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Set_CompProjection          (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Initialize_Met_Grids        (this check is needed)
+                                 .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
+
       ! convert MR_dum3d_MetP to MR_dum3d_metH
       call MR_Regrid_MetP_to_MetH(istep)
 
@@ -2203,6 +2550,14 @@
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
       !write(MR_global_production,*)"----------      MR_Regrid_MetP_to_MetH                                ----------"
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Set_CompProjection          (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Initialize_Met_Grids        (this check is needed)
+                                 .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
 
       ! Now remap from
       !    nx_submet,ny_submet,np_fullmet to
@@ -2292,6 +2647,14 @@
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
       !write(MR_global_production,*)"----------      MR_Regrid_Met2d_to_Comp2d                             ----------"
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Set_CompProjection          (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Initialize_Met_Grids        (this check is needed)
+                                 .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
 
         ! Now we have MR_dum3d_metH; interpolate onto computational grid
         !  Since MR_dum3d_metH and MR_dum3d_compH have the same z-coordinate, we only
@@ -2615,104 +2978,219 @@
 !
 !##############################################################################
 
-        subroutine MR_QC_3dvar(              &
-                   nx_max,ny_max,nz1_max, &
-                   z_array_sp,               &
-                   nz2_max,               &
-                   dum_array_sp,             &
-                   fill_val_sp,              &
-                   bc_low_sp, bc_high_sp)
+      subroutine MR_QC_3dvar(              &
+                 nx_max,ny_max,nz1_max, &
+                 z_array_sp,               &
+                 nz2_max,               &
+                 dum_array_sp,             &
+                 fill_val_sp,              &
+                 bc_low_sp, bc_high_sp)
 
 
-        implicit none
+      implicit none
 
-        integer, parameter :: sp        = 4 ! single precision
-        integer, parameter :: dp        = 8 ! double precision
+      integer, parameter :: sp        = 4 ! single precision
+      integer, parameter :: dp        = 8 ! double precision
 
-        integer               ,intent(in)    :: nx_max,ny_max,nz1_max
-        real(kind=sp)         ,intent(in)    :: z_array_sp(nx_max,ny_max,nz1_max)
-        integer               ,intent(in)    :: nz2_max
-        real(kind=sp)         ,intent(inout) :: dum_array_sp(nx_max,ny_max,nz2_max)
-        real(kind=sp)         ,intent(in)    :: fill_val_sp
-        real(kind=sp),optional,intent(in)    :: bc_low_sp
-        real(kind=sp),optional,intent(in)    :: bc_high_sp
+      integer               ,intent(in)    :: nx_max,ny_max,nz1_max
+      real(kind=sp)         ,intent(in)    :: z_array_sp(nx_max,ny_max,nz1_max)
+      integer               ,intent(in)    :: nz2_max
+      real(kind=sp)         ,intent(inout) :: dum_array_sp(nx_max,ny_max,nz2_max)
+      real(kind=sp)         ,intent(in)    :: fill_val_sp
+      real(kind=sp),optional,intent(in)    :: bc_low_sp
+      real(kind=sp),optional,intent(in)    :: bc_high_sp
 
-        logical,dimension(nz1_max) :: IsFillValue
+      logical,dimension(nz1_max) :: IsFillValue
 
-        integer ::  i,j,k,kk,kkk,klow,khigh
+      integer ::  i,j,k,kk,kkk,klow,khigh
 
-        do i=1,nx_max
-          do j=1,ny_max
-            ! find all fill values in the column
-            IsFillValue = .false.
-            do k=1,nz2_max
-              if(isnan(dum_array_sp(i,j,k)).or.      &  ! Some windfiles use NaN's for fill values
-                 dum_array_sp(i,j,k).eq.fill_val_sp) &  ! Others have a specific number for fill
-                     IsFillValue(k) = .true.
+      do i=1,nx_max
+        do j=1,ny_max
+          ! find all fill values in the column
+          IsFillValue = .false.
+          do k=1,nz2_max
+            if(isnan(dum_array_sp(i,j,k)).or.      &  ! Some windfiles use NaN's for fill values
+               dum_array_sp(i,j,k).eq.fill_val_sp) &  ! Others have a specific number for fill
+                   IsFillValue(k) = .true.
+          enddo
+
+          ! Set lower BC if requested and needed
+          if(IsFillValue(1).and.present(bc_low_sp)) &
+              dum_array_sp(i,j,1) = bc_low_sp
+
+          if(nz2_max.gt.1)then
+            ! Set upper BC if requested and needed
+            if(IsFillValue(nz2_max).and.present(bc_high_sp)) &
+                dum_array_sp(i,j,nz2_max) = bc_high_sp
+
+            ! Now find the lowest non-Fill value
+            do klow=1,nz2_max
+              if(.not.IsFillValue(klow))exit
+            enddo
+            ! And the highest non-Fill value
+            do khigh=nz2_max,1,-1
+              if(.not.IsFillValue(khigh))exit
             enddo
 
-            ! Set lower BC if requested and needed
-            if(IsFillValue(1).and.present(bc_low_sp)) &
-                dum_array_sp(i,j,1) = bc_low_sp
-
-            if(nz2_max.gt.1)then
-              ! Set upper BC if requested and needed
-              if(IsFillValue(nz2_max).and.present(bc_high_sp)) &
-                  dum_array_sp(i,j,nz2_max) = bc_high_sp
-
-              ! Now find the lowest non-Fill value
-              do klow=1,nz2_max
-                if(.not.IsFillValue(klow))exit
-              enddo
-              ! And the highest non-Fill value
-              do khigh=nz2_max,1,-1
-                if(.not.IsFillValue(khigh))exit
-              enddo
-
-              ! Set bottom values to the lowest real number
-              !if(klow.gt.1.and..not.present(bc_low_sp))then
-              if(klow.gt.1)then
-                do k = 1,klow-1
-                  dum_array_sp(i,j,k) = dum_array_sp(i,j,klow)
-                enddo
-              endif
-
-              ! Set top values to the highest real number
-              !if(khigh.lt.nz2_max.and..not.present(bc_high_sp))then
-              if(khigh.lt.nz2_max)then
-                do k = nz2_max,khigh+1,-1
-                  dum_array_sp(i,j,k) = dum_array_sp(i,j,khigh)
-                enddo
-              endif
-
-              ! Now check if there are any intermediate FillValues and
-              ! interpolate
-              do k=klow+1,khigh-1
-                if(IsFillValue(k))then
-                   ! linearly interpolate in z
-                     ! Find first number bove
-                   do kk = k+1,khigh,1
-                     if(.not.IsFillValue(kk))exit
-                   enddo
-                     ! Find first number beneath
-                   do kkk = max(k-1,1),klow,-1
-                     if(.not.IsFillValue(kkk))exit
-                   enddo
-                   ! Note:  this assumes that nz2_max.le.nz1_max and that the
-                   ! pressure values for dum_array_sp(1:nz2_max) are the same as
-                   ! the pressure for z_array_sp(nz1_max)
-                   dum_array_sp(i,j,k) = dum_array_sp(i,j,kk) + &
-                         (dum_array_sp(i,j,kk)-dum_array_sp(i,j,kkk)) * &
-                         (z_array_sp(i,j,kk)-z_array_sp(i,j,kkk))/ &
-                         (z_array_sp(i,j,kk)-z_array_sp(i,j,kkk))
-                endif
-
+            ! Set bottom values to the lowest real number
+            !if(klow.gt.1.and..not.present(bc_low_sp))then
+            if(klow.gt.1)then
+              do k = 1,klow-1
+                dum_array_sp(i,j,k) = dum_array_sp(i,j,klow)
               enddo
             endif
-          enddo
-        enddo
 
-        end subroutine MR_QC_3dvar
+            ! Set top values to the highest real number
+            !if(khigh.lt.nz2_max.and..not.present(bc_high_sp))then
+            if(khigh.lt.nz2_max)then
+              do k = nz2_max,khigh+1,-1
+                dum_array_sp(i,j,k) = dum_array_sp(i,j,khigh)
+              enddo
+            endif
+
+            ! Now check if there are any intermediate FillValues and
+            ! interpolate
+            do k=klow+1,khigh-1
+              if(IsFillValue(k))then
+                 ! linearly interpolate in z
+                   ! Find first number bove
+                 do kk = k+1,khigh,1
+                   if(.not.IsFillValue(kk))exit
+                 enddo
+                   ! Find first number beneath
+                 do kkk = max(k-1,1),klow,-1
+                   if(.not.IsFillValue(kkk))exit
+                 enddo
+                 ! Note:  this assumes that nz2_max.le.nz1_max and that the
+                 ! pressure values for dum_array_sp(1:nz2_max) are the same as
+                 ! the pressure for z_array_sp(nz1_max)
+                 dum_array_sp(i,j,k) = dum_array_sp(i,j,kk) + &
+                       (dum_array_sp(i,j,kk)-dum_array_sp(i,j,kkk)) * &
+                       (z_array_sp(i,j,kk)-z_array_sp(i,j,kkk))/ &
+                       (z_array_sp(i,j,kk)-z_array_sp(i,j,kkk))
+              endif
+
+            enddo
+          endif
+        enddo
+      enddo
+
+      end subroutine MR_QC_3dvar
+
+!##############################################################################
+!
+!    MR_Check_Prerequsites
+!
+!    Subroutine called at various points in MetReader to verify that the
+!    prerequisite steps have been completed.  The five parameters are logicals
+!    specifying whether or not a particular test is required.
+!
+!##############################################################################
+
+      subroutine MR_Check_Prerequsites(test_allocate,    &
+                                       test_dimvars,     &
+                                       test_compproj,    &
+                                       test_initmetgrid, &
+                                       test_setmettimes)
+
+      implicit none
+
+      logical ,intent(in) :: test_allocate    ! Check if MR_Allocate_FullMetFileList was called
+      logical ,intent(in) :: test_dimvars     ! Check if MR_Read_Met_DimVars
+      logical ,intent(in) :: test_compproj    ! Check if MR_Set_CompProjection
+      logical ,intent(in) :: test_initmetgrid ! Check if MR_Initialize_Met_Grids
+      logical ,intent(in) :: test_setmettimes ! Check if MR_Set_Met_Times
+
+      logical :: failtest_allocate    = .false.
+      logical :: failtest_dimvars     = .false.
+      logical :: failtest_compproj    = .false.
+      logical :: failtest_initmetgrid = .false.
+      logical :: failtest_setmettimes = .false.
+
+      ! Check prerequisites
+      if(test_allocate.eqv..true.)then
+        if(CALLED_MR_Allocate_FullMetFileList.eqv..false.)then
+          write(MR_global_error,*)"MR ERROR:  The subroutine MR_Allocate_FullMetFileList has not be called."
+          write(MR_global_error,*)"           This must first be called to allocate the space for the"
+          write(MR_global_error,*)"           windfiles.  The calling format is:"
+          write(MR_global_error,*)"             MR_Allocate_FullMetFileList(iw,iwf,igrid,idf,iwfiles)"
+          write(MR_global_error,*)"               where iw      = windfile class (1-5)"
+          write(MR_global_error,*)"                     iwf     = windfile format number (1-51)"
+          write(MR_global_error,*)"                     igrid   = 2d grid code used (if known)"
+          write(MR_global_error,*)"                     idf     = data format ID (ascii, netcdf, grib, etc)"
+          write(MR_global_error,*)"                     iwfiles = number of windfiles to be read"
+          write(MR_global_error,*)" "
+          write(MR_global_error,*)"           The array MR_windfiles(1:iwfiles) must then be filled within"
+          write(MR_global_error,*)"           the calling program."
+          failtest_allocate = .true.
+        endif
+      endif
+
+      if(test_dimvars.eqv..true.)then
+        if(CALLED_MR_Read_Met_DimVars.eqv..false.)then
+          write(MR_global_error,*)"MR ERROR:  The subroutine MR_Read_Met_DimVars has not be called."
+          write(MR_global_error,*)"           This must first be called to determine the size (x,y,z,t) of"
+          write(MR_global_error,*)"           the windfiles.  The calling format is:"
+          write(MR_global_error,*)"             MR_Read_Met_DimVars(optional_argument = iyear)"
+          write(MR_global_error,*)"               where the argument iyear determines nt for leap/non-leap years"
+          failtest_dimvars = .true.
+        endif
+      endif
+
+      if(test_compproj.eqv..true.)then
+        if(CALLED_MR_Set_CompProjection.eqv..false.)then
+          write(MR_global_error,*)"MR ERROR:  The subroutine MR_Set_CompProjection has not be called."
+          write(MR_global_error,*)"           This must first be called to determine the subgrid needed"
+          write(MR_global_error,*)"           from the windfiles.  The calling format is:"
+          write(MR_global_error,*)"             MR_Set_CompProjection(LL_flag,ipf,lam0,phi0,phi1,phi2,ko,Re)"
+          write(MR_global_error,*)"               where LL_flag = 0,1 (for projected or lon/lat, respectively)"
+          write(MR_global_error,*)"                     ipf     = 1-5 (projection code)"
+          write(MR_global_error,*)"                     lam0    = central longitude"
+          write(MR_global_error,*)"                     phi0    = first latitude for projection"
+          write(MR_global_error,*)"                     phi1    = second latitude for projection"
+          write(MR_global_error,*)"                     phi2    = third latitude for projection"
+          write(MR_global_error,*)"                     ko      = scaling term (<=1.0)"
+          write(MR_global_error,*)"                     Re      = radius of earth in km"
+          failtest_compproj = .true.
+        endif
+      endif
+
+      if(test_initmetgrid.eqv..true.)then
+        if(CALLED_MR_Initialize_Met_Grids.eqv..false.)then
+          write(MR_global_error,*)"MR ERROR:  The subroutine MR_Initialize_Met_Grids has not be called."
+          write(MR_global_error,*)"           This must first be called to allocate the computational grid needed"
+          write(MR_global_error,*)"           and to generate the mapping from the windfiles.  The calling format is:"
+          write(MR_global_error,*)"             MR_Initialize_Met_Grids(nx,ny,nz,dumx_sp,dumy_sp,dumz_sp,periodic)"
+          write(MR_global_error,*)"               where nx,ny,nz = size of comp. grid in x,y,z"
+          write(MR_global_error,*)"                     dumx_sp  = cell-centered grid points in x"
+          write(MR_global_error,*)"                     dumy_sp  = cell-centered grid points in y"
+          write(MR_global_error,*)"                     dumz_sp  = cell-centered grid points in z"
+          write(MR_global_error,*)"                     periodic = true or false for periodic grids"
+          failtest_initmetgrid = .true.
+        endif
+      endif
+
+      if(test_setmettimes.eqv..true.)then
+        if(CALLED_MR_Set_Met_Times.eqv..false.)then
+          write(MR_global_error,*)"MR ERROR:  The subroutine MR_Set_Met_Times has not be called."
+          write(MR_global_error,*)"           This must first be called to trim the list of windfiles to just"
+          write(MR_global_error,*)"           that needed by the simulation.  The calling format is:"
+          write(MR_global_error,*)"             MR_Set_Met_Times(eStartHour,Duration)"
+          write(MR_global_error,*)"               where eStartHour = start time needed in hours since basetime"
+          write(MR_global_error,*)"                     Duration   = length of time needed"
+          failtest_setmettimes = .true.
+        endif
+      endif
+
+      if(failtest_allocate    .or.&
+         failtest_dimvars     .or.&
+         failtest_compproj    .or.&
+         failtest_initmetgrid .or.&
+         failtest_setmettimes)then
+        stop 1
+      endif
+
+      end subroutine MR_Check_Prerequsites
 
 !##############################################################################
 

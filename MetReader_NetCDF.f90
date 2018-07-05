@@ -83,7 +83,6 @@
         Met_var_names(33) = "Ice_mixing_ratio_isobaric"         ; Met_var_IsAvailable(33)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.4)then
           ! NARR3D NAM221 32 km North America files (RAW : assumes full set of
@@ -152,7 +151,6 @@
           Met_var_IsAvailable(44)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.5)then
           ! NAM216 AK 45km
@@ -221,7 +219,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.6)then
           ! NAM Regional 90 km grid 104
@@ -291,7 +288,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.7)then
           ! CONUS 212 40km
@@ -363,7 +359,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.8)then
           ! CONUS 218 (12km)
@@ -416,7 +411,6 @@
           Met_var_IsAvailable(30)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 1.0_4
 
       elseif(MR_iwindformat.eq.9)then
          !Unassigned
@@ -453,7 +447,6 @@
           Met_var_IsAvailable(30)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.10)then
           ! NAM 242 11.25 km AK
@@ -513,7 +506,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 3.0_4
 
       elseif(MR_iwindformat.eq.11)then
           ! NAM 196 2.5 km HI
@@ -591,7 +583,6 @@
           Met_var_IsAvailable(44)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
       elseif(MR_iwindformat.eq.12)then
           ! NAM 198 5.953 km AK
@@ -671,7 +662,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
       elseif(MR_iwindformat.eq.13)then
           ! NAM 91 2.976 km AK
@@ -755,9 +745,8 @@
         !  Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
-      elseif (MR_iwindformat.eq.20.or.MR_iwindformat.eq.22.or.MR_iwindformat.eq.26) then
+      elseif (MR_iwindformat.eq.20.or.MR_iwindformat.eq.22) then
            ! GFS 0.5 (or 0.25) deg from http://www.nco.ncep.noaa.gov/pmb/products/gfs/
            ! or
            ! http://motherlode.ucar.edu/native/conduit/data/nccf/com/gfs/prod/
@@ -821,36 +810,47 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 3.0_4
 
       elseif (MR_iwindformat.eq.21) then
-           ! Old format GFS 0.5-degree
+           ! GFS 1.0 deg from http://www.nco.ncep.noaa.gov/pmb/products/gfs/
         Met_dim_IsAvailable=.false.
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"       ! time
           Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "pressure"   ! pressure (1.0e5-1.0e3 Pa or 1000 ->i10.0 hPa in 26 levels)
+        Met_dim_names(2) = "isobaric3"   ! pressure (1.0e5-1.0e3 Pa or 1000 -> 10.0 hPa in 26 levels)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "lat"        ! y        (90.0 -> -90.0)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "lon"        ! x        (0.0 - 359.5)
           Met_dim_IsAvailable(4)=.true.
+        Met_dim_names(5) = "isobaric2"  ! pressure coordinate for Vz (to 100 hPa in 21 levels)
+          Met_dim_IsAvailable(5)=.true.
+        Met_dim_names(6) = "isobaric3"  ! pressure coordinate for RH (to 10 hPa in 25 levels)
+          Met_dim_IsAvailable(6)=.true.
 
         ! Momentum / State variables
-        Met_var_names(1) = "Geopotential_height"    ! float gpm
+        Met_var_names(1) = "Geopotential_height_isobaric"    ! float gpm
           Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "U-component_of_wind"    ! float m/s
+        Met_var_names(2) = "u-component_of_wind_isobaric"    ! float m/s
           Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "V-component_of_wind"    ! float m/s
+        Met_var_names(3) = "v-component_of_wind_isobaric"    ! float m/s
           Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure" ! float Pa/s
+        Met_var_names(4) = "Vertical_velocity_pressure_isobaric" ! float Pa/s
           Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature"            ! float deg K
+        Met_var_names(5) = "Temperature_isobaric"            ! float deg K
           Met_var_IsAvailable(5)=.true.
 
+        ! Surface
+        Met_var_names(10) = "Planetary_Boundary_Layer_Height_surface"
+          Met_var_IsAvailable(10)=.true.
+        ! Moisture
+        Met_var_names(30) = "Relative_humidity_isobaric"      ! float percent
+          Met_var_IsAvailable(30)=.true.
+        Met_var_names(32) = "Cloud_mixing_ratio"     ! float kg/kg
+          Met_var_IsAvailable(32)=.true.
+
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 3.0_4
 
        elseif (MR_iwindformat.eq.23) then
          ! NCEP / doE reanalysis 2.5 degree files 
@@ -890,63 +890,69 @@
           Met_var_IsAvailable(44)=.true.
 
         fill_value_sp(MR_iwindformat) = 9.999_sp
-        MR_ForecastInterval = 6.0_4
 
        elseif (MR_iwindformat.eq.24) then
-         ! NASA-MERRA reanalysis 1.25 degree files 
+         ! NASA-MERRA-2 reanalysis 0.625 x 0.5 degree files 
 
         Met_dim_IsAvailable=.false.
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"       ! time
           Met_dim_IsAvailable(1)=.true. 
-        Met_dim_names(2) = "isobaric"   ! pressure (1000 -> 0.1 hPa in 42 levels)
+        Met_dim_names(2) = "lev"   ! pressure (1000 -> 0.1 hPa in 42 levels)
           Met_dim_IsAvailable(2)=.true. 
         Met_dim_names(3) = "lat"        ! y        (89.375 -> -89.375)
           Met_dim_IsAvailable(3)=.true. 
         Met_dim_names(4) = "lon"        ! x        (-179.375 -> 179.375)
           Met_dim_IsAvailable(4)=.true. 
-        Met_dim_names(5) = "isobaric"   ! pressure coordinate for Vz
+        Met_dim_names(5) = "lev"   ! pressure coordinate for Vz
           Met_dim_IsAvailable(5)=.true. 
-        Met_dim_names(6) = "isobaric"   ! pressure coordinate for RH
+        Met_dim_names(6) = "lev"   ! pressure coordinate for RH
           Met_dim_IsAvailable(6)=.true. 
 
+        Met_dim_fac(1) = 1.0/60.0
+
         ! Momentum / State variables
-        Met_var_names(1) = "Geopotential_height"        ! float m^2/s^2
+        ! Available in MERRA2_400.inst3_3d_asm_Np.YYYYMMDD.nc4
+        !  from https://goldsmr5.gesdisc.eosdis.nasa.gov/data/MERRA2/M2I3NPASM.5.12.4
+        Met_var_names(1) = "H"            ! float m^2/s^2
           Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u_wind"       ! float m/s
+        Met_var_names(2) = "U"            ! float m/s
           Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v_wind"       ! float m/s
+        Met_var_names(3) = "V"            ! float m/s
           Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Pressure_vertical_velocity"       ! float Pa/s
+        Met_var_names(4) = "OMEGA"        ! float Pa/s
           Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature"        ! float K
+        Met_var_names(5) = "T"            ! float K
           Met_var_IsAvailable(5)=.true.
 
         ! Surface
-        Met_var_names(10) = "PBLH"        ! float Planetary boundary layer height (m)
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11) = "U10M"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "V10M"
-          Met_var_IsAvailable(12)=.true.
-        Met_var_names(14) = "DISPH"
-          Met_var_IsAvailable(14)=.true.
-        Met_var_names(16) = "GWETTOP"
-          Met_var_IsAvailable(16)=.true.
-        Met_var_names(19) = "TS"
-          Met_var_IsAvailable(19)=.true.
-        ! Atmospheric Structure
-        Met_var_names(21) = "CLDPRS"
-          Met_var_IsAvailable(21)=.true.
-        Met_var_names(22) = "CLDTMP"
-          Met_var_IsAvailable(22)=.true.
-        Met_var_names(23) = "CLDTOT"
-          Met_var_IsAvailable(23)=.true.
-        Met_var_names(24) = "CLDLOW"
-          Met_var_IsAvailable(24)=.true.
+        !Met_var_names(10) = "PBLH"        ! float Planetary boundary layer height (m)
+        !  Met_var_IsAvailable(10)=.true.
+        !Met_var_names(11) = "U10M"
+        !  Met_var_IsAvailable(11)=.true.
+        !Met_var_names(12) = "V10M"
+        !  Met_var_IsAvailable(12)=.true.
+        !Met_var_names(14) = "DISPH"
+        !  Met_var_IsAvailable(14)=.true.
+        !Met_var_names(16) = "GWETTOP"
+        !  Met_var_IsAvailable(16)=.true.
+        !Met_var_names(19) = "TS"
+        !  Met_var_IsAvailable(19)=.true.
+        !! Atmospheric Structure
+        !Met_var_names(21) = "CLDPRS"
+        !  Met_var_IsAvailable(21)=.true.
+        !Met_var_names(22) = "CLDTMP"
+        !  Met_var_IsAvailable(22)=.true.
+        !Met_var_names(23) = "CLDTOT"
+        !  Met_var_IsAvailable(23)=.true.
+        !Met_var_names(24) = "CLDLOW"
+        !  Met_var_IsAvailable(24)=.true.
+
         ! Moisture
-        Met_var_names(30) = "Relative_humidity"         ! float percent
+        ! Available in MERRA2_400.inst3_3d_asm_Np.YYYYMMDD.nc4
+        !  from https://goldsmr5.gesdisc.eosdis.nasa.gov/data/MERRA2/M2I3NPASM.5.12.4
+        Met_var_names(30) = "RH"          ! float percent
           Met_var_IsAvailable(30)=.true.
         Met_var_names(31) = "QV"          ! float cloud liquid water mixing ratio kg/kg
           Met_var_IsAvailable(31)=.true.
@@ -954,20 +960,22 @@
           Met_var_IsAvailable(32)=.true.
         Met_var_names(33) = "QI"          ! float cloud ice mixing ratio kg/kg
           Met_var_IsAvailable(33)=.true.
-        ! Precipitation
-        Met_var_names(44) = "PFLLSAN"     ! float liquid large-scale + anvil precip kg/m2/s
-          Met_var_IsAvailable(44)=.true.
-        Met_var_names(45) = "PFLCU"       ! float liquid convective precip kg/m2/s
-          Met_var_IsAvailable(45)=.true.
-        Met_var_names(46) = "PFILSAN"     ! float ice large-scale + anvil precip kg/m2/s
-          Met_var_IsAvailable(46)=.true.
-        Met_var_names(47) = "PFICU"       ! float ice convective precip kg/m2/s
-          Met_var_IsAvailable(47)=.true.
+
+        ! Precipitation: Note:This is on a different time grid 90 minutes offset
+        ! Available in MERRA2_400.tavg3_3d_mst_Np.YYYYMMDD.nc4
+        !  from https://goldsmr5.gesdisc.eosdis.nasa.gov/data/MERRA2/M2T3NPMST.5.12.4/
+        !Met_var_names(44) = "PFLLSAN"     ! float liquid large-scale + anvil precip kg/m2/s
+        !  Met_var_IsAvailable(44)=.true.
+        !Met_var_names(45) = "PFLCU"       ! float liquid convective precip kg/m2/s
+        !  Met_var_IsAvailable(45)=.true.
+        !Met_var_names(46) = "PFILSAN"     ! float ice large-scale + anvil precip kg/m2/s
+        !  Met_var_IsAvailable(46)=.true.
+        !Met_var_names(47) = "PFICU"       ! float ice convective precip kg/m2/s
+        !  Met_var_IsAvailable(47)=.true.
 
         fill_value_sp(MR_iwindformat) = 1.0e15_sp
 
         Met_var_conversion_factor(44) = 1.0_sp/1.0e3_sp
-        MR_ForecastInterval = 3.0_4
 
        elseif (MR_iwindformat.eq.25) then
          ! NCEP/NCAR reanalysis 2.5 degree files 
@@ -1034,7 +1042,6 @@
         iwf25_scale_facs(45) = 1.0e-7_sp ; iwf25_offsets(45) = 0.0031765_sp ! cprat
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 6.0_4
 
        elseif (MR_iwindformat.eq.27) then
          ! NOAA-CIRES reanalysis 2.5 degree files 
@@ -1086,7 +1093,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = 1.e+20_sp
-        MR_ForecastInterval = 6.0_4
 
        elseif (MR_iwindformat.eq.28) then
          ! ECMWF Interim Reanalysis (ERA-Interim)
@@ -1126,8 +1132,6 @@
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
         Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
 
-        MR_ForecastInterval = 6.0_4
-
        elseif (MR_iwindformat.eq.29) then
          ! JRA-55 reanalysis
        elseif (MR_iwindformat.eq.31) then
@@ -1160,7 +1164,6 @@
           Met_var_IsAvailable(5)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 3.0_4
 
        elseif (MR_iwindformat.eq.32) then
          ! Air Force Weather Agency subcenter = 0
@@ -1229,7 +1232,6 @@
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999._sp ! actually NaNf
-        MR_ForecastInterval = 1.0_4
 
        elseif (MR_iwindformat.eq.33) then
          ! CCSM3.0 Community Atmosphere Model (CAM)
@@ -1272,7 +1274,6 @@
           Met_var_IsAvailable(31)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
-        MR_ForecastInterval = 744.0_4
 
        elseif (MR_iwindformat.eq.40) then
          ! NASA-GEOS Cp
@@ -1293,6 +1294,8 @@
         Met_dim_names(6) = "lev"   ! pressure coordinate for RH
           Met_dim_IsAvailable(6)=.true.
 
+        Met_dim_fac(1) = 1.0/60.0
+
         ! Momentum / State variables
         Met_var_names(1) = "H"           ! float m^2/s^2
           Met_var_IsAvailable(1)=.true.
@@ -1306,7 +1309,6 @@
           Met_var_IsAvailable(5)=.true.
 
         fill_value_sp(MR_iwindformat) = 1.0e15_sp
-        MR_ForecastInterval = 3.0_4
 
        elseif (MR_iwindformat.eq.41) then
          ! NASA-GEOS Np
@@ -1327,6 +1329,8 @@
         Met_dim_names(6) = "lev"   ! pressure coordinate for RH
           Met_dim_IsAvailable(6)=.true.
 
+        Met_dim_fac(1) = 1.0/60.0
+
         ! Momentum / State variables
         Met_var_names(1) = "H"           ! float m^2/s^2
           Met_var_IsAvailable(1)=.true.
@@ -1340,7 +1344,6 @@
           Met_var_IsAvailable(5)=.true.
 
         fill_value_sp(MR_iwindformat) = 1.0e15_sp
-        MR_ForecastInterval = 3.0_4
 
        elseif (MR_iwindformat.eq.50) then
          ! WRF - output
@@ -1408,7 +1411,6 @@
         fill_value_sp(MR_iwindformat) = 1.e+20_sp
 
         Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
-        MR_ForecastInterval = 1.0_4
 
       elseif(MR_iwindformat.eq.51)then
           ! NAM 198 5.953 km AK
@@ -1477,7 +1479,6 @@
         fill_value_sp(MR_iwindformat) = -9999._sp ! actually NaNf
 
         !Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
-        MR_ForecastInterval = 3.0_4
 
       else
         ! Not a recognized MR_iwindformat
@@ -1878,13 +1879,13 @@
         z_inverted = .true.
 
       elseif(MR_iwindformat.eq.21)then
-        ! GFS 0.5 old style
-        call MR_Set_Met_NCEPGeoGrid(4)
+        ! GFS 1.0
+        call MR_Set_Met_NCEPGeoGrid(3)
 
         nt_fullmet = 1
-        np_fullmet = 26   ! This is for air, hgt, uwnd, vwnd
+        np_fullmet = 31   ! This is for air, hgt, uwnd, vwnd
         np_fullmet_Vz = 21 ! omega
-        np_fullmet_RH = 25  ! rhum
+        np_fullmet_RH = 31  ! rhum
         allocate(p_fullmet_sp(np_fullmet))
         allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
         allocate(p_fullmet_RH_sp(np_fullmet_RH))
@@ -1894,7 +1895,8 @@
              600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
              350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
              100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
-              10.0_sp /)
+              10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, &
+               1.0_sp /)
         p_fullmet_Vz_sp(1:21) =  &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
@@ -1906,14 +1908,16 @@
              850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
              600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
              350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-             100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  10.0_sp /)
-        MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
+             100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
+              10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, &
+               1.0_sp /)
+        MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
         p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
         p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .true.
-        z_inverted = .false.
+        z_inverted = .true.
 
       elseif(MR_iwindformat.eq.22)then
         ! GFS 0.25
@@ -1981,7 +1985,7 @@
         y_inverted = .true.
         z_inverted = .false.
       elseif(MR_iwindformat.eq.24)then
-        ! NASA MERRA reanalysis
+        ! NASA MERRA2 reanalysis
         call MR_Set_Met_NCEPGeoGrid(1024)
 
         nt_fullmet = 1
@@ -2009,7 +2013,8 @@
         p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
         p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
-        y_inverted = .true.
+        !y_inverted = .true.
+        y_inverted = .false.
         z_inverted = .false.
       elseif(MR_iwindformat.eq.25)then
         ! NCEP-1 1948 reanalysis
@@ -2980,6 +2985,9 @@
       real(kind=dp),dimension(:), allocatable :: dum1d_dp
       real(kind=sp),dimension(:), allocatable :: dum1d_sp
       integer(kind=4),dimension(:), allocatable :: dum1d_int4
+      integer,dimension(8) :: values
+      integer              :: Current_Year,nt_tst
+      character(len=130)   :: infile
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                MR_Read_Met_Times_netcdf                    ----------"
@@ -2995,11 +3003,11 @@
       if(MR_iwindformat.eq.25.or.MR_iwindformat.eq.27)then
         ! Here the branch for when MR_iwindformat = 25 or 27
         ! First copy path read in to slot 2
-        if(MR_runAsForecast)then
-          write(MR_global_error,*)"MR ERROR: iwf=25 and 27 cannot be used for forecast runs."
-          write(MR_global_error,*)"          These are reanalysis files."
-          stop 1
-        endif
+        !if(MR_runAsForecast)then
+        !  write(MR_global_error,*)"MR ERROR: iwf=25 and 27 cannot be used for forecast runs."
+        !  write(MR_global_error,*)"          These are reanalysis files."
+        !  stop 1
+        !endif
         dumstr = MR_windfiles(1)
  110    format(a50,a1,i4,a1)
         write(MR_windfiles(1),110)trim(ADJUSTL(dumstr)),'/', &
@@ -3016,6 +3024,46 @@
         else
           nt_fullmet = 1460     ! Not a leap year
         endif
+        ! Note: The nt_fullmet given above is the expected number based on a complete year.
+        !       If MR_Comp_StartYear is the current year, then we will not have this many
+        !       time steps available.  Double-check
+        ! Getting current year
+        call date_and_time(VALUES=values)
+        Current_Year = values(1)
+        ! Now getting the actual nt of the file; trying the hgt file
+ 111    format(a50,a4,i4,a3)
+        write(infile,111)trim(adjustl(MR_windfiles(1))), &
+                         "hgt.",MR_Comp_StartYear,".nc"
+        nSTAT = nf90_open(trim(ADJUSTL(infile)),NF90_NOWRITE,ncid)
+        if(nSTAT.ne.NF90_NOERR)then
+          write(MR_global_error,*)'MR ERROR: nf90_open: ',nf90_strerror(nSTAT)
+          write(MR_global_error,*)"    Could not open file: ",trim(ADJUSTL(infile))
+          write(MR_global_log  ,*)'MR ERROR: nf90_open: ',nf90_strerror(nSTAT)
+          stop 1
+        endif
+        nSTAT = nf90_inq_dimid(ncid,Met_dim_names(1),t_dim_id)
+        if(nSTAT.ne.NF90_NOERR)then
+          write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+          write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(1)
+          write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+          stop 1
+        endif
+        nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,len=nt_tst)
+        if(nSTAT.ne.NF90_NOERR)then
+          write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+          write(MR_global_error,*)"    Could not dimension length: "
+          write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+          stop 1
+        endif
+        nSTAT = nf90_close(ncid)
+        if(MR_Comp_StartYear.lt.Current_Year.and.nt_tst.lt.nt_fullmet)then
+          write(MR_global_info,*)"WARNING:  The NCEP files are for an archived year yet are incomplete."
+          write(MR_global_info,*)"          To get the complete year, run the script "
+          write(MR_global_info,*)"            autorun_scripts/get_NCEP_50YearReanalysis.sh",MR_Comp_StartYear
+          write(MR_global_info,*)"          Steps available = ",nt_tst
+          write(MR_global_info,*)"          Hours into year = ",(nt_tst-1)*6
+        endif
+        nt_fullmet = nt_tst
         MR_windfiles_nt_fullmet(1)=nt_fullmet
         MR_windfiles_nt_fullmet(2)=nt_fullmet  ! Note: we don't care if the next
                                                !       year is a leap year since
@@ -3024,9 +3072,8 @@
         allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
 
           ! the interval for both iwf25 and iwf27 is 6 hours
-        MR_ForecastInterval = 6.0_4
         do iwstep = 1,nt_fullmet
-          MR_windfile_stephour(:,iwstep) = (iwstep-1)*MR_ForecastInterval
+          MR_windfile_stephour(:,iwstep) = (iwstep-1)*6.0_4
         enddo
       elseif(MR_iwindformat.eq.31)then
         ! Here's the branch for the Catania files
@@ -3315,7 +3362,7 @@
               endif
             enddo
           endif
-2100      FORMAT(20x,a11,i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2)
+2100      format(20x,a11,i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2)
  103      format(i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2)
 
           ! Assume we now have the parsed reftime
