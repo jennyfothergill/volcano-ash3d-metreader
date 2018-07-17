@@ -51,10 +51,10 @@
         IsGlobal_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         Met_iprojflag     = 5
-        Met_lam0          = 274.784027099609
-        Met_phi0          =  56.7920036315918
-        Met_k0            =  0.933
-        Met_Re            =  6367.470
+        Met_lam0          = 274.784027099609_8
+        Met_phi0          =  56.7920036315918_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6367.470_8
 
         nx_fullmet = 93
         ny_fullmet = 112
@@ -439,10 +439,10 @@
         IsGlobal_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         Met_iprojflag     = 1
-        Met_lam0          = -150.0
-        Met_phi0          =  90.0
-        Met_k0            =  0.933
-        Met_Re            =  6371.229
+        Met_lam0          = -150.0_8
+        Met_phi0          =  90.0_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6371.229_8
 
         nx_fullmet = 1649
         ny_fullmet = 1105
@@ -498,10 +498,10 @@
         IsGlobal_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         Met_iprojflag     = 1
-        Met_lam0          = -105.0
-        Met_phi0          =  90.0
-        Met_k0            =  0.933
-        Met_Re            =  6371.229
+        Met_lam0          = -105.0_8
+        Met_phi0          =  90.0_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6371.229_8
 
         nx_fullmet = 147
         ny_fullmet = 110
@@ -739,10 +739,10 @@
         IsGlobal_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         Met_iprojflag     = 5
-        Met_lam0          = 198.475   
-        Met_phi0          =  20.0     
-        Met_k0            =  0.933    
-        Met_Re            =  6371.229 
+        Met_lam0          = 198.475_8
+        Met_phi0          =  20.0_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6371.229_8
 
         nx_fullmet = 321
         ny_fullmet = 225
@@ -818,10 +818,10 @@
         IsGlobal_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         Met_iprojflag     = 1
-        Met_lam0          = -150.0
-        Met_phi0          =  90.0
-        Met_k0            =  0.933
-        Met_Re            =  6371.229
+        Met_lam0          = -150.0_8
+        Met_phi0          =  90.0_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6371.229_8
 
         nx_fullmet = 825
         ny_fullmet = 553
@@ -875,12 +875,12 @@
         IsGlobal_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         Met_iprojflag     = 4
-        Met_lam0          =  265.0
-        Met_phi0          =  25.0
-        Met_phi1          =  25.0
-        Met_phi2          =  25.0
-        Met_k0            =  0.933
-        Met_Re            =  6371.229
+        Met_lam0          =  265.0_8
+        Met_phi0          =  25.0_8
+        Met_phi1          =  25.0_8
+        Met_phi2          =  25.0_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6371.229_8
 
         nx_fullmet = 185
         ny_fullmet = 129
@@ -933,12 +933,12 @@
         IsGlobal_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         Met_iprojflag     = 4
-        Met_lam0          =  265.0
-        Met_phi0          =  25.0
-        Met_phi1          =  25.0
-        Met_phi2          =  25.0
-        Met_k0            =  0.933
-        Met_Re            =  6371.229
+        Met_lam0          =  265.0_8
+        Met_phi0          =  25.0_8
+        Met_phi1          =  25.0_8
+        Met_phi2          =  25.0_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6371.229_8
 
         nx_fullmet = 369
         ny_fullmet = 257
@@ -991,10 +991,10 @@
         IsGlobal_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         Met_iprojflag     = 1
-        Met_lam0          = -135.0
-        Met_phi0          =  90.0
-        Met_k0            =  0.933
-        Met_Re            =  6371.229
+        Met_lam0          = -135.0_8
+        Met_phi0          =  90.0_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6371.229_8
 
         nx_fullmet = 139
         ny_fullmet = 107
@@ -1046,12 +1046,12 @@
         IsGlobal_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         Met_iprojflag     = 4
-        Met_lam0          =  265.0
-        Met_phi0          =  25.0
-        Met_phi1          =  25.0
-        Met_phi2          =  25.0
-        Met_k0            =  0.933
-        Met_Re            =  6371.229
+        Met_lam0          =  265.0_8
+        Met_phi0          =  25.0_8
+        Met_phi1          =  25.0_8
+        Met_phi2          =  25.0_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6371.229_8
 
         nx_fullmet = 614
         ny_fullmet = 428
@@ -1105,12 +1105,12 @@
         IsGlobal_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         Met_iprojflag     = 4
-        Met_lam0          =  107.0
-        Met_phi0          =  50.0
-        Met_phi1          =  50.0
-        Met_phi2          =  50.0
-        Met_k0            =  0.933
-        Met_Re            =  6371.229
+        Met_lam0          =  107.0_8
+        Met_phi0          =  50.0_8
+        Met_phi1          =  50.0_8
+        Met_phi2          =  50.0_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6371.229_8
 
         nx_fullmet = 349
         ny_fullmet = 277
@@ -1163,10 +1163,10 @@
         IsGlobal_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         Met_iprojflag     = 1
-        Met_lam0          = -135.0
-        Met_phi0          =  90.0
-        Met_k0            =  0.933
-        Met_Re            =  6371.229
+        Met_lam0          = -135.0_8
+        Met_phi0          =  90.0_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6371.229_8
 
         nx_fullmet = 553
         ny_fullmet = 425
@@ -1688,7 +1688,7 @@
                 endif
               enddo
             endif
-          elseif(abs(py-y_submet_sp(ny_submet)).lt.0.001)then
+          elseif(abs(py-y_submet_sp(ny_submet)).lt.1.0e-7_sp)then
               ! This is to fix the occasional instances where the top comp point
               ! maps almost right on the top submet point
             If(IsRegular_MetGrid)then
@@ -1899,6 +1899,7 @@
 
       integer, parameter :: sp        = 4 ! single precision
       integer, parameter :: dp        = 8 ! double precision
+      real(kind=dp), parameter :: tol = 1.0e-3_dp
 
       real(kind=dp) :: dum1,dum2,dum3,dum4,dum5
       integer :: i,j
@@ -1944,10 +1945,10 @@
             dum2 = abs(Comp_phi0 - Met_phi0)
             dum3 = abs(Comp_k0 - Met_k0)
             dum4 = abs(Comp_Re - Met_Re)
-            if(dum1.gt.0.001.and.&
-               dum2.gt.0.001.and.&
-               dum3.gt.0.001.and.&
-               dum4.gt.0.001)then
+            if(dum1.gt.tol.and.&
+               dum2.gt.tol.and.&
+               dum3.gt.tol.and.&
+               dum4.gt.tol)then
               Map_Case = 5
             else
               Map_Case = 2
@@ -1958,10 +1959,10 @@
             dum2 = abs(Comp_phi0 - Met_phi0)
             dum3 = abs(Comp_phi1 - Met_phi1)
             dum4 = abs(Comp_phi2 - Met_phi2)
-            if(dum1.gt.0.001.and.&
-               dum2.gt.0.001.and.&
-               dum3.gt.0.001.and.&
-               dum4.gt.0.001)then
+            if(dum1.gt.tol.and.&
+               dum2.gt.tol.and.&
+               dum3.gt.tol.and.&
+               dum4.gt.tol)then
               Map_Case = 5
             else
               Map_Case = 2
@@ -1976,11 +1977,11 @@
             dum3 = abs(Comp_phi1 - Met_phi1)
             dum4 = abs(Comp_phi2 - Met_phi2)
             dum5 = abs(Comp_Re - Met_Re)
-            if(dum1.gt.0.001.and.&
-               dum2.gt.0.001.and.&
-               dum3.gt.0.001.and.&
-               dum4.gt.0.001.and.&
-               dum5.gt.0.001)then
+            if(dum1.gt.tol.and.&
+               dum2.gt.tol.and.&
+               dum3.gt.tol.and.&
+               dum4.gt.tol.and.&
+               dum5.gt.tol)then
               Map_Case = 5
             else
               Map_Case = 2
@@ -1990,9 +1991,9 @@
             dum1 = abs(Comp_lam0 - Met_lam0)
             dum2 = abs(Comp_phi0 - Met_phi0)
             dum3 = abs(Comp_Re - Met_Re)
-            if(dum1.gt.0.001.and.&
-               dum2.gt.0.001.and.&
-               dum3.gt.0.001)then
+            if(dum1.gt.tol.and.&
+               dum2.gt.tol.and.&
+               dum3.gt.tol)then
               Map_Case = 5
             else
               Map_Case = 2

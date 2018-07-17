@@ -283,8 +283,8 @@
         allocate(MR_windfile_starthour(MR_iwindfiles))
         allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
 
-        MR_windfile_starthour = 0.0 ! This is the initialization; will be set below
-        MR_windfile_stephour  = 0.0 ! This will be the final value since all files
+        MR_windfile_starthour = 0.0_dp ! This is the initialization; will be set below
+        MR_windfile_stephour  = 0.0_dp ! This will be the final value since all files
                                     ! have one step and so no offset.
         MR_windfiles_nt_fullmet(:) = nt_fullmet
 
@@ -385,7 +385,7 @@
             if(iw_idx.eq.1)then
               allocate(MR_SndVars_metP(MR_nSnd_Locs,MR_Snd_nt_fullmet,MR_Snd_nvars,MAX_ROWS))
               allocate(MR_Snd_np_fullmet(MR_nSnd_Locs,MR_Snd_nt_fullmet))
-              MR_SndVars_metP   = 0.0
+              MR_SndVars_metP   = 0.0_sp
               MR_Snd_np_fullmet = 0
             endif
             MR_Snd_np_fullmet(iloc,itime) = nlev
@@ -410,12 +410,12 @@
                 IsRegular_MetGrid = .false.
                 ! The rest of this is ignored
                 Met_iprojflag     = 4
-                Met_lam0          =  265.0
-                Met_phi0          =  25.0
-                Met_phi1          =  25.0
-                Met_phi2          =  25.0
-                Met_k0            =  0.933
-                Met_Re            =  6371.229
+                Met_lam0          =  265.0_8
+                Met_phi0          =  25.0_8
+                Met_phi1          =  25.0_8
+                Met_phi2          =  25.0_8
+                Met_k0            =  0.933_8
+                Met_Re            =  6371.229_8
               else
                 ! Try to read the projection line
                 indx1 = index(linebuffer,' 0 ')
@@ -502,7 +502,7 @@
                   stop 1
                 endif
               endif ! il.eq.1
-              rvalues(:) = -1.99_4
+              rvalues(:) = -1.99_sp
               ! read ncols of data on this row
               read(linebuffer,*,iostat=ioerr) rvalues(1:ncols)
 
@@ -530,7 +530,7 @@
                 WindDirection(il) = rvalues(3)
                 if(iw_idx.eq.1.and.&         ! For the first file
                    il.eq.1.and.    &         ! and the first level
-                   rvalues(4).gt.1500.0)then ! test pressure value
+                   rvalues(4).gt.1500.0_sp)then ! test pressure value
                   ! Check if pressure is greater than the expected 1013 hPa.
                   ! If so, assume pressure is in Pa
                   In_hPa = .false.
@@ -549,7 +549,7 @@
                   if(SndColReadOrder(ic).eq.0)then       ! pressure
                     if(iw_idx.eq.1.and.&         ! For the first file
                        il.eq.1.and.    &         ! and the first level
-                       rvalues(ic).gt.1500.0)then ! test pressure value
+                       rvalues(ic).gt.1500.0_sp)then ! test pressure value
                       In_hPa = .false.
                     else
                       In_hPa = .true.
@@ -610,7 +610,7 @@
 
         ! Here we look for the highest pressure value (lowest altitude) of all the pressure
         ! values to be used for setting the master pressure array (p_fullmet_sp)
-        p_maxtop = 0.0
+        p_maxtop = 0.0_sp
         p_tidx = 0
         p_lidx = 0
         do itime = 1,MR_Snd_nt_fullmet
@@ -649,9 +649,9 @@
         allocate(MR_windfile_starthour(MR_iwindfiles))
         allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
 
-        MR_windfile_starthour = 0.0 ! This is the initialization; will be set below
-        MR_windfile_stephour  = 0.0 ! This will be the final value since all files
-                                    ! have one step and so no offset.
+        MR_windfile_starthour = 0.0_dp ! This is the initialization; will be set below
+        MR_windfile_stephour  = 0.0_dp ! This will be the final value since all files
+                                       ! have one step and so no offset.
         MR_windfiles_nt_fullmet(:) = nt_fullmet
 
         Have_Vz = .false.
@@ -995,7 +995,7 @@
 
         ! Here we look for the highest pressure value (lowest altitude) of all the pressure
         ! values to be used for setting the master pressure array (p_fullmet_sp)
-        p_maxtop = 0.0
+        p_maxtop = 0.0_sp
         p_tidx = 0
         p_lidx = 0
         do itime = 1,MR_Snd_nt_fullmet

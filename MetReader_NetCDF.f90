@@ -3073,7 +3073,7 @@
 
           ! the interval for both iwf25 and iwf27 is 6 hours
         do iwstep = 1,nt_fullmet
-          MR_windfile_stephour(:,iwstep) = (iwstep-1)*6.0_4
+          MR_windfile_stephour(:,iwstep) = (iwstep-1)*6.0_dp
         enddo
       elseif(MR_iwindformat.eq.31)then
         ! Here's the branch for the Catania files
@@ -3472,6 +3472,7 @@
 
       integer, parameter :: sp        = 4 ! single precision
       integer, parameter :: dp        = 8 ! double precision
+      real(kind=sp), parameter :: tol = 1.0e-7_sp
 
       integer :: iw,pi,i
 
@@ -3700,12 +3701,12 @@
       ! We need to check if this is a regular grid
       IsRegular_MetGrid = .true.
       do i = 1,nx_fullmet-1
-        if(abs(MR_dx_met(i+1)-MR_dx_met(i)).gt.0.001*MR_dx_met(i))then
+        if(abs(MR_dx_met(i+1)-MR_dx_met(i)).gt.tol*MR_dx_met(i))then
           IsRegular_MetGrid = .false.
         endif
       enddo
       do i = 1,ny_fullmet-1
-        if(abs(MR_dy_met(i+1)-MR_dy_met(i)).gt.0.001*MR_dy_met(i))then
+        if(abs(MR_dy_met(i+1)-MR_dy_met(i)).gt.tol*MR_dy_met(i))then
           IsRegular_MetGrid = .false.
         endif
       enddo
@@ -3965,81 +3966,6 @@
         write(MR_global_log  ,*)'MR ERROR: Could not close file:',nf90_strerror(nSTAT)
         stop 1
       endif
-
-      ! Now dump coordinate values to file
-!      do i=1,nx_fullmet
-!        x_in = x_fullmet_sp(i)
-!        y_in = y_fullmet_sp(1)
-!        if(.not.IsLatLon_MetGrid)then
-!          call PJ_proj_inv(x_in, y_in, Met_iprojflag, &
-!                         Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re,&
-!                             x_out,y_out)
-!          write(121,*)real(x_out,kind=sp),real(y_out,kind=sp),&
-!                      real(x_in ,kind=sp),real(y_in ,kind=sp)
-!        else
-!          write(121,*)real(x_in,kind=sp),real(y_in,kind=sp)
-!        endif
-!      enddo
-!
-!      do j=1,ny_fullmet
-!        x_in = x_fullmet_sp(nx_fullmet)
-!        y_in = y_fullmet_sp(j)
-!        if(.not.IsLatLon_MetGrid)then
-!          call PJ_proj_inv(x_in, y_in, Met_iprojflag, &
-!                         Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re,&
-!                             x_out,y_out)
-!          write(121,*)real(x_out,kind=sp),real(y_out,kind=sp),&
-!                      real(x_in ,kind=sp),real(y_in ,kind=sp)
-!        else
-!          write(121,*)real(x_in,kind=sp),real(y_in,kind=sp)
-!        endif
-!      enddo
-!
-!      do i=nx_fullmet,1,-1
-!        x_in = x_fullmet_sp(i)
-!        y_in = y_fullmet_sp(ny_fullmet)
-!        if(.not.IsLatLon_MetGrid)then
-!          call PJ_proj_inv(x_in, y_in, Met_iprojflag, &
-!                         Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re,&
-!                             x_out,y_out)
-!          write(121,*)real(x_out,kind=sp),real(y_out,kind=sp),&
-!                      real(x_in ,kind=sp),real(y_in ,kind=sp)
-!        else
-!          write(121,*)real(x_in,kind=sp),real(y_in,kind=sp)
-!        endif
-!      enddo
-!      do j=ny_fullmet,1,-1
-!        x_in = x_fullmet_sp(1)
-!        y_in = y_fullmet_sp(j)
-!        if(.not.IsLatLon_MetGrid)then
-!          call PJ_proj_inv(x_in, y_in, Met_iprojflag, &
-!                         Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re,&
-!                             x_out,y_out)
-!          write(121,*)real(x_out,kind=sp),real(y_out,kind=sp),&
-!                      real(x_in ,kind=sp),real(y_in ,kind=sp)
-!        else
-!          write(121,*)real(x_in,kind=sp),real(y_in,kind=sp)
-!        endif
-!      enddo
-!
-!
-!      do i=1,nx_fullmet
-!        do j=1,ny_fullmet
-!          x_in = x_fullmet_sp(i)
-!          y_in = y_fullmet_sp(j)
-!          if(.not.IsLatLon_MetGrid)then
-!            call PJ_proj_inv(x_in, y_in, Met_iprojflag, &
-!                           Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re,&
-!                               x_out,y_out)
-!            write(122,*)real(x_out,kind=sp),real(y_out,kind=sp),&
-!                        real(x_in ,kind=sp),real(y_in ,kind=sp)
-!          else
-!            write(122,*)real(x_in,kind=sp),real(y_in,kind=sp)
-!          endif
-!        enddo
-!      enddo
-!
-!      stop 1
 
       end subroutine MR_Set_Met_Dims_Template_netcdf
 
@@ -4629,7 +4555,6 @@
             do i=1,np_met_loc
               itmp = np_met_loc-i+1
               MR_dum3d_metP(1:nx_submet,1:ny_submet,i) = temp3d_sp(1:nx_submet,1:ny_submet,itmp,1)
-              !If(ivar.eq.4)write(MR_global_info,*)MR_dum3d_metP(1,1,i),i,np_met_loc,np_fullmet
             enddo
           endif
         endif !MR_iwindformat.eq.50, MR_iwindformat.eq.25, else

@@ -1083,12 +1083,12 @@
 
       isLatLon_CompGrid = LL_flag
 
-      Comp_lam0 = 0.0
-      Comp_phi0 = 0.0
-      Comp_phi1 = 0.0
-      Comp_phi2 = 0.0
-      Comp_k0   = 0.0
-      Comp_Re   = 0.0
+      Comp_lam0 = 0.0_8
+      Comp_phi0 = 0.0_8
+      Comp_phi1 = 0.0_8
+      Comp_phi2 = 0.0_8
+      Comp_k0   = 0.0_8
+      Comp_Re   = 0.0_8
 
       if(.not.isLatLon_CompGrid)then
         Comp_iprojflag = ipf 
@@ -2956,7 +2956,7 @@
       real(kind=sp),dimension(7) :: US_StdAtm_pnodes
 
       real(kind=sp) :: pres0 = 1013.25_sp
-      real(kind=sp) :: skinz   = 7.0
+      real(kind=sp) :: skinz   = 7.0_sp
 
       US_StdAtm_znodes = (/ 0.0_sp, 11.0_sp, 20.0_sp, 32.0_sp, &
                            47.0_sp, 51.0_sp, 71.0_sp/)
