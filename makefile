@@ -146,11 +146,11 @@ MetReader_ASCII.o: MetReader_ASCII.f90 MetReader.o makefile
 
 ifeq ($(USENETCDF), T)
 MetReader_NetCDF.o: MetReader_NetCDF.f90 MetReader.o makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) -c MetReader_NetCDF.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(USGSLIB) -c MetReader_NetCDF.f90
 endif
 ifeq ($(USEGRIB2), T)
 MetReader_GRIB_index.o: MetReader_GRIB_index.f90 makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c MetReader_GRIB_index.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) $(USGSLIB) -c MetReader_GRIB_index.f90
 MetReader_GRIB.o: MetReader_GRIB.f90 MetReader_GRIB_index.o MetReader.o makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c MetReader_GRIB.f90
 gen_GRIB2_index: gen_GRIB2_index.f90 MetReader_GRIB_index.o makefile libMetReader.a
