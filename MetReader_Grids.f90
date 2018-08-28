@@ -37,7 +37,64 @@
       write(MR_global_production,*)"----------                          MR_Set_Met_NCEPGeoGrid            ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
-      if(igrid.eq.1051)then
+      if(igrid.eq.1221)then
+        ! NAM 32-km Lambert Conformal used by NARR (used Met_Re=6367.470, not 6371.229)
+        ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID221
+        !        LambertConformal_Projection:grid_mapping_name = "lambert_conformal_conic" ;
+        !        LambertConformal_Projection:latitude_of_projection_origin = 50. ;
+        !        LambertConformal_Projection:longitude_of_central_meridian = 253. ;
+        !        LambertConformal_Projection:standard_parallel = 50. ;
+        !    Reported NARR Reanal    Lambert_Conformal:GRIB_param_grid_radius_spherical_earth = 6367.47 ;
+        ! proj +proj=lcc +lon_0=-107.0 +lat_0=50.0 +lat_1=50.0 +lat_2=50.0 +R=6367.47
+        !   214.50  1.0
+        !     -5629.34  -4609.85
+        !   357.43 46.352
+        !      5661.26  4344.51
+        !  latlonflag  = 0         : projected grid
+        !  projflag    = 4         : Lambert conformal conic
+        !  lam0     = 265.0     : longitude of projection point
+        !  phi0        =  25.0     : latitude of projection point
+        !  phi1        =  25.0     : latitude of cone intersection 1
+        !  phi2        =  25.0     : latitude of cone intersection 2
+        !  radius      =  6367.47 : earth radius for spherical earth
+        ! 0 4 -107.0 50.0 50.0 50.0 6367.47    #Proj flags and params  
+
+        IsLatLon_MetGrid  = .false.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        Met_iprojflag     = 4
+        Met_lam0          =  -107.0_8
+        Met_phi0          =  50.0_8
+        Met_phi1          =  50.0_8
+        Met_phi2          =  50.0_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6367.470_8
+
+        nx_fullmet = 349
+        ny_fullmet = 277
+        dx_met_const = 32.463_sp
+        dy_met_const = 32.463_sp
+        x_start = -5629.344_sp
+        y_start = -4609.846_sp
+        allocate(x_fullmet_sp(0:nx_fullmet+1))
+        allocate(y_fullmet_sp(ny_fullmet))
+        allocate(MR_dx_met(nx_fullmet))
+        allocate(MR_dy_met(ny_fullmet))
+        do i = 0,nx_fullmet+1
+          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
+        enddo
+        do i = 1,ny_fullmet
+          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
+        enddo
+        do i = 1,nx_fullmet
+          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+        enddo
+        do i = 1,ny_fullmet-1
+          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+        enddo
+        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+
+      elseif(igrid.eq.1051)then
         ! Not an NCEP grid
         !  This grid is for the SENAMHI 22 km files
         ! proj +proj=merc  +lat_ts=56.792 +lon_0=274.784 +R=6367.470
@@ -245,7 +302,7 @@
 
       !elseif(igrid.eq.1024)then
       !   ! Not an NCEP grid
-      !   !  This grid is for the NASA MERRA files
+      !   !  This grid is for the NASA MERRA-1 files (obselete)
       !  IsLatLon_MetGrid  = .true.
       !  IsGlobal_MetGrid  = .true.
       !  IsRegular_MetGrid = .true.
@@ -1086,7 +1143,7 @@
         !        LambertConformal_Projection:longitude_of_central_meridian = 253. ;
         !        LambertConformal_Projection:standard_parallel = 50. ;
         !    NCEP FC        LambertConformal_Projection:earth_radius = 6371229. ;
-        !    Reported NARR Reanal    Lambert_Conformal:GRIB_param_grid_radius_spherical_earth = 6367.47 ;
+        ! Note: the NARR grid should use 1221
         ! proj +proj=lcc +lon_0=-107.0 +lat_0=50.0 +lat_1=50.0 +lat_2=50.0 +R=6371.229
         !   214.50  1.0
         !     -5632.668 -4612.566
@@ -1105,7 +1162,7 @@
         IsGlobal_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         Met_iprojflag     = 4
-        Met_lam0          =  107.0_8
+        Met_lam0          =  -107.0_8
         Met_phi0          =  50.0_8
         Met_phi1          =  50.0_8
         Met_phi2          =  50.0_8
@@ -1251,6 +1308,8 @@
       real(kind=sp) :: x_start_sub,y_start_sub
 
       real(kind=dp) :: xout,yout
+      logical       :: cond1, cond2
+
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                 MR_Set_MetComp_Grids                       ----------"
@@ -1330,44 +1389,30 @@
         write(MR_global_info,*) "Computational domain is periodic"
       else
         if(x_fullmet_sp(1).le.xLL)then
-           ! Make sure the start of the comp grid is not below the domain of the
-           ! met files
-          if(IsRegular_MetGrid)then
-            istart = max(1,floor((abs(x_fullmet_sp(1)-xLL)/dx_met_const)+1))
-          else
-            ! Need to actually march through all the values of x_fullmet_sp and find
-            ! which interval is needed
-            istart = -1
-            do i = 2,nx_fullmet
-              if(x_fullmet_sp(i).ge.xLL.and.x_fullmet_sp(i-1).lt.xLL)istart=i-1
-            enddo
-            if(istart.lt.0)then
-              write(MR_global_info,*)"MR ERROR: Could not find iend"
-              write(MR_global_info,*)"  ",xLL
-              stop 1
-            endif
-          endif
+          ! Make sure the start of the comp grid is not below the domain of the
+          ! met files
+          istart = 1
+          do i = 1,nx_fullmet-1
+            ! For the start index, we assign the lower node of the interval
+            ! Note: cond1 is not satisfied when xLL.eq.x_fullmet_sp(1) so we
+            !       must initialize istart to 1
+            cond1 = x_fullmet_sp(i  ).lt.xLL
+            cond2 = x_fullmet_sp(i+1).ge.xLL
+            if(cond1.and.cond2) istart = i
+          enddo
         else
           write(MR_global_info,*)"MR ERROR: xLL < x_fullmet_sp(1)"
           write(MR_global_info,*)"     x_fullmet_sp(1) = ",x_fullmet_sp(1)
           write(MR_global_info,*)"     xLL             = ",xLL
           stop 1
         endif
-        if(IsRegular_MetGrid)then
-          iend = max(2,floor((abs(x_fullmet_sp(1)-xUR)/dx_met_const))+2)
-        else
-          ! Need to actually march through all the values of x_fullmet_sp and find
-          ! which interval is needed
-          iend = -1
-          do i = 2,nx_fullmet
-            if(x_fullmet_sp(i).ge.xUR.and.x_fullmet_sp(i-1).lt.xUR)iend=i
-          enddo
-          if(iend.lt.0)then
-            write(MR_global_info,*)"MR ERROR: Could not find iend"
-            write(MR_global_info,*)"  ",xUR
-            stop 1
-          endif
-        endif
+        iend = 1
+        do i = 1,nx_fullmet-1
+          ! For the end index, we assign the upper node of the interval
+          cond1 = x_fullmet_sp(i  ).lt.xUR
+          cond2 = x_fullmet_sp(i+1).ge.xUR
+          if(cond1.and.cond2) iend = i+1
+        enddo
         nx_submet = iend-istart+1
         write(MR_global_info,*) "Domain is NOT periodic"
       endif
@@ -1437,21 +1482,15 @@
           if(y_fullmet_sp(1).ge.yUR)then
               ! This is the normal case where the UR of the comp grid is within
               ! the lat values of the wind file
-            if(IsRegular_MetGrid)then
-             jstart = max(1,floor((abs(y_fullmet_sp(1)-yUR)/dy_met_const))+1)
-            else
-               ! Need to actually march through all the values of y_fullmet_sp and find
-               ! which interval is needed
-              jstart = -1
-              do j = 2,ny_fullmet
-                if(y_fullmet_sp(j).lt.yUR.and.y_fullmet_sp(j-1).ge.yUR) jstart = j-1
-              enddo
-              if(jstart.lt.0)then
-                write(MR_global_info,*)"MR ERROR: Could not find jstart"
-                write(MR_global_info,*)"  ",yUR
-                stop 1
-              endif
-            endif
+            jstart = 1
+            do j = 1,ny_fullmet-1
+              ! For the start index, we assign the lower node of the interval
+              ! Note: cond1 is not satisfied when yUR.eq.y_fullmet_sp(1) so we
+              !       must initialize jstart to 1
+              cond1 = y_fullmet_sp(j  ).gt.yUR
+              cond2 = y_fullmet_sp(j+1).le.yUR
+              if(cond1.and.cond2) jstart = j
+            enddo
           elseif(IsGlobal_MetGrid)then
               ! There are some special cases where the met grid is global, but do not
               ! have values at the poles (e.g. ERA).  There are occasional instances where we need
@@ -1469,23 +1508,13 @@
           if(y_fullmet_sp(ny_fullmet).le.yLL)then
               ! Again, this is the normal case where the LL of the comp grid is within
               ! the lat values of the wind file
-            if(IsRegular_MetGrid)then
-              jend = max(2,floor((abs(y_fullmet_sp(1)-yLL)/dy_met_const))+2)
-                ! Make sure jend doesn't exceed the met grid
-              jend = min(jend,ny_fullmet)
-            else
-               ! Need to actually march through all the values of y_fullmet_sp and find
-               ! which interval is needed
-              jend = -1
-              do j = 2,ny_fullmet
-                if(y_fullmet_sp(j).lt.yLL.and.y_fullmet_sp(j-1).ge.yLL) jend = j
-              enddo
-              if(jend.lt.0)then
-                write(MR_global_info,*)"MR ERROR: Could not find jend"
-                write(MR_global_info,*)"  ",yLL
-                stop 1
-              endif
-            endif
+            jend = 1
+            do j = 1,ny_fullmet-1
+              ! For the end index, we assign the lower node of the interval
+              cond1 = y_fullmet_sp(j  ).gt.yLL
+              cond2 = y_fullmet_sp(j+1).le.yLL
+              if(cond1.and.cond2) jend = j + 1
+            enddo
           elseif(IsGlobal_MetGrid)then
               ! Here is the same special case as above, but for the southern boundary
             jend = ny_fullmet
@@ -1499,20 +1528,15 @@
         else ! .not.y_inverted
           ! y values go from - to +
           if(y_fullmet_sp(1).le.yLL)then
-            if(IsRegular_MetGrid)then
-              jstart = max(1,floor((abs(y_fullmet_sp(1)-yLL)/dy_met_const)+1))
-            else
-              ! Need to actually march through all the values of y_fullmet_sp and find
-              ! which interval is needed
-              jstart = -1
-              do j = 2,ny_fullmet
-                if(y_fullmet_sp(j).ge.yLL.and.y_fullmet_sp(j-1).lt.yLL)jstart=j-1
-              enddo
-              if(jstart.lt.0)then
-                write(MR_global_info,*)"MR ERROR: Could not find jend"
-                write(MR_global_info,*)"  ",yLL
-              endif
-            endif
+            jstart = 1
+            do j = 1,ny_fullmet-1
+              ! For the start index, we assign the lower node of the interval
+              ! Note: cond1 is not satisfied when yLL.eq.y_fullmet_sp(1) so we
+              !       must initialize jstart to 1
+              cond1 = y_fullmet_sp(j  ).lt.yLL
+              cond2 = y_fullmet_sp(j+1).ge.yLL
+              if(cond1.and.cond2) jstart = j
+            enddo
           elseif(IsGlobal_MetGrid)then
             jstart = 1
           else
@@ -1522,22 +1546,13 @@
             stop 1
           endif
           if(y_fullmet_sp(ny_fullmet).ge.yUR)then
-            if(IsRegular_MetGrid)then
-              jend = max(2,floor((abs(y_fullmet_sp(1)-yUR)/dy_met_const))+2)
-                ! Make sure jend doesn't exceed the met grid
-              jend = min(jend,ny_fullmet)
-            else
-              ! Need to actually march through all the values of y_fullmet_sp and find
-              ! which interval is needed
-              jend = -1
-              do j = 2,ny_fullmet
-                if(y_fullmet_sp(j).ge.yUR.and.y_fullmet_sp(j-1).lt.yUR)jend=j
-              enddo
-              if(jend.lt.0)then
-                write(MR_global_info,*)"MR ERROR: Could not find jend"
-                write(MR_global_info,*)"  ",yUR
-              endif
-            endif
+            jend = 1
+            do j = 1,ny_fullmet-1
+              ! For the end index, we assign the upper node of the interval
+              cond1 = y_fullmet_sp(j  ).lt.yUR
+              cond2 = y_fullmet_sp(j+1).ge.yUR
+              if(cond1.and.cond2) jend = j + 1
+            enddo
           elseif(IsGlobal_MetGrid)then
             jend = ny_fullmet
             y_pad_South = .true.
@@ -1559,7 +1574,7 @@
       write(MR_global_info,*)"         ysubMetMin =" ,y_fullmet_sp(jstart)
       write(MR_global_info,*)"                yLL =" ,yLL
       write(MR_global_info,*)"                yUR =" ,yUR
-      write(MR_global_info,*)"         ysubMetMax = ",y_fullmet_sp(jend)
+      write(MR_global_info,*)"         ysubMetMax =",y_fullmet_sp(jend)
       write(MR_global_info,*)"-------------"
 
       if(IsPeriodic_CompGrid)then
@@ -1662,46 +1677,55 @@
           endif
 
           ! Get the sub_Met index of LL corner of cell containing px,py
-          If(IsRegular_MetGrid)then
-            isubmet = int((px-x_start_sub)/dx_met_const) + 1
-          else
-            isubmet = -1
-            do ii = 1,nx_submet
-              if(px.ge.x_submet_sp(ii).and.px.lt.x_submet_sp(ii+1))then
+          !If(IsRegular_MetGrid)then
+          !  isubmet = int((px-x_start_sub)/dx_met_const) + 1
+          !else
+            isubmet = 1
+            do ii = 1,nx_submet-1
+                ! Set interval inclusive of lower node
+              cond1 = px.ge.x_submet_sp(ii  )
+              cond2 = px.lt.x_submet_sp(ii+1)
+              if(cond1.and.cond2)then
                 isubmet = ii
                 exit
               endif
             enddo
-          endif
+          !endif
           CompPoint_on_subMet_idx(i,j,1) = isubmet
 
             ! Check if the point is within the upper and lower bounds
           if(py.lt.y_submet_sp(ny_submet).and.py.ge.y_submet_sp(1))then
-            If(IsRegular_MetGrid)then
-              jsubmet = int((py-y_start_sub)/dy_met_const) + 1
-            else
-              jsubmet = -1
+            !if(IsRegular_MetGrid)then
+            !  jsubmet = int((py-y_start_sub)/dy_met_const) + 1
+            !else
+              jsubmet = 1
               do jj = 1,ny_submet-1
-                if(py.ge.y_submet_sp(jj).and.py.lt.y_submet_sp(jj+1))then
+                ! Set interval inclusive of lower node
+                cond1 = py.ge.y_submet_sp(jj  )
+                cond2 = py.lt.y_submet_sp(jj+1)
+                if(cond1.and.cond2)then
                   jsubmet = jj
                   exit
                 endif
               enddo
-            endif
+            !endif
           elseif(abs(py-y_submet_sp(ny_submet)).lt.1.0e-7_sp)then
               ! This is to fix the occasional instances where the top comp point
               ! maps almost right on the top submet point
-            If(IsRegular_MetGrid)then
-              jsubmet = int((py-y_start_sub)/dy_met_const)
-            else
-              jsubmet = -1
+            !if(IsRegular_MetGrid)then
+            !  jsubmet = int((py-y_start_sub)/dy_met_const)
+            !else
+              jsubmet = 1
               do jj = 1,ny_submet-1
-                if(py.ge.y_submet_sp(jj).and.py.lt.y_submet_sp(jj+1))then
+                ! Set interval inclusive of lower node
+                cond1 = py.ge.y_submet_sp(jj  )
+                cond2 = py.lt.y_submet_sp(jj+1)
+                if(cond1.and.cond2)then
                   jsubmet = jj
                   exit
                 endif
               enddo
-            endif
+            !endif
           elseif(py.gt.y_submet_sp(ny_submet).and.IsGlobal_MetGrid.and.y_pad_North)then
             jsubmet = ny_submet
           elseif(py.lt.y_submet_sp(1)        .and.IsGlobal_MetGrid.and.y_pad_South)then
@@ -1773,30 +1797,34 @@
       ! ER values to a projected computational grid.  So we set up another rotation
       ! to map ER values that were interpolated onto a computational grid to GR
       if(Map_Case.eq.3.or. & ! Met is Lat/Lon, but Comp is projected
+         Map_Case.eq.4.or. & ! Met is projected, but Comp is Lat/Lon
          Map_Case.eq.5)then  ! Met Grid and Comp grids have different projections
         write(MR_global_info,*)"  Setting up for arrays for rotating vectors on comp grid."
         allocate(MR_dum3d_compH_2(nx_comp,ny_comp,nz_comp))
         allocate(theta_Comp(nx_comp,ny_comp))
-        ! If met and comp grids differ, first get Met grid winds as Earth-relative
-        ! Note: This is only needed if Met grid is projected, ie for Map_Case = 4 or 5
-        do i=1,nx_comp
-          do j=1,ny_comp
-              ! Get lon/lat of point in question
-            xin = real(x_comp_sp(i),kind=dp)
-            yin = real(y_comp_sp(j),kind=dp)
-            call PJ_proj_inv(xin,yin, Comp_iprojflag, &
-                          Comp_lam0,Comp_phi0,Comp_phi1,Comp_phi2,Comp_k0,Comp_Re, &
-                           ptlon,ptlat)
-              ! Get projected coordinate of de at the currrent point
-            call PJ_proj_for(ptlon+1.0_dp/60.0_dp,ptlat, Comp_iprojflag, &
-                       Comp_lam0,Comp_phi0,Comp_phi1,Comp_phi2,Comp_k0,Comp_Re, &
-                       xout,yout)
-            de_x = xout-xin
-            de_y = yout-yin
-              ! Again, we want the angle between de and x (but now, of comp grid)
-            theta_Comp(i,j) = atan(de_y/de_x)
+        if(Map_Case.eq.3.or.Map_Case.eq.5)then
+          ! We only need to calculate inverse projections if the comp grid is projected.
+          ! If met and comp grids differ, first get Met grid winds as Earth-relative
+          ! Note: This is only needed if Met grid is projected, ie for Map_Case = 4 or 5
+          do i=1,nx_comp
+            do j=1,ny_comp
+                ! Get lon/lat of point in question
+              xin = real(x_comp_sp(i),kind=dp)
+              yin = real(y_comp_sp(j),kind=dp)
+              call PJ_proj_inv(xin,yin, Comp_iprojflag, &
+                            Comp_lam0,Comp_phi0,Comp_phi1,Comp_phi2,Comp_k0,Comp_Re, &
+                             ptlon,ptlat)
+                ! Get projected coordinate of de at the currrent point
+              call PJ_proj_for(ptlon+1.0_dp/60.0_dp,ptlat, Comp_iprojflag, &
+                         Comp_lam0,Comp_phi0,Comp_phi1,Comp_phi2,Comp_k0,Comp_Re, &
+                         xout,yout)
+              de_x = xout-xin
+              de_y = yout-yin
+                ! Again, we want the angle between de and x (but now, of comp grid)
+              theta_Comp(i,j) = atan(de_y/de_x)
+            enddo
           enddo
-        enddo
+        endif
       endif
 
       allocate(MR_dum2d_met_int(nx_submet,ny_submet))

@@ -3,6 +3,11 @@
       integer, parameter,private :: sp        = 4 ! single precision
       integer, parameter,private :: dp        = 8 ! double precision
 
+      integer, parameter :: MR_MAXVARS        = 50 ! Maximum number of variables in fixed arrays
+
+      real(kind=dp), parameter :: MR_EPS_SMALL  = 1.0e-7_dp  ! Small number
+      real(kind=dp), parameter :: MR_EPS_TINY   = 1.0e-12_dp ! Very small number
+
       real(kind=sp), parameter :: RAD_EARTH_MET = 6371.229_sp ! Radius of Earth in km
       real(kind=sp), parameter :: DEG2RAD_MET   = 1.7453292519943295e-2_sp
 
@@ -58,8 +63,7 @@
       integer,public :: MR_idataFormat !   Specifies the data model used
                                     !    =1 ASCII
                                     !    =2 netcdf
-                                    !    =3 grib2
-                                    !    =4 grib1
+                                    !    =3 grib1 or grib2
 
         ! These variables describe the full list of windfiles read
       integer                                       ,public :: MR_iwindfiles           ! number of files provided
@@ -360,19 +364,25 @@
         !  45 = Precipitation rate convective  (liquid)
         !  46 = Precipitation rate large-scale (ice)
         !  47 = Precipitation rate convective  (ice)
-      logical          ,dimension(50)   :: Met_var_IsAvailable      ! true if iwf contains the var
-      character(len=71),dimension(50)   :: Met_var_names            ! name in the file
-      character(len=5) ,dimension(50)   :: Met_var_names_WMO        ! WMO version of the name
-      integer          ,dimension(50)   :: Met_var_ndim             ! 
-      integer          ,dimension(50)   :: Met_var_zdimID           ! 
-      integer          ,dimension(50,4) :: Met_var_GRIB2_DPcPnSt    ! 
+      logical          ,dimension(MR_MAXVARS)   :: Met_var_IsAvailable      ! true if iwf contains the var
+      character(len=71),dimension(MR_MAXVARS)   :: Met_var_names            ! name in the file
+      character(len=5) ,dimension(MR_MAXVARS)   :: Met_var_names_WMO        ! WMO version of the name
+      integer          ,dimension(MR_MAXVARS)   :: Met_var_ndim             ! 
+      integer          ,dimension(MR_MAXVARS)   :: Met_var_zdimID           ! 
+      integer          ,dimension(MR_MAXVARS,4) :: Met_var_GRIB2_DPcPnSt    ! Grib2 files have variables identified by
+                                                                            ! discpln,param_cat,param_num,surf_class
+      character(len=7) ,dimension(MR_MAXVARS)   :: Met_var_GRIB1_MARS       ! Grib1 files have variables identified by
+                                                                            ! the MARS parameter id in the format
+                                                                            ! paramId.table_ver_#  (e.g. 11.131)
+      character(len=3) ,dimension(MR_MAXVARS)   :: Met_var_GRIB1_St         ! level type (pl, src, 116 etc)
+      integer                                   :: MR_GRIB_Version  = 0
 
-      !logical          ,dimension(50) :: Met_var_IsFloat  ! true if kind=4 otherwise false
-      real(kind=sp)    ,dimension(50) :: Met_var_conversion_factor
+      !logical          ,dimension(MR_MAXVARS) :: Met_var_IsFloat  ! true if kind=4 otherwise false
+      real(kind=sp)    ,dimension(MR_MAXVARS) :: Met_var_conversion_factor
 
         ! Variables needed by netcdf reader
-      real(kind=sp) :: iwf25_scale_facs(50)
-      real(kind=sp) :: iwf25_offsets(50)
+      real(kind=sp) :: iwf25_scale_facs(MR_MAXVARS)
+      real(kind=sp) :: iwf25_offsets(MR_MAXVARS)
       real(kind=sp) :: x_in_iwf25_sp(192)
       real(kind=sp) :: y_in_iwf25_sp(94)
         ! Here is the mapping for bilinear weighting coeffiecients (amap) and
@@ -586,10 +596,10 @@
 
       ! Check for igrid and iwf consistancy
       ! If we are using a known product (i.e. iwf > 0) then overide the provided igrid
-      if (iwf.eq.3) then      ! NARR3D NAM221 32 km North America files
-        MR_iGridCode = 221
-      elseif (iwf.eq.4) then  ! NARR3D NAM221 32 km North America files
-        MR_iGridCode = 221
+      if (iwf.eq.3) then      ! NARR3D NAM221 32 km North America files, except diff. Re
+        MR_iGridCode = 1221
+      elseif (iwf.eq.4) then  ! NARR3D NAM221 32 km North America files, except diff. Re
+        MR_iGridCode = 1221
       elseif (iwf.eq.5) then  ! NAM216 AK 45km
         MR_iGridCode = 216
       elseif (iwf.eq.6) then  ! NAM Regional 90 km grid 104
@@ -684,11 +694,11 @@
       elseif (MR_iwindformat.eq.3) then  ! NARR3D NAM221 32 km North America files
         MR_Reannalysis = .true.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "NARR3D NAM221 32 km North America files"
+                  "NARR3D NAM221 32 km North America files with Re=6367.47"
       elseif (MR_iwindformat.eq.4) then  ! NARR3D NAM221 32 km North America files
         MR_Reannalysis = .true.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "NARR3D NAM221 32 km North America files"
+                  "NARR3D NAM221 32 km North America files with Re=6367.47"
       elseif (MR_iwindformat.eq.5) then  ! NAM216 AK 45km
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
@@ -808,19 +818,11 @@
         stop 1
 #endif
       case(3)
-        write(MR_global_info,*)"            data format = ",MR_idataFormat,"GRIB2"
-#ifndef USEGRIB2
-        write(MR_global_error,*)"MR ERROR: Met files are grib2, but MetReader was not"
-        write(MR_global_error,*)"          compiled with grib2 support."
-        write(MR_global_error,*)"          Please recompile MetReader with grib2 support"
-        stop 1
-#endif
-      case(4)
-        write(MR_global_info,*)"            data format = ",MR_idataFormat,"GRIB1"
-#ifndef USEGRIB1
-        write(MR_global_error,*)"MR ERROR: Met files are grib1, but MetReader was not"
-        write(MR_global_error,*)"          compiled with grib1 support."
-        write(MR_global_error,*)"          Please recompile MetReader with grib1 support"
+        write(MR_global_info,*)"            data format = ",MR_idataFormat,"GRIB"
+#ifndef USEGRIB
+        write(MR_global_error,*)"MR ERROR: Met files are grib, but MetReader was not"
+        write(MR_global_error,*)"          compiled with grib support."
+        write(MR_global_error,*)"          Please recompile MetReader with grib support"
         stop 1
 #endif
       case default
@@ -1023,14 +1025,9 @@
           call MR_Read_Met_Times_netcdf
 #endif
         elseif(MR_idataFormat.eq.3)then
-#ifdef USEGRIB2
-          call MR_Read_Met_DimVars_GRIB2
-          call MR_Read_Met_Times_GRIB2
-#endif
-        elseif(MR_idataFormat.eq.4)then
-#ifdef USEGRIB1
-          !call MR_Read_Met_DimVars_GRIB1
-          !call MR_Read_Met_Times_GRIB1
+#ifdef USEGRIB
+          call MR_Read_Met_DimVars_GRIB
+          call MR_Read_Met_Times_GRIB
 #endif
         else
           write(MR_global_error,*)"MR ERROR: Unknown MR_idataFormat:",MR_idataFormat
@@ -1342,6 +1339,8 @@
       integer, parameter :: sp        = 4 ! single precision
       integer, parameter :: dp        = 8 ! double precision
 
+      integer, parameter :: NT_MAXOUT = 40
+
       real(kind=8),intent(in) :: eStartHour
       real(kind=8),intent(in) :: Duration
 
@@ -1355,9 +1354,9 @@
       integer            :: iwstep
       integer            :: istep
       real(kind=8)       :: stephour
-      logical :: Found_First_Step
-      logical :: Found_Last_Step
-      integer :: nMetSteps_Comp
+      logical :: Found_First_Step = .false.
+      logical :: Found_Last_Step  = .false.
+      integer :: nMetSteps_Comp   = 0
       real(kind=8) :: StepInterval
       real(kind=8) :: met_t1,met_t2,met_dt1
       logical      :: prestep, poststep
@@ -1517,7 +1516,7 @@
           if(stephour.lt.MR_Comp_StartHour)then
             Found_First_Step = .false.
             istep = 1
-            if(MR_windfiles_nt_fullmet(iw).lt.36)then
+            if(MR_windfiles_nt_fullmet(iw).lt.NT_MAXOUT)then
               ! This suppresses outputing the windfile step info for the files that contain a year's
               ! worth of data (NCEP 2.5, etc)
               write(MR_global_info,150)                    &
@@ -1529,9 +1528,11 @@
             if(.not.Found_Last_Step)then
               Found_First_Step = .true.
               istep = istep + 1
-              write(MR_global_info,150)                    &
-                iw,iwstep,stephour,MR_Comp_StartHour,istep,&
-                "After MR_Comp_StartHour "
+              if(MR_windfiles_nt_fullmet(iw).lt.NT_MAXOUT)then
+                write(MR_global_info,150)                    &
+                  iw,iwstep,stephour,MR_Comp_StartHour,istep,&
+                  "After MR_Comp_StartHour "
+              endif
             endif
           endif
 
@@ -1541,13 +1542,14 @@
             Found_Last_Step = .true.
           endif
           if(Found_Last_Step &
-             .and.MR_windfiles_nt_fullmet(iw).lt.36)then ! This condition suppressess output for NCEP 2.5
+             .and.MR_windfiles_nt_fullmet(iw).lt.NT_MAXOUT)then ! This condition suppressess output for NCEP 2.5
               write(MR_global_info,150)                    &
                 iw,iwstep,stephour,MR_Comp_StartHour,istep,&
                 "At or after END OF SIM  "
           endif
         enddo
       enddo
+
       ! If we went through all the steps and didn't find the last step, and if poststep=T, then
       ! increment istep and set nMetSteps_Comp
       if(.not.Found_Last_Step)then
@@ -1564,7 +1566,7 @@
           stop 1
         endif
       endif
- 150  format(8x,i3,9x,i4,4x,f15.2,2x,f13.2,10x,i3,8x,a25)
+ 150  format(8x,i3,9x,i4,4x,f15.2,2x,f13.2,10x,i4,8x,a25)
 
       ! We now have the number of steps needed for the computation
       ! Allocate the lists
@@ -1674,12 +1676,11 @@
 
       write(MR_global_info,*)"Comp start = ",real(MR_Comp_StartHour,kind=4)
       write(MR_global_info,*)"Comp end   = ",real(MR_Comp_StartHour+MR_Comp_Time_in_hours,kind=4)
+
       do istep = 1,MR_MetSteps_Total
         iw       = MR_MetStep_findex(istep)
         iwstep   = MR_MetStep_tindex(istep)
         stephour = MR_MetStep_Hour_since_baseyear(istep)
-        write(MR_global_info,*)istep,trim(adjustl(MR_MetStep_File(istep))),iw,iwstep,real(stephour,kind=4),&
-                               real(MR_MetStep_Interval(istep),kind=4)
       enddo
 
  !     MAKE SURE THE WIND MODEL TIME WINDOW COVERS THE ENTIRE SUMULATION TIME
@@ -1711,7 +1712,6 @@
         stop 1
       endif
       write(MR_global_info,103)
-      !write(MR_global_log ,103)
 103   format(4x,'Good.  It does.',/)
 
       CALLED_MR_Set_Met_Times = .true.
@@ -1777,12 +1777,8 @@
           call MR_Read_MetP_Variable_netcdf(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.3)then
-#ifdef USEGRIB2
-          call MR_Read_MetP_Variable_GRIB2(ivar,istep)
-#endif
-        elseif(MR_idataFormat.eq.4)then
-#ifdef USEGRIB1
-          !call MR_Read_MetP_Variable_GRIB1(ivar,istep)
+#ifdef USEGRIB
+          call MR_Read_MetP_Variable_GRIB(ivar,istep)
 #endif
         endif
         MR_geoH_metP_last(:,:,:) = MR_dum3d_metP(:,:,:)
@@ -1800,12 +1796,8 @@
         call MR_Read_MetP_Variable_netcdf(ivar,istep+1)
 #endif
       elseif(MR_idataFormat.eq.3)then
-#ifdef USEGRIB2
-        call MR_Read_MetP_Variable_GRIB2(ivar,istep+1)
-#endif
-      elseif(MR_idataFormat.eq.4)then
-#ifdef USEGRIB1
-        !call MR_Read_MetP_Variable_GRIB1(ivar,istep+1)
+#ifdef USEGRIB
+        call MR_Read_MetP_Variable_GRIB(ivar,istep+1)
 #endif
       endif
       MR_geoH_metP_next(:,:,:) = MR_dum3d_metP(:,:,:)
@@ -1879,12 +1871,8 @@
           call MR_Read_MetP_Variable_netcdf(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.3)then
-#ifdef USEGRIB2
-          call MR_Read_MetP_Variable_GRIB2(ivar,istep)
-#endif
-        elseif(MR_idataFormat.eq.4)then
-#ifdef USEGRIB1
-          !call MR_Read_MetP_Variable_GRIB1(ivar,istep)
+#ifdef USEGRIB
+          call MR_Read_MetP_Variable_GRIB(ivar,istep)
 #endif
         endif
 
@@ -2197,12 +2185,8 @@
           call MR_Read_MetP_Variable_netcdf(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.3)then
-#ifdef USEGRIB2
-          call MR_Read_MetP_Variable_GRIB2(ivar,istep)
-#endif
-        elseif(MR_idataFormat.eq.4)then
-#ifdef USEGRIB1
-          !call MR_Read_MetP_Variable_GRIB1(ivar,istep)
+#ifdef USEGRIB
+          call MR_Read_MetP_Variable_GRIB(ivar,istep)
 #endif
         endif
       case default
@@ -2282,7 +2266,7 @@
 !
 !     MR_Rotate_UV_GR2ER_Met
 !
-!     This subroutine reads U and V on the metP grid, rotates to GridRelative
+!     This subroutine reads U and V on the metP grid, rotates to EarthRelative
 !
 !     Takes as input :: istep :: specified the met step
 !
@@ -2291,11 +2275,12 @@
 !
 !##############################################################################
 
-      subroutine MR_Rotate_UV_GR2ER_Met(istep)
+      subroutine MR_Rotate_UV_GR2ER_Met(istep,SetComp)
 
       implicit none
 
       integer,intent(in)  :: istep
+      logical,optional,intent(in) :: SetComp
 
       integer             :: i,j,k
 
@@ -2349,11 +2334,16 @@
           enddo
         enddo
       enddo
-      !MR_dum3d_metP = MR_v_ER_metP
-      !call MR_Regrid_MetP_to_CompGrid(istep)
-      !MR_dum3d_compH_2 = MR_dum3d_compH
-      !MR_dum3d_metP = MR_u_ER_metP
-      !call MR_Regrid_MetP_to_CompGrid(istep)
+
+      if(present(SetComp)) then
+        if(SetComp)then
+          MR_dum3d_metP = MR_v_ER_metP
+          call MR_Regrid_MetP_to_CompGrid(istep)
+          MR_dum3d_compH_2 = MR_dum3d_compH
+          MR_dum3d_metP = MR_u_ER_metP
+          call MR_Regrid_MetP_to_CompGrid(istep)
+        endif
+      endif
 
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
@@ -2404,8 +2394,10 @@
                                  .true.,  &  ! CALLED_MR_Initialize_Met_Grids        (this check is needed)
                                  .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
 
-      if(Map_Case.eq.3)then
+      if(Map_Case.eq.3.or.Map_Case.eq.4)then
         ! Met grid is natively LL and Comp grid is projected
+        !  - or -
+        ! Met grid is projected and comp grid is LL
         ! Fill the y velocities to spare array (comp_2)
         call MR_Read_3d_MetP_Variable(3,istep) ! This fills MR_dum3d_metP
         call MR_Regrid_MetP_to_CompGrid(istep) ! Takes MR_dum3d_metP and fills MR_dum3d_compH
@@ -2415,12 +2407,12 @@
         call MR_Regrid_MetP_to_CompGrid(istep)
         ! Now compH and compH_2 have vx and vy
       elseif(Map_Case.eq.5)then
-        ! Assume MR_u_ER_metP and MR_v_ER_metP have already been set by
+        ! If the velocity components are grid relative, then
+        ! assume MR_u_ER_metP and MR_v_ER_metP have already been set by
         ! MR_Rotate_UV_GR2ER_Met
         MR_dum3d_metP = MR_v_ER_metP
         call MR_Regrid_MetP_to_CompGrid(istep)
           MR_dum3d_compH_2 = MR_dum3d_compH
-
         MR_dum3d_metP = MR_u_ER_metP
         call MR_Regrid_MetP_to_CompGrid(istep)
         ! Now compH and compH_2 have vx and vy

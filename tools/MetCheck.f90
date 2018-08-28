@@ -88,7 +88,7 @@
         write(MR_global_info,*)"     "
         write(MR_global_info,*)"     [year] = year for NCEP tests"
         write(MR_global_info,*)"               This is optional and defaults to current year"
-        write(MR_global_info,*)"               is not provided."
+        write(MR_global_info,*)"               if not provided."
 
         stop 1
       else
@@ -158,20 +158,26 @@
       call MR_Set_Met_Times(0.0_8,0.0_8)
 
       ! These are dummy values.
-      nxmax = 3 ! 
-      nymax = 3 ! 
+      !nxmax = 3 !
+      !nymax = 3 !
+      nxmax = 2 !
+      nymax = 2 !
+
       nzmax = 2 ! This is not really used in this utility
       inlon = 0.0_4
       inlat = 0.0_4
-      allocate(lon_grid(nxmax)); lon_grid(1:3) = (/inlon-0.5_4,inlon,inlon+0.5_4/)
-      allocate(lat_grid(nymax)); lat_grid(1:3) = (/inlat-0.5_4,inlat,inlat+0.5_4/)
+      !allocate(lon_grid(nxmax)); lon_grid(1:3) = (/inlon-0.5_4,inlon,inlon+0.5_4/)
+      !allocate(lat_grid(nymax)); lat_grid(1:3) = (/inlat-0.5_4,inlat,inlat+0.5_4/)
+      allocate(lon_grid(nxmax)); lon_grid(1:nxmax) = (/inlon-0.5_4,inlon+0.5_4/)
+      allocate(lat_grid(nymax)); lat_grid(1:nymax) = (/inlat-0.5_4,inlat+0.5_4/)
+
       allocate(z_cc(nzmax))    ; z_cc(1:2) = (/0.0_4, 10.0_4/)
       IsPeriodic = .false.
 
       ! We just want to access the met grid, so set our 'comp' grid to the
       ! same projection
-      IsLatLon = IsLatLon_MetGrid
-      iprojflag = Met_iprojflag
+      IsLatLon     = IsLatLon_MetGrid
+      iprojflag    = Met_iprojflag
       lambda0      = Met_lam0
       phi0         = Met_phi0
       phi1         = Met_phi1
@@ -190,6 +196,9 @@
                               lat_grid(1:nymax), &
                               z_cc(1:nzmax)    , &
                               IsPeriodic)
+      ! We need to populate the HGT arrays or the vertical velocity read with fail
+      ! since the conversion relies on dp/dz
+      call MR_Read_HGT_arrays(1)  ! Just fill with the geopotential height at step 1
 
       do imetstep = 1,nt_fullmet
         if(iwf.eq.25)then

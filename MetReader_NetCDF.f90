@@ -1500,7 +1500,7 @@
       elseif(MR_iwindformat.eq.3.or.MR_iwindformat.eq.4)then
           ! 3 = NARR3D NAM221 32 km North America files
           ! 4 = RAW : assumes full set of variables
-        call MR_Set_Met_NCEPGeoGrid(221)
+        call MR_Set_Met_NCEPGeoGrid(1221) ! This is almost NAM221, but uses a diff Re
         isGridRelative = .false.
 
         nt_fullmet = 1
@@ -1526,7 +1526,7 @@
         p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
-        z_inverted = .false.
+        z_inverted = .true.
 
       elseif(MR_iwindformat.eq.5)then
         ! NAM 45-km Polar Sterographic
@@ -2512,6 +2512,7 @@
       if(nSTAT.ne.NF90_NOERR) then
         write(MR_global_error,*)'MR ERROR: open WRF file: ',nf90_strerror(nSTAT)
         write(MR_global_log  ,*)'MR ERROR: open WRF file: ',nf90_strerror(nSTAT)
+        write(MR_global_error,*)'Exiting'
         stop 1
       endif
       
@@ -2973,7 +2974,7 @@
       integer :: filetime_in_int
 
       integer            :: var_xtype
-      character(len=40)  :: invar
+      character(len=NF90_MAX_NAME)  :: name,invar
       integer            :: xtype, length, attnum
       character(len=20)  :: tstring
       character(len=31)  :: tstring2
@@ -3039,6 +3040,7 @@
           write(MR_global_error,*)'MR ERROR: nf90_open: ',nf90_strerror(nSTAT)
           write(MR_global_error,*)"    Could not open file: ",trim(ADJUSTL(infile))
           write(MR_global_log  ,*)'MR ERROR: nf90_open: ',nf90_strerror(nSTAT)
+          write(MR_global_error,*)'Exiting'
           stop 1
         endif
         nSTAT = nf90_inq_dimid(ncid,Met_dim_names(1),t_dim_id)
@@ -3369,7 +3371,8 @@
 
           ! Now get time data
           ! Check if we need to read into an int, float or a double
-          nSTAT = nf90_inquire_variable(ncid, time_var_id, invar, xtype = var_xtype)
+          !nSTAT = nf90_inquire_variable(ncid, time_var_id, invar, xtype = var_xtype)
+          nSTAT = nf90_inquire_variable(ncid, time_var_id, name = invar, xtype = var_xtype)
           if(nSTAT.ne.NF90_NOERR)then
             write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
             write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
@@ -4237,6 +4240,7 @@
         write(MR_global_error,*)'MR ERROR open file:',infile,nf90_strerror(nSTAT)
         write(MR_global_log  ,*)'MR ERROR open file:',infile,nf90_strerror(nSTAT)
         write(MR_global_error,*)trim(adjustl(infile)),NF90_NOWRITE,ncid,nSTAT
+        write(MR_global_error,*)'Exiting'
         stop 1
       endif
 
@@ -4310,7 +4314,7 @@
             allocate(temp3d_sp(nx_submet,ny_submet,np_met_loc,1))
             allocate(dum3d_metP_aux(nx_submet,ny_submet,np_met_loc,1))
           endif
-        endif
+        endif ! MR_iwindformat.ne.50
 
         do i=1,ict        !read subgrid at current time step
           if(MR_iwindformat.eq.25)then
@@ -4510,7 +4514,8 @@
 
             endif
 
-          else
+          else ! end of iwf25 (NECP) and iwf=50 (WRF) sections
+
             ! for any other 3d variable (non-WRF, non-NCEP/2.5 reannalysis)
             nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
                      start = (/iistart(i),jstart,1,iwstep/),       &
@@ -4786,7 +4791,14 @@
                   endif
                 endif
                 del_H = del_H * 1000.0_sp ! convert to m
-                dpdz  = del_P/del_H
+                if(abs(del_H).gt.MR_EPS_SMALL)then
+                  dpdz  = del_P/del_H
+                else
+                  write(MR_global_error,*)'MR ERROR: failed to calculate dpdz'
+                  write(MR_global_error,*)i,j,k,del_P,del_H
+                  write(MR_global_error,*)MR_geoH_metP_last(i,j,:)
+                  stop 1
+                endif
                 MR_dum3d_metP(i,j,k) = MR_dum3d_metP(i,j,k) / dpdz
               enddo ! j
             enddo ! i

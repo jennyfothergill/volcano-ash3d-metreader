@@ -1,269 +1,11 @@
-!      subroutine MR_Set_Gen_Index_GRIB(grib2_file)
-!
-!      use MetReader
-!      use grib_api
-!
-!      implicit none
-!
-!      character(len=130)  :: grib2_file
-!
-!      character(len=130)  :: index_file
-!
-!      integer            :: idx
-!      integer            :: iret
-!      integer            :: i,j,k,l,t
-!      integer            :: count1=0
-!        ! Used for keys
-!      integer(kind=4),dimension(:),allocatable :: discipline_idx
-!      integer(kind=4),dimension(:),allocatable :: parameterCategory_idx
-!      integer(kind=4),dimension(:),allocatable :: parameterNumber_idx
-!      integer(kind=4),dimension(:),allocatable :: level_idx
-!      integer(kind=4),dimension(:),allocatable :: forecastTime_idx
-!      integer(kind=4)  :: disciplineSize
-!      integer(kind=4)  :: parameterCategorySize
-!      integer(kind=4)  :: parameterNumberSize
-!      integer(kind=4)  :: levelSize
-!      integer(kind=4)  :: forecastTimeSize
-!
-!      ! Message identifier.
-!      integer            :: igrib
-!
-!! discipline
-!! 0 Meteorological products
-!! 1 Hydrological products
-!! 2 Land surface products
-!!10 Oceanographic products
-!
-!! parameterCategory
-!! 0 Temperature
-!! 1 Moisture
-!! 2 Momentum
-!! 3 Mass
-!! 4 Short-wave Radiation
-!! 5 Long-wave Radiation
-!! 6 Cloud
-!! 7 Thermodynamic Stability indices
-!
-!! parameterNumber
-!!  This is a sub-category of the discipline and parameterCategory
-!
-!! typeOfFirstFixedSurface
-!!  1 Ground or water surface
-!!  2 Cloud base level
-!!  3 Level of cloud tops
-!!100 Isobaric surface  (Pa)
-!!103 Specified height level above ground  (m)
-!!106 Depth below land surface  (m)
-!!200 Unknown code table entry
-!! http://www.nco.ncep.noaa.gov/pmb/docs/grib2/grib2_table4-1.shtml
-!!    shortName 
-!!            discipline 
-!!              parameterCategory 
-!!                  parameterNumber
-!! 1  gh      0 3   5 100   HGT   Geopotential_height_isobaric
-!! 2  u       0 2   2 100  UGRD   u-component_of_wind_isobaric
-!! 3  v       0 2   3 100  VGRD   v-component_of_wind_isobaric
-!! 4  w       0 2   8 100  VVEL   Vertical_velocity_pressure_isobaric
-!! 5  t       0 0   0 100   TMP   Temperature_isobaric
-!! 10 hpbl    0 3 196   1  HPBL   Planetary_Boundary_Layer_Height_surface
-!! 11 u       0 2   2 103  UGRD   u-component_of_wind_height_above_ground
-!! 12 v       0 2   3 103  VGRD   v-component_of_wind_height_above_ground
-!! 13 fricv   0 2 197   1 FRICV   Frictional_Velocity_surface
-!! 15 sd      0 1  11   1  SNOD   Snow_depth_surface
-!! 16 soilw   2 0 192 106 SOILW   Volumetric_Soil_Moisture_Content_depth_below_surface_layer
-!! 17 sr      2 0   1   1  SFCR   Surface_roughness_surface
-!! 18 gust    0 2  22   1  GUST   Wind_speed_gust_surface
-!! 20 pres    0 3   0   2  PRES   Pressure_cloud_base
-!! 21 pres    0 3   0   3  PRES   Pressure_cloud_tops
-!! 23 tcc     0 6   1 200  TCDC   Total_cloud_cover_entire_atmosphere
-!! 30 r       0 1   1 100    RH   Relative_humidity_isobaric
-!! 31 q       0 1   0 100  SPFH   Specific_humidity_isobaric
-!! 32 clwmr   0 1  22 100 CLWMR   Cloud_mixing_ratio_isobaric
-!! 33 snmr    0 1  25 100  SNMR   Snow_mixing_ratio_isobaric
-!! 40 crain   0 1 192   1 CRAIN   Categorical_Rain_surface
-!! 41 csnow   0 1 195   1 CSNOW   Categorical_Snow_surface
-!! 42 cfrzr   0 1 193   1 CFRZR   Categorical_Freezing_Rain_surface
-!! 43 cicep   0 1 194   1 CICEP   Categorical_Ice_Pellets_surface
-!! 44 prate   0 1   7   1 PRATE   Precipitation_rate_surface
-!! 45                   1 CPRAT   Convective_Precipitation_Rate_surface
-!! 45 tp      0 1   8   APCP   Total_precipitation_surface_0_Hour_Accumulation
-!! 46                  ACPCP
-!! Convective_precipitation_surface_0_Hour_Accumulation
-!! 47 ncpcp   0 1   9  NCPCP
-!! Large-scale_precipitation_non-convective_surface_0_Hour_Accumulation
-!
-!      index_file = adjustl(trim(grib2_file)) // ".index"
-!      write(MR_global_info,*)"Generating index file: ",index_file
-!
-!          ! create an index from a grib file using some keys
-!        call grib_index_create(idx,adjustl(trim(grib2_file)),&
-!              'discipline,parameterCategory,parameterNumber,level,forecastTime')
-!        !  call grib_index_read(idx,index_file)
-!        call grib_multi_support_on()
-!      
-!          ! get the number of distinct values of all the keys in the index
-!        call grib_index_get_size(idx,'discipline',disciplineSize)
-!        call grib_index_get_size(idx,'parameterCategory',parameterCategorySize)
-!        call grib_index_get_size(idx,'parameterNumber',parameterNumberSize)
-!        call grib_index_get_size(idx,'level',levelSize)
-!        call grib_index_get_size(idx,'forecastTime',forecastTimeSize)
-!      
-!          ! allocate the arry to contain the list of distinct values
-!        allocate(discipline_idx(disciplineSize))
-!        allocate(parameterCategory_idx(parameterCategorySize))
-!        allocate(parameterNumber_idx(parameterNumberSize))
-!        allocate(level_idx(levelSize))
-!        allocate(forecastTime_idx(forecastTimeSize))
-!      
-!          ! get the list of distinct key values from the index
-!        call grib_index_get(idx,'discipline',discipline_idx)
-!        call grib_index_get(idx,'parameterCategory',parameterCategory_idx)
-!        call grib_index_get(idx,'parameterNumber',parameterNumber_idx)
-!        call grib_index_get(idx,'level',level_idx)
-!        call grib_index_get(idx,'forecastTime',forecastTime_idx)
-!      
-!        count1=0
-!        do l=1,disciplineSize
-!          call grib_index_select(idx,'discipline',discipline_idx(l))
-!      
-!          do j=1,parameterCategorySize
-!            call grib_index_select(idx,'parameterCategory',parameterCategory_idx(j))
-!      
-!            do k=1,parameterNumberSize
-!              call grib_index_select(idx,'parameterNumber',parameterNumber_idx(k))
-!      
-!              do i=1,levelSize
-!                call grib_index_select(idx,'level',level_idx(i))
-!      
-!                do t=1,forecastTimeSize
-!                  call grib_index_select(idx,'forecastTime',forecastTime_idx(t))
-!      
-!      
-!                call grib_new_from_index(idx,igrib, iret)
-!                do while (iret /= GRIB_END_OF_INDEX)
-!                   count1=count1+1
-!                   !call grib_get(igrib,'shortName',sName)
-!                   !write(MR_global_info,*)count1,sName
-!                   call grib_release(igrib)
-!                   call grib_new_from_index(idx,igrib, iret)
-!                enddo
-!                call grib_release(igrib)
-!      
-!                enddo ! loop on forecastTime
-!              enddo ! loop on level
-!            enddo ! loop on parameterNumber
-!          enddo ! loop on parameterCategory
-!        enddo ! loop on discipline
-!      
-!        call grib_index_write(idx,adjustl(trim(index_file)))
-!      
-!        call grib_index_release(idx)
-!
-!      end subroutine MR_Set_Gen_Index_GRIB
-
-
-!##############################################################################
-!##############################################################################
-!##############################################################################
-!    call grib_index_read(idx,index_file)
-!
-!    ! get the number of distinct values of all the keys in the index
-!  call grib_index_get_size(idx,'discipline',disciplineSize)
-!  call grib_index_get_size(idx,'parameterCategory',parameterCategorySize)
-!  call grib_index_get_size(idx,'parameterNumber',parameterNumberSize)
-!  call grib_index_get_size(idx,'level',levelSize)
-!  call grib_index_get_size(idx,'forecastTime',forecastTimeSize)
-!
-!    ! allocate the arry to contain the list of distinct values
-!  allocate(discipline_idx(disciplineSize))
-!  allocate(parameterCategory_idx(parameterCategorySize))
-!  allocate(parameterNumber_idx(parameterNumberSize))
-!  allocate(level_idx(levelSize))
-!  allocate(forecastTime_idx(forecastTimeSize))
-!
-!    ! get the list of distinct key values from the index
-!  call grib_index_get(idx,'discipline',discipline_idx)
-!  call grib_index_get(idx,'parameterCategory',parameterCategory_idx)
-!  call grib_index_get(idx,'parameterNumber',parameterNumber_idx)
-!  call grib_index_get(idx,'level',level_idx)
-!  call grib_index_get(idx,'forecastTime',forecastTime_idx)
-!
-!  count1=0
-!  do l=1,disciplineSize
-!    call grib_index_select(idx,'discipline',discipline_idx(l))
-!
-!    do j=1,parameterCategorySize
-!      call grib_index_select(idx,'parameterCategory',parameterCategory_idx(j))
-!
-!      do k=1,parameterNumberSize
-!        call grib_index_select(idx,'parameterNumber',parameterNumber_idx(k))
-!
-!        do i=1,levelSize
-!          call grib_index_select(idx,'level',level_idx(i))
-!
-!          do t=1,forecastTimeSize
-!            call grib_index_select(idx,'forecastTime',forecastTime_idx(t))
-!
-!
-!          call grib_new_from_index(idx,igrib, iret)
-!          do while (iret /= GRIB_END_OF_INDEX)
-!             count1=count1+1
-!
-!    call grib_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
-!
-!    iv_discpl = 0
-!    iv_paramC = 3
-!    iv_paramN = 5
-!    iv_typeSf = 100
-!    if ( discipline_idx(l)              .eq. iv_discpl .and. &
-!         parameterCategory_idx(j)       .eq. iv_paramC .and. &
-!         parameterNumber_idx(k)         .eq. iv_paramN .and. &
-!         typeOfFirstFixedSurface .eq. iv_typeSf) then
-!      call grib_get(igrib,'numberOfPoints',numberOfPoints)
-!      call grib_get(igrib,'Ni',Ni)
-!      call grib_get(igrib,'Nj',Nj)
-!      allocate(values(numberOfPoints))
-!      allocate(slice(Ni,Nj))
-!
-!      call grib_get(igrib,'shortName',sName)
-!      call grib_get(igrib,'level',lev)
-!      write(MR_global_info,*)sName,lev
-!      if(lev.eq.1000)then
-!        call grib_get(igrib,'values',values)
-!        do m = 1,Nj
-!          istrt = (m-1)*Ni + 1
-!          iend  = m*Ni
-!          slice(1:Ni,m) = values(istrt:iend)
-!        enddo
-!        write(MR_global_info,*)slice(:,1)
-!      endif
-!      deallocate(values)
-!      deallocate(slice)
-!    endif
-!             call grib_release(igrib)
-!             call grib_new_from_index(idx,igrib, iret)
-!          enddo
-!          call grib_release(igrib)
-!
-!          enddo ! loop on forecastTime
-!        enddo ! loop on level
-!      enddo ! loop on parameterNumber
-!    enddo ! loop on parameterCategory
-!  enddo ! loop on discipline
-!
-!  call grib_index_release(idx)
-
-
-
 !##############################################################################
 !##############################################################################
 !##############################################################################
 
 
-
 !##############################################################################
 !
-!     MR_Read_Met_DimVars_GRIB2
+!     MR_Read_Met_DimVars_GRIB
 !
 !     Called once from MR_Read_Met_DimVars 
 !
@@ -280,7 +22,7 @@
 !
 !##############################################################################
 
-      subroutine MR_Read_Met_DimVars_GRIB2
+      subroutine MR_Read_Met_DimVars_GRIB
 
       use MetReader
       use grib_api
@@ -307,6 +49,10 @@
         Met_var_conversion_factor(:)  = 1.0_sp
       endif
 
+      Met_var_GRIB2_DPcPnSt(:,:) = 0
+      Met_var_GRIB1_MARS(:)      = ""
+      Met_var_GRIB1_St(:)        = ""
+
       ! Initialize dimension and variable names
       if(MR_iwindformat.eq.0)then
           ! This expects that MR_iwf_template has been filled by the calling program
@@ -318,12 +64,152 @@
           ! Note that winds are "earth-relative" and must be rotated!
           ! See
           ! http://www.emc.ncep.noaa.gov/mmb/rreanl/faq.html#eta-winds
+        Met_dim_IsAvailable=.false.
+        Met_var_IsAvailable=.false.
+
+        ! These names are not used for reading GRIB files
+        Met_dim_names(1) = "time"      ! time
+          Met_dim_IsAvailable(1)=.true.
+        Met_dim_names(2) = "isobaric2"  ! pressure
+          Met_dim_IsAvailable(2)=.true.
+        Met_dim_names(3) = "y"         ! y
+          Met_dim_IsAvailable(3)=.true.
+        Met_dim_names(4) = "x"         ! x
+          Met_dim_IsAvailable(4)=.true.
+        Met_dim_names(5) = "isobaric2"  ! pressure coordinate for Vz
+          Met_dim_IsAvailable(5)=.true.
+        Met_dim_names(6) = "isobaric2" ! pressure coordinate for RH
+          Met_dim_IsAvailable(6)=.true.
+
+        ! Mechanical / State variables
+        Met_var_names(1)               = "gh"
+          Met_var_GRIB1_MARS(1)        = "7.131"
+          Met_var_GRIB1_St(1)          = "pl"
+          Met_var_IsAvailable(1)       = .true.
+        Met_var_names(2)               = "u"
+          Met_var_GRIB1_MARS(2)        = "33.131"
+          Met_var_GRIB1_St(2)          = "pl"
+          Met_var_IsAvailable(2)       = .true.
+        Met_var_names(3)               = "v"
+          Met_var_GRIB1_MARS(3)        = "34.131"
+          Met_var_GRIB1_St(3)          = "pl"
+          Met_var_IsAvailable(3)       = .true.
+        Met_var_names(4)               = "w"
+          Met_var_GRIB1_MARS(4)        = "39.131"
+          Met_var_GRIB1_St(4)          = "pl"
+          Met_var_IsAvailable(4)       = .true.
+        Met_var_names(5)               = "t"
+          Met_var_GRIB1_MARS(5)        = "11.131"
+          Met_var_GRIB1_St(5)          = "pl"
+          Met_var_IsAvailable(5)       = .true.
+
+        ! Surface
+!        Met_var_names(10)              = "hpbl"
+!        Met_var_names(11)              = "u"
+!        Met_var_names(12)              = "v"
+!        Met_var_names(13)              = "fricv"
+!        !  14 = Displacement Height
+!        Met_var_names(15)              = "sd"
+!        Met_var_names(16)              = "soilw"
+!        Met_var_names(17)              = "sr"
+!        Met_var_names(18)              = "gust"
+!        ! Atmospheric Structure
+!        Met_var_names(20)              = "pres"
+!        Met_var_names(21)              = "pres"
+!        Met_var_names(23)              = "tcc"
+!        ! Moisture
+!        Met_var_names(30)              = "r"
+        Met_var_names(31)              = "q"
+          Met_var_GRIB1_MARS(31)       = "51.131"
+          Met_var_GRIB1_St(31)         = "pl"
+          Met_var_IsAvailable(31)      = .true.
+!        Met_var_names(32)              = "clwmr"
+!        Met_var_names(33)              = "snmr"
+!        ! Precipitation
+!        Met_var_names(40)              = "crain"
+!        Met_var_names(41)              = "csnow"
+!        Met_var_names(42)              = "cfrzr"
+!        Met_var_names(43)              = "cicep"
+!        Met_var_names(44)              = "prate"
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+
       elseif(MR_iwindformat.eq.4)then
           ! NARR3D NAM221 50 km North America files (RAW : assumes full set of
           ! variables)
           ! Note that winds are "earth-relative" and must be rotated!
           ! See
           ! http://www.emc.ncep.noaa.gov/mmb/rreanl/faq.html#eta-winds
+        Met_dim_IsAvailable=.false.
+        Met_var_IsAvailable=.false.
+
+        ! These names are not used for reading GRIB files
+        Met_dim_names(1) = "time"      ! time
+          Met_dim_IsAvailable(1)=.true.
+        Met_dim_names(2) = "isobaric2"  ! pressure
+          Met_dim_IsAvailable(2)=.true.
+        Met_dim_names(3) = "y"         ! y
+          Met_dim_IsAvailable(3)=.true.
+        Met_dim_names(4) = "x"         ! x
+          Met_dim_IsAvailable(4)=.true.
+        Met_dim_names(5) = "isobaric2"  ! pressure coordinate for Vz
+          Met_dim_IsAvailable(5)=.true.
+        Met_dim_names(6) = "isobaric2" ! pressure coordinate for RH
+          Met_dim_IsAvailable(6)=.true.
+
+        ! Mechanical / State variables
+        Met_var_names(1)               = "gh"
+          Met_var_GRIB1_MARS(1)        = "7.131"
+          Met_var_GRIB1_St(1)          = "pl"
+          Met_var_IsAvailable(1)       = .true.
+        Met_var_names(2)               = "u"
+          Met_var_GRIB1_MARS(2)        = "33.131"
+          Met_var_GRIB1_St(2)          = "pl"
+          Met_var_IsAvailable(2)       = .true.
+        Met_var_names(3)               = "v"
+          Met_var_GRIB1_MARS(3)        = "34.131"
+          Met_var_GRIB1_St(3)          = "pl"
+          Met_var_IsAvailable(3)       = .true.
+        Met_var_names(4)               = "w"
+          Met_var_GRIB1_MARS(4)        = "39.131"
+          Met_var_GRIB1_St(4)          = "pl"
+          Met_var_IsAvailable(4)       = .true.
+        Met_var_names(5)               = "t"
+          Met_var_GRIB1_MARS(5)        = "11.131"
+          Met_var_GRIB1_St(5)          = "pl"
+          Met_var_IsAvailable(5)       = .true.
+
+        ! Surface
+!        Met_var_names(10)              = "hpbl"
+!        Met_var_names(11)              = "u"
+!        Met_var_names(12)              = "v"
+!        Met_var_names(13)              = "fricv"
+!        !  14 = Displacement Height
+!        Met_var_names(15)              = "sd"
+!        Met_var_names(16)              = "soilw"
+!        Met_var_names(17)              = "sr"
+!        Met_var_names(18)              = "gust"
+!        ! Atmospheric Structure
+!        Met_var_names(20)              = "pres"
+!        Met_var_names(21)              = "pres"
+!        Met_var_names(23)              = "tcc"
+!        ! Moisture
+!        Met_var_names(30)              = "r"
+        Met_var_names(31)              = "q"
+          Met_var_GRIB1_MARS(31)       = "51.131"
+          Met_var_GRIB1_St(31)         = "pl"
+          Met_var_IsAvailable(31)      = .true.
+!        Met_var_names(32)              = "clwmr"
+!        Met_var_names(33)              = "snmr"
+!        ! Precipitation
+!        Met_var_names(40)              = "crain"
+!        Met_var_names(41)              = "csnow"
+!        Met_var_names(42)              = "cfrzr"
+!        Met_var_names(43)              = "cicep"
+!        Met_var_names(44)              = "prate"
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+
       elseif(MR_iwindformat.eq.5)then
           ! NAM216 AK 45km
       elseif(MR_iwindformat.eq.6)then
@@ -714,7 +600,7 @@
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
 
-      elseif (MR_iwindformat.eq.21) then
+       elseif (MR_iwindformat.eq.21) then
            ! Old format GFS 0.5-degree
        elseif (MR_iwindformat.eq.23) then
          ! NCEP / doE reanalysis 2.5 degree files 
@@ -847,7 +733,7 @@
         ! Custom windfile (example for nam198)
         !  Need to populate
         !call MR_Set_Met_Dims_Custom_GRIB
-        write(MR_global_error,*)"MR ERROR : Currently, grib reader only works for known grib2 files."
+        write(MR_global_error,*)"MR ERROR : Currently, grib reader only works for known grib files."
         write(MR_global_error,*)"           Custom reader forthcoming"
         stop 1
       elseif(MR_iwindformat.eq.2)then
@@ -856,7 +742,8 @@
       elseif(MR_iwindformat.eq.3.or.MR_iwindformat.eq.4)then
           ! 3 = NARR3D NAM221 32 km North America files
           ! 4 = RAW : assumes full set of variables
-        call MR_Set_Met_NCEPGeoGrid(221)
+          ! We really should not be here since NARR is provided as GRIB1 not GRIB2
+        call MR_Set_Met_NCEPGeoGrid(1221)
         isGridRelative = .false.
 
         nt_fullmet = 1
@@ -882,7 +769,7 @@
         p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
-        z_inverted = .false.
+        z_inverted = .true.
 
       elseif(MR_iwindformat.eq.5)then
         ! NAM 45-km Polar Sterographic
@@ -1727,13 +1614,13 @@
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
-      end subroutine MR_Read_Met_DimVars_GRIB2
+      end subroutine MR_Read_Met_DimVars_GRIB
 
 !##############################################################################
 
 !##############################################################################
 !
-!     MR_Read_Met_Times_GRIB2
+!     MR_Read_Met_Times_GRIB
 !
 !     Called once from MR_Read_Met_DimVars 
 !
@@ -1749,7 +1636,7 @@
 !
 !##############################################################################
 
-      subroutine MR_Read_Met_Times_GRIB2
+      subroutine MR_Read_Met_Times_GRIB
 
       use MetReader
       use grib_api
@@ -1778,7 +1665,7 @@
       integer            :: igrib
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                MR_Read_Met_Times_GRIB2                     ----------"
+      write(MR_global_production,*)"----------                MR_Read_Met_Times_GRIB                      ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       if(.not.Met_dim_IsAvailable(1))then
@@ -1842,7 +1729,7 @@
             ! For now, assume one time step per file
             nt_fullmet = 1
             write(MR_global_info,*)"  Assuming all NWP files have the same number of steps."
-            write(MR_global_info,*)"   For grib2, assume one time step per file."
+            write(MR_global_info,*)"   For grib, assume one time step per file."
             write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"files"
             write(MR_global_info,*)"                              ",nt_fullmet,"step(s) each"
             allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
@@ -1850,15 +1737,23 @@
 
           call grib_open_file(ifile,trim(ADJUSTL(MR_windfiles(iw))),'R')
           call grib_new_from_file(ifile,igrib,iret)
+
+          if(iw.eq.1)call grib_get(igrib,'editionNumber',MR_GRIB_Version)
+
           call grib_get(igrib,'dataDate',dataDate)
           call grib_get(igrib,'dataTime',dataTime)
-          call grib_get(igrib,'forecastTime',forecastTime)
+          if(MR_GRIB_Version.eq.1)then
+            ! The only girb1 files we deal with are reanalysis files with no FC time
+            forecastTime = 0
+          else
+            call grib_get(igrib,'forecastTime',forecastTime)
+          endif
 
           itstart_year  = int(dataDate/10000)
           itstart_month = int((dataDate-10000*itstart_year)/100)
           itstart_day   = mod(dataDate,100)
-          itstart_hour  = dataTime
-          itstart_min   = 0
+          itstart_hour  = int(dataTime/100)
+          itstart_min   = mod(dataTime,100)
           itstart_sec   = 0
 
           write(MR_global_info,2100)"Ref time = ",itstart_year,itstart_month,itstart_day, &
@@ -1894,12 +1789,12 @@
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
-      end subroutine MR_Read_Met_Times_GRIB2
+      end subroutine MR_Read_Met_Times_GRIB
 !##############################################################################
 
 !##############################################################################
 !
-!     MR_Read_MetP_Variable_GRIB2
+!     MR_Read_MetP_Variable_GRIB
 !
 !     Called from Read_HGT_arrays and once from Read_3d_MetP_Variable.
 !
@@ -1907,7 +1802,7 @@
 !
 !##############################################################################
 
-      subroutine MR_Read_MetP_Variable_GRIB2(ivar,istep)
+      subroutine MR_Read_MetP_Variable_GRIB(ivar,istep)
 
       use MetReader
       use grib_api
@@ -1924,7 +1819,7 @@
       integer :: np_met_loc
       character(len=71)  :: invar
       character(len=130) :: index_file
-      character(len=130) :: grib2_file
+      character(len=130) :: grib_file
 
       real(kind=sp) :: del_H,del_P,dpdz
 
@@ -1952,34 +1847,41 @@
       integer(kind=4)  :: Ni
       integer(kind=4)  :: Nj
       integer(kind=4)  :: typeOfFirstFixedSurface
-        ! Used for keys
-      integer(kind=4)  :: discipline
-      integer(kind=4)  :: parameterCategory
-      integer(kind=4)  :: parameterNumber
-      integer(kind=4)  :: level
-      integer(kind=4)  :: scaledValueOfFirstFixedSurface
+        ! Stores values of keys read from grib file
+      character(len=7) :: grb_marsParam
+      character(len=4) :: grb_typeSfc
+      integer(kind=4)  :: grb_discipline
+      integer(kind=4)  :: grb_parameterCategory
+      integer(kind=4)  :: grb_parameterNumber
+      integer(kind=4)  :: grb_level
+      integer(kind=4)  :: grb_scaledValueOfFirstFixedSurface
       !character(len=9)   :: sName
       !integer(kind=4)  :: forecastTime
+      integer(kind=4),dimension(:),allocatable :: marsParam_idx
       integer(kind=4),dimension(:),allocatable :: discipline_idx
       integer(kind=4),dimension(:),allocatable :: parameterCategory_idx
       integer(kind=4),dimension(:),allocatable :: parameterNumber_idx
       integer(kind=4),dimension(:),allocatable :: level_idx
       integer(kind=4),dimension(:),allocatable :: forecastTime_idx
+
+      integer(kind=4)  :: marsParamSize
       integer(kind=4)  :: disciplineSize
       integer(kind=4)  :: parameterCategorySize
       integer(kind=4)  :: parameterNumberSize
       integer(kind=4)  :: levelSize
       integer(kind=4)  :: forecastTimeSize
-
+        ! temporary versions of those stored in Met_var_GRIB[...](ivar)
       integer(kind=4)  :: iv_discpl
       integer(kind=4)  :: iv_paramC
       integer(kind=4)  :: iv_paramN
       integer(kind=4)  :: iv_typeSf
+      character(len=7) :: iv_marsParam
+      character(len=3) :: iv_typeSfc
 
       real(kind=sp) :: Z_top, T_top
       real(kind=sp),dimension(:,:,:),allocatable :: full_values
 
-      logical :: Use_GRIB2_Index = .false.
+      logical :: Use_GRIB_Index = .false.
 
       if(.not.Met_var_IsAvailable(ivar))then
         write(MR_global_error,*)"MR ERROR:  Variable not available for this windfile"
@@ -1989,18 +1891,30 @@
         stop 1
       endif
 
-      !if(ivar.eq.3 .or. ivar.eq.12)then
-      !  Use_GRIB2_Index = .false.
-      !else
-      !  Use_GRIB2_Index = .true.
-      !endif
+      if(ivar.eq.3 .or. &   ! V_isobaric
+         ivar.eq.12)then    ! V_height_above_ground
+        ! The v components might be not reachable with the indexing if they are the second
+        ! component of a multi-variable message
+        Use_GRIB_Index = .false.
+      else
+        Use_GRIB_Index = .true.
+      endif
 
-      ! Get the variable discipline, Parameter Catagory, Parameter Number, and
-      ! level type for this variable
-      iv_discpl = Met_var_GRIB2_DPcPnSt(ivar,1)
-      iv_paramC = Met_var_GRIB2_DPcPnSt(ivar,2)
-      iv_paramN = Met_var_GRIB2_DPcPnSt(ivar,3)
-      iv_typeSf = Met_var_GRIB2_DPcPnSt(ivar,4)
+      if(MR_GRIB_Version.eq.1)then
+        ! grib1 uses an index based on marsParam
+        iv_marsParam = Met_var_GRIB1_MARS(ivar)
+        iv_typeSfc   = Met_var_GRIB1_St(ivar)
+      elseif(MR_GRIB_Version.eq.2)then
+        ! Get the variable discipline, Parameter Catagory, Parameter Number, and
+        ! level type for this variable
+        iv_discpl = Met_var_GRIB2_DPcPnSt(ivar,1)
+        iv_paramC = Met_var_GRIB2_DPcPnSt(ivar,2)
+        iv_paramN = Met_var_GRIB2_DPcPnSt(ivar,3)
+        iv_typeSf = Met_var_GRIB2_DPcPnSt(ivar,4)
+      else
+        write(MR_global_error,*)"MR ERROR:  GRIB type not determined"
+        stop 1
+      endif
 
       iw     = MR_MetStep_findex(istep)
       iwstep = MR_MetStep_tindex(istep)
@@ -2133,8 +2047,11 @@
         p_met_loc = 0
         if(ivar.eq.4)then      ! Vertical_velocity_pressure_isobaric
           np_met_loc = np_fullmet_Vz
-          !p_met_loc(1:np_met_loc)  = int(p_fullmet_Vz_sp(1:np_met_loc)/100.0)
-          p_met_loc(1:np_met_loc)  = int(p_fullmet_Vz_sp(1:np_met_loc))
+          if(MR_GRIB_Version.eq.1)then
+            p_met_loc(1:np_met_loc)  = int(p_fullmet_Vz_sp(1:np_met_loc)/100.0)
+          else
+            p_met_loc(1:np_met_loc)  = int(p_fullmet_Vz_sp(1:np_met_loc))
+          endif
         elseif(ivar.eq.10)then ! Planetary_Boundary_Layer_Height_surface
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
@@ -2171,8 +2088,11 @@
           p_met_loc(1:np_met_loc)  = 0
         elseif(ivar.eq.30)then ! Relative_humidity_isobaric
           np_met_loc = np_fullmet_RH
-          !p_met_loc(1:np_met_loc)  = int(p_fullmet_RH_sp(1:np_met_loc)/100.0)
-          p_met_loc(1:np_met_loc)  = int(p_fullmet_RH_sp(1:np_met_loc))
+          if(MR_GRIB_Version.eq.1)then
+            p_met_loc(1:np_met_loc)  = int(p_fullmet_RH_sp(1:np_met_loc)/100.0)
+          else
+            p_met_loc(1:np_met_loc)  = int(p_fullmet_RH_sp(1:np_met_loc))
+          endif
         elseif(ivar.eq.40.or.ivar.eq.41.or.ivar.eq.42.or.ivar.eq.43)then ! categorical precip
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
@@ -2181,14 +2101,17 @@
           p_met_loc(1:np_met_loc)  = 0
         else
           np_met_loc = np_fullmet
-          !p_met_loc(1:np_met_loc)  = int(p_fullmet_sp(1:np_met_loc)/100.0)
-          p_met_loc(1:np_met_loc)  = int(p_fullmet_sp(1:np_met_loc))
+          if(MR_GRIB_Version.eq.1)then
+            p_met_loc(1:np_met_loc)  = int(p_fullmet_sp(1:np_met_loc)/100.0)
+          else
+            p_met_loc(1:np_met_loc)  = int(p_fullmet_sp(1:np_met_loc))
+          endif
         endif
         !write(MR_global_info,*)p_met_loc
         !write(MR_global_info,*)"Allocating full_values ",nx_fullmet,ny_fullmet,np_met_loc
         allocate(full_values(nx_fullmet,ny_fullmet,np_met_loc))
           ! Files are listed directly, not through directories (as in MR_iwindformat=25,27)
-        grib2_file = trim(adjustl(MR_MetStep_File(istep)))
+        grib_file  = trim(adjustl(MR_MetStep_File(istep)))
         index_file = trim(adjustl(MR_MetStep_File(istep))) // ".index"
       endif
       invar = Met_var_names(ivar)
@@ -2210,87 +2133,136 @@
         iicount(1) = nx_submet
       endif
 
-      if(Use_GRIB2_Index)then
-        write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
-                  trim(adjustl(index_file))!,nx_submet,ny_submet,np_met_loc
-  
-        call grib_index_read(idx,index_file)
-        call grib_multi_support_on()
-  
-          ! get the number of distinct values of all the keys in the index
-        call grib_index_get_size(idx,'discipline',disciplineSize)
-        call grib_index_get_size(idx,'parameterCategory',parameterCategorySize)
-        call grib_index_get_size(idx,'parameterNumber',parameterNumberSize)
-        !call grib_index_get_size(idx,'level',levelSize)
-        call grib_index_get_size(idx,'scaledValueOfFirstFixedSurface',levelSize)
-        call grib_index_get_size(idx,'forecastTime',forecastTimeSize)
-        
-          ! allocate the array to contain the list of distinct values
-        allocate(discipline_idx(disciplineSize))
-        allocate(parameterCategory_idx(parameterCategorySize))
-        allocate(parameterNumber_idx(parameterNumberSize))
-        allocate(level_idx(levelSize))
-        allocate(forecastTime_idx(forecastTimeSize))
-        
-          ! get the list of distinct key values from the index
-        call grib_index_get(idx,'discipline',discipline_idx)
-        call grib_index_get(idx,'parameterCategory',parameterCategory_idx)
-        call grib_index_get(idx,'parameterNumber',parameterNumber_idx)
-        !call grib_index_get(idx,'level',level_idx)
-        call grib_index_get(idx,'scaledValueOfFirstFixedSurface',level_idx)
-        call grib_index_get(idx,'forecastTime',forecastTime_idx)
-  
-        ! Start marching throught the index file and look for the match with the 
-        ! keys
-        count1=0
-        do l=1,disciplineSize
-          call grib_index_select(idx,'discipline',discipline_idx(l))
-      
-          do j=1,parameterCategorySize
-            call grib_index_select(idx,'parameterCategory',parameterCategory_idx(j))
-      
-            do k=1,parameterNumberSize
-              call grib_index_select(idx,'parameterNumber',parameterNumber_idx(k))
-      
-              do i=1,levelSize
-                call grib_index_select(idx,'level',level_idx(i))
-                call grib_index_select(idx,'scaledValueOfFirstFixedSurface',level_idx(i))
- 
-                do t=1,forecastTimeSize
-                  call grib_index_select(idx,'forecastTime',forecastTime_idx(t))
-      
-                  call grib_new_from_index(idx,igrib, iret)
-                  do while (iret /= GRIB_END_OF_INDEX)
-                    count1=count1+1
-  
-          call grib_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
-          !write(MR_global_info,*)discipline_idx(l),parameterCategory_idx(j),&
-          !          parameterNumber_idx(k),level_idx(i),forecastTime_idx(t),&
-          !          typeOfFirstFixedSurface
-          if ( discipline_idx(l)       .eq. iv_discpl .and. &
-               parameterCategory_idx(j).eq. iv_paramC .and. &
-               parameterNumber_idx(k)  .eq. iv_paramN .and. &
-               typeOfFirstFixedSurface .eq. iv_typeSf) then
+      !----------------------------------------------------
+      ! This is the part where we actually read the files
+      ! 4 branches total
+      !  Grib1 with index file
+      !  Grib1 without index file
+      !  Grib2 with index file
+      !  Grib2 without index file
+      if(MR_GRIB_Version.eq.1)then
+        if(Use_GRIB_Index)then
+          write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
+                    trim(adjustl(index_file))
 
-            !call grib_get(igrib,'shortName',sName)
-            !write(MR_global_info,*)"       FOUND :: ",sName
-            call grib_get(igrib,'numberOfPoints',numberOfPoints)
-            call grib_get(igrib,'Ni',Ni)
-            call grib_get(igrib,'Nj',Nj)
-            if(nx_fullmet.ne.Ni)then
-              write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
-              write(MR_global_error,*)"nx_fullmet = ",nx_fullmet
-              write(MR_global_error,*)"Ni         = ",Ni
-              stop 1
-            endif
-            if(ny_fullmet.ne.Nj)then
-              write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
-              write(MR_global_error,*)"ny_fullmet = ",ny_fullmet
-              write(MR_global_error,*)"Nj         = ",Nj
-              stop 1
-            endif
-            allocate(values(numberOfPoints))
-            allocate(slice(Ni,Nj))
+          call grib_index_read(idx,index_file)
+          call grib_multi_support_on()
+
+            ! get the number of distinct values of all the keys in the index
+          call grib_index_get_size(idx,'marsParam',marsParamSize)
+          call grib_index_get_size(idx,'level',levelSize)
+
+            ! allocate the array to contain the list of distinct values
+          allocate(marsParam_idx(marsParamSize))
+          allocate(level_idx(levelSize))
+
+            ! get the list of distinct key values from the index
+          call grib_index_get(idx,'marsParam',marsParam_idx)
+          call grib_index_get(idx,'level',level_idx)
+
+          ! Start marching throught the index file and look for the match with the 
+          ! keys
+          count1=0
+          do l=1,marsParamSize
+            call grib_index_select(idx,'marsParam',marsParam_idx(l))
+            do i=1,levelSize
+              call grib_index_select(idx,'level',level_idx(i))
+              call grib_new_from_index(idx,igrib, iret)
+              do while (iret /= GRIB_END_OF_INDEX)
+                count1=count1+1
+                call grib_get(igrib,'indicatorOfTypeOfLevel',grb_typeSfc)
+
+                if( grb_marsParam           .eq. iv_marsParam.and. &
+                    grb_typeSfc(1:3)        .eq. iv_typeSfc) then
+                  call grib_get(igrib,'numberOfPoints',numberOfPoints)
+                  call grib_get(igrib,'Ni',Ni)
+                  call grib_get(igrib,'Nj',Nj)
+                  if(nx_fullmet.ne.Ni)then
+                    write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                    write(MR_global_error,*)"nx_fullmet = ",nx_fullmet
+                    write(MR_global_error,*)"Ni         = ",Ni
+                    stop 1
+                  endif
+                  if(ny_fullmet.ne.Nj)then
+                    write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                    write(MR_global_error,*)"ny_fullmet = ",ny_fullmet
+                    write(MR_global_error,*)"Nj         = ",Nj
+                    stop 1
+                  endif
+                  allocate(values(numberOfPoints))
+                  allocate(slice(Ni,Nj))
+                  call grib_get(igrib,'values',values)
+                  do m = 1,Nj
+                    rstrt = (m-1)*Ni + 1
+                    rend  = m*Ni
+                    slice(1:Ni,m) = values(rstrt:rend)
+                  enddo
+                  deallocate(values)
+
+                  ! There is no guarentee that grib levels are in order so...
+                  ! Now loop through the pressure values for this variable and put
+                  ! this slice at the correct level.
+                  call grib_get(igrib,'level',grb_level)
+                  do kk = 1,np_met_loc
+                    if(p_met_loc(kk).eq.grb_level)then
+                      full_values(:,:,kk) = real(slice(:,:),kind=sp)
+                      exit
+                    endif
+                  enddo
+                  deallocate(slice)
+                endif
+
+                call grib_release(igrib)
+                call grib_new_from_index(idx,igrib, iret)
+              enddo ! while
+              call grib_release(igrib)
+
+            enddo ! loop on level
+          enddo ! loop on marsParam
+
+          call grib_index_release(idx)
+
+        else ! Non-index Grib1 case
+
+          ! We don't have/(can't make) the index file so scan all messages of the
+          ! grib1 file
+          write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
+                    trim(adjustl(grib_file))!,nx_submet,ny_submet,np_met_loc
+          ifile=5
+          call grib_open_file(ifile,grib_file,'R')
+
+          !     turn on support for multi fields messages */
+          call grib_multi_support_on()
+
+          ! Loop on all the messages in a file.
+          call grib_new_from_file(ifile,igrib,iret)
+          count1=0
+
+          do while (iret/=GRIB_END_OF_FILE)
+            count1=count1+1
+
+            call grib_get(igrib,'marsParam',grb_marsParam)
+            call grib_get(igrib,'indicatorOfTypeOfLevel',grb_typeSfc)
+
+            if ( grb_marsParam           .eq. iv_marsParam.and. &
+                 grb_typeSfc(1:3)        .eq. iv_typeSfc) then
+              call grib_get(igrib,'numberOfPoints',numberOfPoints)
+              call grib_get(igrib,'Ni',Ni)
+              call grib_get(igrib,'Nj',Nj)
+              if(nx_fullmet.ne.Ni)then
+                write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                write(MR_global_error,*)"nx_fullmet = ",nx_fullmet
+                write(MR_global_error,*)"Ni         = ",Ni
+                stop 1
+              endif
+              if(ny_fullmet.ne.Nj)then
+                write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                write(MR_global_error,*)"ny_fullmet = ",ny_fullmet
+                write(MR_global_error,*)"Nj         = ",Nj
+                stop 1
+              endif
+              allocate(values(numberOfPoints))
+              allocate(slice(Ni,Nj))
               call grib_get(igrib,'values',values)
               do m = 1,Nj
                 rstrt = (m-1)*Ni + 1
@@ -2298,105 +2270,205 @@
                 slice(1:Ni,m) = values(rstrt:rend)
               enddo
               deallocate(values)
-      
-             ! There is no guarentee that grib levels are in order so...
-             ! Now loop through the pressure values for this variable and put this
-             ! slice at the correct level.
-             do kk = 1,np_met_loc
-               !write(MR_global_info,*)"Checking levels: ",kk,p_met_loc(kk),level_idx(i)
-               if(p_met_loc(kk).eq.level_idx(i))then
-                 full_values(:,:,kk) = real(slice(:,:),kind=sp)
-                 exit
-               endif
-             enddo
-             deallocate(slice)
-           endif
-      
-                    call grib_release(igrib)
+
+               ! There is no guarentee that grib levels are in order so...
+               ! Now loop through the pressure values for this variable and put
+               ! this slice at the correct level.
+               call grib_get(igrib,'level',grb_level)
+               do kk = 1,np_met_loc
+                 if(p_met_loc(kk).eq.grb_level)then
+                   full_values(:,:,kk) = real(slice(:,:),kind=sp)
+                   exit
+                 endif
+               enddo
+               deallocate(slice)
+            endif
+            call grib_release(igrib)
+            call grib_new_from_file(ifile,igrib, iret)
+
+          enddo
+          call grib_close_file(ifile)
+
+        endif
+
+      elseif(MR_GRIB_Version.eq.2)then
+        if(Use_GRIB_Index)then
+          write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
+                    trim(adjustl(index_file))
+    
+          call grib_index_read(idx,index_file)
+          call grib_multi_support_on()
+    
+            ! get the number of distinct values of all the keys in the index
+          call grib_index_get_size(idx,'discipline',disciplineSize)
+          call grib_index_get_size(idx,'parameterCategory',parameterCategorySize)
+          call grib_index_get_size(idx,'parameterNumber',parameterNumberSize)
+          call grib_index_get_size(idx,'scaledValueOfFirstFixedSurface',levelSize)
+          call grib_index_get_size(idx,'forecastTime',forecastTimeSize)
+          
+            ! allocate the array to contain the list of distinct values
+          allocate(discipline_idx(disciplineSize))
+          allocate(parameterCategory_idx(parameterCategorySize))
+          allocate(parameterNumber_idx(parameterNumberSize))
+          allocate(level_idx(levelSize))
+          allocate(forecastTime_idx(forecastTimeSize))
+          
+            ! get the list of distinct key values from the index
+          call grib_index_get(idx,'discipline',discipline_idx)
+          call grib_index_get(idx,'parameterCategory',parameterCategory_idx)
+          call grib_index_get(idx,'parameterNumber',parameterNumber_idx)
+          call grib_index_get(idx,'scaledValueOfFirstFixedSurface',level_idx)
+          call grib_index_get(idx,'forecastTime',forecastTime_idx)
+    
+          ! Start marching throught the index file and look for the match with the 
+          ! keys
+          count1=0
+          do l=1,disciplineSize
+            call grib_index_select(idx,'discipline',discipline_idx(l))
+        
+            do j=1,parameterCategorySize
+              call grib_index_select(idx,'parameterCategory',parameterCategory_idx(j))
+        
+              do k=1,parameterNumberSize
+                call grib_index_select(idx,'parameterNumber',parameterNumber_idx(k))
+        
+                do i=1,levelSize
+                  call grib_index_select(idx,'level',level_idx(i))
+                  call grib_index_select(idx,'scaledValueOfFirstFixedSurface',level_idx(i))
+   
+                  do t=1,forecastTimeSize
+                    call grib_index_select(idx,'forecastTime',forecastTime_idx(t))
+        
                     call grib_new_from_index(idx,igrib, iret)
-                  enddo
-                  call grib_release(igrib)
-      
-                enddo ! loop on forecastTime
-              enddo ! loop on level
-            enddo ! loop on parameterNumber
-          enddo ! loop on parameterCategory
-        enddo ! loop on discipline
-      
-        call grib_index_release(idx)
-      else
-        ! We don't have/(can't make) the index file so scan all messages of the
-        ! grib2 file
-        write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
-                  trim(adjustl(grib2_file))!,nx_submet,ny_submet,np_met_loc
-        ifile=5
-        call grib_open_file(ifile,grib2_file,'R')
-      
-        !     turn on support for multi fields messages */
-        call grib_multi_support_on()
-      
-        ! Loop on all the messages in a file.
-        call grib_new_from_file(ifile,igrib,iret)
-        !write(MR_global_info,*)"  ifile,igrib,iret: ",ifile,igrib,iret
-        count1=0
-        do while (iret/=GRIB_END_OF_FILE)
-          count1=count1+1
-          call grib_get(igrib,'discipline',              discipline)
-          call grib_get(igrib,'parameterCategory',       parameterCategory)
-          call grib_get(igrib,'parameterNumber',         parameterNumber)
-          call grib_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
-          !call grib_get(igrib,'level',level)
-          call grib_get(igrib,'scaledValueOfFirstFixedSurface',level)
+                    do while (iret /= GRIB_END_OF_INDEX)
+                      count1=count1+1
+    
+            call grib_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
 
-          call grib_get(igrib,'scaledValueOfFirstFixedSurface',scaledValueOfFirstFixedSurface)
-          !write(MR_global_info,*)count1,discipline,parameterCategory,parameterNumber,typeOfFirstFixedSurface
-          if ( discipline              .eq. iv_discpl .and. &
-               parameterCategory       .eq. iv_paramC .and. &
-               parameterNumber         .eq. iv_paramN .and. &
-               typeOfFirstFixedSurface .eq. iv_typeSf) then
-            call grib_get(igrib,'numberOfPoints',numberOfPoints)
-            call grib_get(igrib,'Ni',Ni)
-            call grib_get(igrib,'Nj',Nj)
-            if(nx_fullmet.ne.Ni)then
-              write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
-              write(MR_global_error,*)"nx_fullmet = ",nx_fullmet
-              write(MR_global_error,*)"Ni         = ",Ni
-              stop 1
+            if ( discipline_idx(l)       .eq. iv_discpl .and. &
+                 parameterCategory_idx(j).eq. iv_paramC .and. &
+                 parameterNumber_idx(k)  .eq. iv_paramN .and. &
+                 typeOfFirstFixedSurface .eq. iv_typeSf) then
+  
+              call grib_get(igrib,'numberOfPoints',numberOfPoints)
+              call grib_get(igrib,'Ni',Ni)
+              call grib_get(igrib,'Nj',Nj)
+              if(nx_fullmet.ne.Ni)then
+                write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                write(MR_global_error,*)"nx_fullmet = ",nx_fullmet
+                write(MR_global_error,*)"Ni         = ",Ni
+                stop 1
+              endif
+              if(ny_fullmet.ne.Nj)then
+                write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                write(MR_global_error,*)"ny_fullmet = ",ny_fullmet
+                write(MR_global_error,*)"Nj         = ",Nj
+                stop 1
+              endif
+              allocate(values(numberOfPoints))
+              allocate(slice(Ni,Nj))
+                call grib_get(igrib,'values',values)
+                do m = 1,Nj
+                  rstrt = (m-1)*Ni + 1
+                  rend  = m*Ni
+                  slice(1:Ni,m) = values(rstrt:rend)
+                enddo
+                deallocate(values)
+        
+               ! There is no guarentee that grib levels are in order so...
+               ! Now loop through the pressure values for this variable and put this
+               ! slice at the correct level.
+               do kk = 1,np_met_loc
+                 if(p_met_loc(kk).eq.level_idx(i))then
+                   full_values(:,:,kk) = real(slice(:,:),kind=sp)
+                   exit
+                 endif
+               enddo
+               deallocate(slice)
+             endif
+        
+                      call grib_release(igrib)
+                      call grib_new_from_index(idx,igrib, iret)
+                    enddo
+                    call grib_release(igrib)
+        
+                  enddo ! loop on forecastTime
+                enddo ! loop on level
+              enddo ! loop on parameterNumber
+            enddo ! loop on parameterCategory
+          enddo ! loop on discipline
+        
+          call grib_index_release(idx)
+        else
+          ! We don't have/(can't make) the index file so scan all messages of the
+          ! grib2 file
+          write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
+                    trim(adjustl(grib_file))
+          ifile=5
+          call grib_open_file(ifile,grib_file,'R')
+        
+          !     turn on support for multi fields messages */
+          call grib_multi_support_on()
+        
+          ! Loop on all the messages in a file.
+          call grib_new_from_file(ifile,igrib,iret)
+          count1=0
+          do while (iret/=GRIB_END_OF_FILE)
+            count1=count1+1
+            call grib_get(igrib,'discipline',              grb_discipline)
+            call grib_get(igrib,'parameterCategory',       grb_parameterCategory)
+            call grib_get(igrib,'parameterNumber',         grb_parameterNumber)
+            call grib_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
+            call grib_get(igrib,'scaledValueOfFirstFixedSurface',grb_level)
+            call grib_get(igrib,'scaledValueOfFirstFixedSurface',scaledValueOfFirstFixedSurface)
+ 
+            if ( grb_discipline              .eq. iv_discpl .and. &
+                 grb_parameterCategory       .eq. iv_paramC .and. &
+                 grb_parameterNumber         .eq. iv_paramN .and. &
+                 typeOfFirstFixedSurface     .eq. iv_typeSf) then
+              call grib_get(igrib,'numberOfPoints',numberOfPoints)
+              call grib_get(igrib,'Ni',Ni)
+              call grib_get(igrib,'Nj',Nj)
+              if(nx_fullmet.ne.Ni)then
+                write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                write(MR_global_error,*)"nx_fullmet = ",nx_fullmet
+                write(MR_global_error,*)"Ni         = ",Ni
+                stop 1
+              endif
+              if(ny_fullmet.ne.Nj)then
+                write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                write(MR_global_error,*)"ny_fullmet = ",ny_fullmet
+                write(MR_global_error,*)"Nj         = ",Nj
+                stop 1
+              endif
+              allocate(values(numberOfPoints))
+              allocate(slice(Ni,Nj))
+              call grib_get(igrib,'values',values)
+              do m = 1,Nj
+                rstrt = (m-1)*Ni + 1
+                rend  = m*Ni
+                slice(1:Ni,m) = values(rstrt:rend)
+              enddo
+              deallocate(values)
+  
+               ! There is no guarentee that grib levels are in order so...
+               ! Now loop through the pressure values for this variable and put
+               ! this slice at the correct level.
+               if(ivar.eq.16)grb_level = scaledValueOfFirstFixedSurface
+               do kk = 1,np_met_loc
+                 if(p_met_loc(kk).eq.grb_level)then
+                   full_values(:,:,kk) = real(slice(:,:),kind=sp)
+                   exit
+                 endif
+               enddo
+               deallocate(slice)
             endif
-            if(ny_fullmet.ne.Nj)then
-              write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
-              write(MR_global_error,*)"ny_fullmet = ",ny_fullmet
-              write(MR_global_error,*)"Nj         = ",Nj
-              stop 1
-            endif
-            allocate(values(numberOfPoints))
-            allocate(slice(Ni,Nj))
-            call grib_get(igrib,'values',values)
-            do m = 1,Nj
-              rstrt = (m-1)*Ni + 1
-              rend  = m*Ni
-              slice(1:Ni,m) = values(rstrt:rend)
-            enddo
-            deallocate(values)
-
-             ! There is no guarentee that grib levels are in order so...
-             ! Now loop through the pressure values for this variable and put
-             ! this
-             ! slice at the correct level.
-             if(ivar.eq.16)level = scaledValueOfFirstFixedSurface
-             do kk = 1,np_met_loc
-               if(p_met_loc(kk).eq.level)then
-                 full_values(:,:,kk) = real(slice(:,:),kind=sp)
-                 exit
-               endif
-             enddo
-             deallocate(slice)
-          endif
-          call grib_release(igrib)
-          call grib_new_from_file(ifile,igrib, iret)
-        enddo
-        call grib_close_file(ifile)
-      endif
+            call grib_release(igrib)
+            call grib_new_from_file(ifile,igrib, iret)
+          enddo
+          call grib_close_file(ifile)
+        endif ! Use_GRIB_index
+      endif ! MR_GRIB_Version eq 1 or 2
 
       if(Dimension_of_Variable.eq.3)then
         MR_dum3d_metP = 0.0_sp
@@ -2422,30 +2494,6 @@
 
       elseif(Dimension_of_Variable.eq.2)then
 !        if(IsCatagorical)then
-!          allocate(temp2d_int(nx_submet,ny_submet,1))
-!          do i=1,ict        !read subgrid at current time step
-!            if(MR_iwindformat.eq.25)then
-!              ! No catagorical variables for MR_iwindformat = 25
-!            else
-!              nSTAT = nf90_get_var(ncid,in_var_id,temp2d_int(ileft(i):iright(i),:,:), &
-!                         start = (/iistart(i),jstart,iwstep/),       &
-!                         count = (/iicount(i),ny_submet,1/))
-!              do j=1,ny_submet
-!                itmp = ny_submet-j+1
-!                if(y_inverted)then
-!                  MR_dum2d_met_int(1:nx_submet,j)  = temp2d_int(1:nx_submet,itmp,1)
-!                else
-!                  MR_dum2d_met_int(1:nx_submet,j)  = temp2d_int(1:nx_submet,j,1)
-!                endif
-!              enddo
-!            endif
-!            if(nSTAT.ne.0)then
-!               write(MR_global_error,*)'MR ERROR: get_var:Vx ',invar,nf90_strerror(nSTAT)
-!               write(MR_global_log  ,*)'MR ERROR: get_var:Vx ',invar,nf90_strerror(nSTAT)
-!               stop 1
-!             endif
-!          enddo
-!          deallocate(temp2d_int)
 !        else
           allocate(temp2d_sp(nx_submet,ny_submet,1))
           if(ivar.eq.11.or.ivar.eq.12)then
@@ -2613,7 +2661,14 @@
                 endif
               endif
               del_h = del_H * 1000.0_sp ! convert to m
-              dpdz  = del_P/del_H
+              if(abs(del_H).gt.MR_EPS_SMALL)then
+                dpdz  = del_P/del_H
+              else
+                write(MR_global_error,*)'MR ERROR: failed to calculate dpdz'
+                write(MR_global_error,*)i,j,k,del_P,del_H
+                write(MR_global_error,*)MR_geoH_metP_last(i,j,:)
+                stop 1
+              endif
               MR_dum3d_metP(i,j,k) = MR_dum3d_metP(i,j,k) / dpdz
             enddo
           enddo
@@ -2621,5 +2676,5 @@
       endif
       MR_dum3d_metP = MR_dum3d_metP * Met_var_conversion_factor(ivar)
 
-      end subroutine MR_Read_MetP_Variable_GRIB2
+      end subroutine MR_Read_MetP_Variable_GRIB
 
