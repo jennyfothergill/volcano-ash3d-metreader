@@ -37,7 +37,64 @@
       write(MR_global_production,*)"----------                          MR_Set_Met_NCEPGeoGrid            ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
-      if(igrid.eq.1221)then
+      if(igrid.eq.1227)then
+        ! CONUS 3.0-km Lambert Conformal
+        ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID218
+        !        LambertConformal_Projection:grid_mapping_name = "lambert_conformal_conic" ;
+        !        LambertConformal_Projection:latitude_of_projection_origin = 38.5.;
+        !        LambertConformal_Projection:longitude_of_central_meridian = 265.;
+        !        LambertConformal_Projection:standard_parallel = 38.5 ;
+        !        LambertConformal_Projection:earth_radius = 6371229. ;
+        ! proj +proj=lcc +lon_0=262.5 +lat_0=38.5 +lat_1=38.5 +lat_2=38.5 +R=6371.229
+        !   226.541 12.190
+        !     -4226.108 -832.6978
+        !   310.615 57.290
+        !      3246.974 4372.859
+        !  latlonflag  = 0         : projected grid
+        !  projflag    = 4         : Lambert conformal conic
+        !  lam0     = 265.0     : longitude of projection point
+        !  phi0        =  25.0     : latitude of projection point
+        !  phi1        =  25.0     : latitude of cone intersection 1
+        !  phi2        =  25.0     : latitude of cone intersection 2
+        !  radius      =  6371.229 : earth radius for spherical earth
+        ! 0 4 262.5 38.5 38.5 38.5 6371.229    #Proj flags and params  
+        IsLatLon_MetGrid  = .false.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        Met_iprojflag     = 4
+        Met_lam0          =  262.5_8
+        Met_phi0          =  38.5_8
+        Met_phi1          =  38.5_8
+        Met_phi2          =  38.5_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6371.229_8
+
+        nx_fullmet = 1799
+        ny_fullmet = 1059
+        dx_met_const = 3.000_sp
+        dy_met_const = 3.000_sp
+        x_start =  -2697.5733_dp
+        y_start =  -1587.306_dp
+        !allocate(x_fullmet_sp(nx_fullmet))
+        allocate(x_fullmet_sp(0:nx_fullmet+1))
+        allocate(y_fullmet_sp(ny_fullmet))
+        allocate(MR_dx_met(nx_fullmet))
+        allocate(MR_dy_met(ny_fullmet))
+        do i = 0,nx_fullmet+1
+          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
+        enddo
+        do i = 1,ny_fullmet
+          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
+        enddo
+        do i = 1,nx_fullmet
+          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+        enddo
+        do i = 1,ny_fullmet-1
+          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+        enddo
+        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+
+      elseif(igrid.eq.1221)then
         ! NAM 32-km Lambert Conformal used by NARR (used Met_Re=6367.470, not 6371.229)
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID221
         !        LambertConformal_Projection:grid_mapping_name = "lambert_conformal_conic" ;
@@ -300,35 +357,36 @@
         enddo
         MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
-      !elseif(igrid.eq.1024)then
-      !   ! Not an NCEP grid
-      !   !  This grid is for the NASA MERRA-1 files (obselete)
-      !  IsLatLon_MetGrid  = .true.
-      !  IsGlobal_MetGrid  = .true.
-      !  IsRegular_MetGrid = .true.
-      !  nx_fullmet = 288
-      !  ny_fullmet = 144
-      !  dx_met_const = 1.25_sp
-      !  dy_met_const = 1.25_sp
-      !  x_start = -179.375_dp
-      !  y_start = 89.375_dp
-      !  allocate(x_fullmet_sp(0:nx_fullmet+1))
-      !  allocate(y_fullmet_sp(ny_fullmet))
-      !  allocate(MR_dx_met(nx_fullmet))
-      !  allocate(MR_dy_met(ny_fullmet))
-      !  do i = 0,nx_fullmet+1
-      !    x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-      !  enddo
-      !  do i = 1,ny_fullmet
-      !    y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
-      !  enddo
-      !  do i = 1,nx_fullmet
-      !    MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-      !  enddo
-      !  do i = 1,ny_fullmet-1
-      !    MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-      !  enddo
-      !  MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+      elseif(igrid.eq.1029)then
+         ! Not an NCEP grid
+         !  This grid is for the ECMWF ERA5
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        nx_fullmet = 1280
+        ny_fullmet = 640
+        dx_met_const = 0.281_sp
+        dy_met_const = 0.281_sp
+        x_start =  0.0_dp
+        y_start = 90.0_dp
+        allocate(x_fullmet_sp(0:nx_fullmet+1))
+        allocate(y_fullmet_sp(ny_fullmet))
+        allocate(MR_dx_met(nx_fullmet))
+        allocate(MR_dy_met(ny_fullmet))
+        do i = 0,nx_fullmet+1
+          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
+        enddo
+        do i = 1,ny_fullmet
+          y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
+        enddo
+        do i = 1,nx_fullmet
+          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+        enddo
+        do i = 1,ny_fullmet-1
+          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+        enddo
+        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+
 
       elseif(igrid.eq.1027)then
          ! Not an NCEP grid
@@ -1194,6 +1252,64 @@
         enddo
         MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
+      elseif(igrid.eq.227)then
+        ! CONUS 5.079-km Lambert Conformal
+        ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID218
+        !        LambertConformal_Projection:grid_mapping_name = "lambert_conformal_conic" ;
+        !        LambertConformal_Projection:latitude_of_projection_origin = 25.0.;
+        !        LambertConformal_Projection:longitude_of_central_meridian = 265.;
+        !        LambertConformal_Projection:standard_parallel = 25.0 ;
+        !        LambertConformal_Projection:earth_radius = 6371229. ;
+        ! proj +proj=lcc +lon_0=265.0 +lat_0=25.0 +lat_1=25.0 +lat_2=25.0 +R=6371.229
+        !   226.541 12.190
+        !     -4226.11  -832.70
+        !   310.615 57.290
+        !      3250.81  4368.72
+        !  latlonflag  = 0         : projected grid
+        !  projflag    = 4         : Lambert conformal conic
+        !  lam0     = 265.0     : longitude of projection point
+        !  phi0        =  25.0     : latitude of projection point
+        !  phi1        =  25.0     : latitude of cone intersection 1
+        !  phi2        =  25.0     : latitude of cone intersection 2
+        !  radius      =  6371.229 : earth radius for spherical earth
+        ! 0 4 265.0 25.0 25.0 25.0 6371.229    #Proj flags and params  
+        IsLatLon_MetGrid  = .false.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        Met_iprojflag     = 4
+        Met_lam0          =  265.0_8
+        Met_phi0          =  25.0_8
+        Met_phi1          =  25.0_8
+        Met_phi2          =  25.0_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6371.229_8
+
+        nx_fullmet = 1473
+        ny_fullmet = 1025
+        dx_met_const = 5.079_sp
+        dy_met_const = 5.079_sp
+        x_start =  -4226.108_dp
+        y_start =  -832.6978_dp
+
+        !allocate(x_fullmet_sp(nx_fullmet))
+        allocate(x_fullmet_sp(0:nx_fullmet+1))
+        allocate(y_fullmet_sp(ny_fullmet))
+        allocate(MR_dx_met(nx_fullmet))
+        allocate(MR_dy_met(ny_fullmet))
+        do i = 0,nx_fullmet+1
+          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
+        enddo
+        do i = 1,ny_fullmet
+          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
+        enddo
+        do i = 1,nx_fullmet
+          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+        enddo
+        do i = 1,ny_fullmet-1
+          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+        enddo
+        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+
       elseif(igrid.eq.242)then
         ! NAM 11.25-km Polar Sterographic
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID242
@@ -1763,7 +1879,7 @@
       if(.not.isGridRelative.or. &  ! We are dealing with NARR data
                Map_Case.eq.4.or. &  ! Met Grid is projected and Comp grid is Lat/Lon
                Map_Case.eq.5)then   ! Met Grid and Comp grids have different projections
-        write(MR_global_info,*)"  Setting up for arrays for rotating vectors on Met grid."
+        write(MR_global_info,*)"  Setting up arrays for rotating vectors on Met grid."
         allocate(MR_u_ER_metP(nx_submet,ny_submet,np_fullmet))
         allocate(MR_v_ER_metP(nx_submet,ny_submet,np_fullmet))
         allocate(theta_Met(nx_submet,ny_submet))  ! This holds the angle between the projected
@@ -1799,7 +1915,7 @@
       if(Map_Case.eq.3.or. & ! Met is Lat/Lon, but Comp is projected
          Map_Case.eq.4.or. & ! Met is projected, but Comp is Lat/Lon
          Map_Case.eq.5)then  ! Met Grid and Comp grids have different projections
-        write(MR_global_info,*)"  Setting up for arrays for rotating vectors on comp grid."
+        write(MR_global_info,*)"  Setting up arrays for rotating vectors on comp grid."
         allocate(MR_dum3d_compH_2(nx_comp,ny_comp,nz_comp))
         allocate(theta_Comp(nx_comp,ny_comp))
         if(Map_Case.eq.3.or.Map_Case.eq.5)then
@@ -2031,10 +2147,10 @@
       endif ! Met and Comp projected
 
       if(Map_Case.eq.1)then
-        write(MR_global_info,*)"Map_case = ",Map_case
+        write(MR_global_info,*)"Map_Case = ",Map_Case
         write(MR_global_info,*)"  Both Comp Grid and Met grids are Lat/Lon"
       elseif(Map_Case.eq.2)then
-        write(MR_global_info,*)"Map_case = ",Map_case
+        write(MR_global_info,*)"Map_Case = ",Map_Case
         write(MR_global_info,*)"  Both Comp Grid and Met grids are the same projection"
         write(MR_global_info,*)"   Met_iprojflag",Met_iprojflag
         write(MR_global_info,*)"   Met_lam0",real(Met_lam0,kind=sp)
@@ -2051,7 +2167,7 @@
         write(MR_global_info,*)"   Comp_Re  ",real(Comp_Re,kind=sp)
         write(MR_global_info,*)"   Comp_k0  ",real(Comp_k0,kind=sp)
       elseif(Map_Case.eq.3)then
-        write(MR_global_info,*)"Map_case = ",Map_case
+        write(MR_global_info,*)"Map_Case = ",Map_Case
         write(MR_global_info,*)"  Met Grid is Lat/Lon and Comp grid is projected"
         write(MR_global_info,*)"   Comp_iprojflag",Comp_iprojflag
         write(MR_global_info,*)"   Comp_lam0",real(Comp_lam0,kind=sp)
@@ -2061,7 +2177,7 @@
         write(MR_global_info,*)"   Comp_Re  ",real(Comp_Re,kind=sp)
         write(MR_global_info,*)"   Comp_k0  ",real(Comp_k0,kind=sp)
       elseif(Map_Case.eq.4)then
-        write(MR_global_info,*)"Map_case = ",Map_case
+        write(MR_global_info,*)"Map_Case = ",Map_Case
         write(MR_global_info,*)"  Met Grid is projected and Comp grid is Lat/Lon"
         write(MR_global_info,*)"   Met_iprojflag",Met_iprojflag
         write(MR_global_info,*)"   Met_lam0",real(Met_lam0,kind=sp)
@@ -2071,7 +2187,7 @@
         write(MR_global_info,*)"   Met_Re  ",real(Met_Re,kind=sp)
         write(MR_global_info,*)"   Met_k0  ",real(Met_k0,kind=sp)
       elseif(Map_Case.eq.5)then
-        write(MR_global_info,*)"Map_case = ",Map_case
+        write(MR_global_info,*)"Map_Case = ",Map_Case
         write(MR_global_info,*)"  Met Grid and Comp grids have different projections"
         write(MR_global_info,*)"   Met_iprojflag",Met_iprojflag
         write(MR_global_info,*)"   Met_lam0",real(Met_lam0,kind=sp)
@@ -2424,6 +2540,7 @@
           Met_dim_IsAvailable(dimID) = .true.
           Met_dim_names(dimID)       = adjustl(trim(dname))
           Met_dim_fac(i)             = fac
+          write(MR_global_info,*)dimID,' ',Met_dim_names(dimID)
         else
           write(MR_global_info,*)"MR ERROR: dimID too large",dimID
           stop 1

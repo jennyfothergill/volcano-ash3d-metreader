@@ -31,25 +31,28 @@
                                        !  0 Custom format based on template
                                        !  1 ASCII profile
                                        !  2 Radiosonde data
-                                       !  3 NARR3D NAM221 32 km North America files
-                                       !  4 NARR3D NAM221 32 km North America files
-                                       !  5 NAM216 AK 45km
-                                       !  6 NAM Regional 90 km grid 104
-                                       !  7 CONUS 212 40km
-                                       !  8 CONUS 218 (12km)
-                                       !  9 Unassigned
-                                       ! 10 NAM 242 11.25 km AK
-                                       ! 11 NAM 196 2.5 km HI
-                                       ! 12 NAM 198 5.953 km AK
-                                       ! 13 NAM 91 2.976 km AK
+                                       !  3 NARR3D 32 km North America files (32 km) :: ds608.0
+                                       !  4 NAM Regional North America 221 (32 km)
+                                       !  5 NAM AK 216  (45 km)
+                                       !  6 NAM Regional 104 (90 km)
+                                       !  7 NAM CONUS 212 (40 km)
+                                       !  8 NAM CONUS 218 (12 km)
+                                       !  9 NAM CONUS 227 (5.08 km)
+                                       ! 10 NAM AK 242 (11.25 km)
+                                       ! 11 NAM HI 196 (2.5 km)
+                                       ! 12 NAM AK 198 (5.953 km)
+                                       ! 13 NAM AK 91 (2.976 km)
+                                       ! 14 NAM CONUS 1227 (3.0 km)
                                        ! 20 GFS 0.5
                                        ! 21 GFS 1.0
                                        ! 22 GFS 0.25
-                                       ! 23 NCEP / DOE reanalysis 2.5 degree files
+                                       ! 23 NCEP / DOE reanalysis 2.5 degree files  :: ds091.0
                                        ! 24 NASA-MERRA-2 reanalysis 0.625/0.5 degree files
-                                       ! 25 NCEP/NCAR reanalysis 2.5 degree files
-                                       ! 27 NOAA-CIRES reanalysis 2.5 degree files
-                                       ! 28 ECMWF Interim Reanalysis (ERA-Interim)
+                                       ! 25 NCEP/NCAR reanalysis 2.5 degree files   :: ds090.0
+                                       ! 26 JRA-55                                  :: ds628.0
+                                       ! 27 NOAA-CIRES reanalysis 2.5 degree files  :: ds131.2
+                                       ! 28 ECMWF Interim Reanalysis (ERA-Interim)  :: ds627.0
+                                       ! 29 ECMWF ERA5                              :: ds630.0
                                        ! 31 Catania forecast
                                        ! 32 Air Force Weather Agency subcenter = 0
                                        ! 33 CCSM3.0 Community Atmosphere Model (CAM)
@@ -598,18 +601,18 @@
       ! If we are using a known product (i.e. iwf > 0) then overide the provided igrid
       if (iwf.eq.3) then      ! NARR3D NAM221 32 km North America files, except diff. Re
         MR_iGridCode = 1221
-      elseif (iwf.eq.4) then  ! NARR3D NAM221 32 km North America files, except diff. Re
-        MR_iGridCode = 1221
-      elseif (iwf.eq.5) then  ! NAM216 AK 45km
+      elseif (iwf.eq.4) then  ! NAM North America files 221 (32 km)
+        MR_iGridCode = 221
+      elseif (iwf.eq.5) then  ! NAM AK 216 (45 km)
         MR_iGridCode = 216
-      elseif (iwf.eq.6) then  ! NAM Regional 90 km grid 104
+      elseif (iwf.eq.6) then  ! NAM Regional 104 (90 km)
         MR_iGridCode = 104
-      elseif (iwf.eq.7) then  ! CONUS 212 40km
+      elseif (iwf.eq.7) then  ! CONUS 212 (40 km)
         MR_iGridCode = 212
-      elseif (iwf.eq.8) then  ! CONUS 218 (12km)
+      elseif (iwf.eq.8) then  ! CONUS 218 (12 km)
         MR_iGridCode = 218
-      elseif (iwf.eq.9) then  ! CONUS 215 (20km)
-        MR_iGridCode = 215
+      elseif (iwf.eq.9) then  ! CONUS 227 (5.08 km)
+        MR_iGridCode = 227
       elseif (iwf.eq.10)then  ! NAM 242 11.25 km AK
         MR_iGridCode = 242
       elseif (iwf.eq.11)then  ! NAM 196 2.5 km HI
@@ -618,6 +621,8 @@
         MR_iGridCode = 198
       elseif (iwf.eq.13)then  ! NAM 91 2.976 km AK
         MR_iGridCode = 91
+      elseif (iwf.eq.14) then ! CONUS 1227 (3.0 km)
+        MR_iGridCode = 1227
       elseif (iwf.eq.20)then  ! GFS 0.5
         MR_iGridCode = 4
       elseif (iwf.eq.21)then  ! GFS 1.0
@@ -630,13 +635,13 @@
         MR_iGridCode = 1024
       elseif (iwf.eq.25)then  ! NCEP/NCAR reanalysis 2.5 degree files
         MR_iGridCode = 2
-      elseif (iwf.eq.26)then  ! GFS 0.5 with 47 pressure levels
-        MR_iGridCode = 4
+      elseif (iwf.eq.26)then  ! JRA-55 reanalysis 1.25 degree files
+        MR_iGridCode = 45
       elseif (iwf.eq.27)then  ! NOAA-CIRES reanalysis 2.5 degree files
         MR_iGridCode = 1027
       elseif (iwf.eq.28)then  ! ECMWF Interim Reanalysis (ERA-Interim)
         MR_iGridCode = 170
-      elseif (iwf.eq.29)then  ! JMA 25-year reanalysis
+      elseif (iwf.eq.29)then  ! ECMWF ERA5
         MR_iGridCode = 2
       elseif (iwf.eq.31)then  ! Catania forecast
         MR_iGridCode = 1031
@@ -695,10 +700,10 @@
         MR_Reannalysis = .true.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NARR3D NAM221 32 km North America files with Re=6367.47"
-      elseif (MR_iwindformat.eq.4) then  ! NARR3D NAM221 32 km North America files
-        MR_Reannalysis = .true.
+      elseif (MR_iwindformat.eq.4) then  ! NAM 221 32 km North America files
+        MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "NARR3D NAM221 32 km North America files with Re=6367.47"
+                  "NAM221 32 km North America files with Re=6371.229"
       elseif (MR_iwindformat.eq.5) then  ! NAM216 AK 45km
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
@@ -715,10 +720,10 @@
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "CONUS 218 (12km)"
-      elseif (MR_iwindformat.eq.9) then  ! Unassigned
+      elseif (MR_iwindformat.eq.9) then  ! CONUS 227 (5.1 km)
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "Unassigned"
+                  "CONUS 227 (5.1 km)"
       elseif (MR_iwindformat.eq.10)then  ! NAM 242 11.25 km AK
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
@@ -735,6 +740,10 @@
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NAM 91 2.976 km AK"
+      elseif (MR_iwindformat.eq.14) then  ! CONUS 1227 (3.0 km)
+        MR_Reannalysis = .false.
+        write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
+                  "CONUS no grid ID (3.0 km)"
       elseif (MR_iwindformat.eq.20)then  ! GFS 0.5
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
@@ -759,10 +768,12 @@
         MR_Reannalysis = .true.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NCEP/NCAR reanalysis 2.5 degree files"
-      elseif (MR_iwindformat.eq.26)then  ! GFS 0.5 with 47 pressure levels
+      elseif (MR_iwindformat.eq.26)then  ! JRA-55 reanalysis 1.25 degree files
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "GFS 0.5 with 47 pressure levels"
+                  "JRA-55 reanalysis 1.25 degree files"
+        write(MR_global_info,*)"MR ERROR: JRA-55 currently not implemented."
+        stop 1
       elseif (MR_iwindformat.eq.27)then  ! NOAA-CIRES reanalysis 2.5 degree files
         MR_Reannalysis = .true.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
@@ -771,6 +782,10 @@
         MR_Reannalysis = .true.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "ECMWF Interim Reanalysis (ERA-Interim)"
+      elseif (MR_iwindformat.eq.29)then  ! ECMWF ERA5
+        MR_Reannalysis = .true.
+        write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
+                  "ECMWF ERA5 reanalysis"
       elseif (MR_iwindformat.eq.31)then  ! Catania forecast
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
@@ -1218,6 +1233,7 @@
       select case (MR_iwind)
       case(1)   ! if we're using a 1-D wind sounding
         call MR_Set_MetComp_Grids_ASCII_1d
+        call MR_Set_Comp2Met_Map
       case(2)
         !call MR_Set_MetComp_Grids_ASCII_3d
       case (3:5)
@@ -2302,12 +2318,12 @@
 
       ! Rotate wind vectors on the MetP grid for NARR cases with Map_Case = 2 (both projected)
       ! or rotate to LL on MetP grid for Map_Case = 4 (Met=proj, Comp=LL)
-      write(MR_global_info,*)" Rotating Earth-relative projected Met winds to grid-relative"
-      write(MR_global_info,*)"  or rotating projected grid-relative Met winds to Earth-relative"
+      !write(MR_global_info,*)" Rotating Earth-relative projected Met winds to grid-relative"
+      !write(MR_global_info,*)"  or rotating projected grid-relative Met winds to Earth-relative"
 
-      if(.not.MR_Save_Velocities)then
-        write(MR_global_info,*)"MR WARNING: Velocities not saved"
-      endif
+      !if(.not.MR_Save_Velocities)then
+      !  write(MR_global_info,*)"MR WARNING: Velocities not saved"
+      !endif
 
       call MR_Read_3d_MetP_Variable(2,istep)
         MR_u_ER_metP = MR_dum3d_metP

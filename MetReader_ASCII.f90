@@ -101,6 +101,7 @@
       integer :: iloc, itime
       integer :: p_lidx, p_tidx
       real(kind=sp) :: p_maxtop, p_top
+      integer :: k
 
       real(kind=sp),dimension(:),allocatable :: WindVelocity
       real(kind=sp),dimension(:),allocatable :: WindDirection
@@ -116,9 +117,13 @@
       character(len=6)   :: dumstr1,dumstr2,dumstr3,dumstr4
       integer :: dum_int
       integer,dimension(:),allocatable :: H_tmp
+      integer,dimension(:),allocatable :: T_tmp
+      integer :: il_bot,il_top,ill
+      real(kind=sp) :: vbot,vtop,zbot,ztop,zhere
       integer :: scl_idx
       real(kind=sp),dimension(7) :: scl_m,scl_a
       real(kind=sp) :: SurfPres,SurfTemp,SurfDewPoint,SurfWindDir,SurfWindSpeed
+      integer :: SurfTemp_int
       logical :: In_hPa = .true.
       integer :: indx1,indx2
       integer :: ncols
@@ -633,10 +638,29 @@
         p_fullmet_Vz_sp = p_fullmet_sp
         p_fullmet_RH_sp = p_fullmet_sp
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
+        do k=1,np_fullmet
+          ! Calculate heights for US Std Atmos while pressures are still in mbars
+          ! or hPa
+          z_approx(k) = MR_Z_US_StdAtm(p_fullmet_sp(k))
+          write(*,*)k,p_fullmet_sp(k),z_approx(k)
+        enddo
  
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       elseif(MR_iwind.eq.1.and.MR_iwindformat.eq.2)then
         ! We are reading radiosonde data from http://weather.uwyo.edu/ or https://ruc.noaa.gov/raobs/
+        ! First, these are always given in lon/lat, earth-relative coordinates:
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .false.
+        ! The rest of this is ignored
+        Met_iprojflag     = 4
+        Met_lam0          =  265.0_8
+        Met_phi0          =  25.0_8
+        Met_phi1          =  25.0_8
+        Met_phi2          =  25.0_8
+        Met_k0            =  0.933_8
+        Met_Re            =  6371.229_8
+
         ! Allocate arrays for iGridCode points at iwindfiles times, and MAX_ROWS levels
 
         ! x and y fullmet array will just be the coordinates in the order listed
@@ -676,6 +700,7 @@
               allocate(MR_SndVars_metP(MR_nSnd_Locs,MR_Snd_nt_fullmet,MR_Snd_nvars,nlev))
               allocate(MR_Snd_np_fullmet(MR_nSnd_Locs,MR_Snd_nt_fullmet))
               allocate(H_tmp(nlev))
+              allocate(T_tmp(nlev))
               MR_SndVars_metP = 0.0_sp
               MR_Snd_np_fullmet(1,1) = 0  ! We initialize this to 0 since we don't know how high
                                           ! the sonde went
@@ -799,24 +824,49 @@
                                        y_fullmet_sp(iloc),x_fullmet_sp(iloc),&
                                        Stat_elev)
               ! Block C: surface pressure
-              read(GTSstr(3)(1:2),*)dum_int ! should be 99 indicating surface
-              read(GTSstr(3)(3:5),*)dum_int ! surface pressure in mb
+              if(GTSstr(3)(1:1).ne.'/')then
+                read(GTSstr(3)(1:2),*)dum_int ! should be 99 indicating surface
+              else
+                dum_int = -9999
+              endif
+              if(GTSstr(3)(3:3).ne.'/')then
+                read(GTSstr(3)(3:5),*)dum_int ! surface pressure in mb
+              else
+                dum_int = -9999
+              endif
               SurfPres = real(dum_int,kind=sp)
 
               ! Block D: temperature/dew-point for last pressure
-              read(GTSstr(4)(1:3),*)dum_int  ! temperature is characters 1-3, dew-point 4-5
-              if (mod(dum_int,2).eq.0)then
-                SurfTemp = real(dum_int,kind=sp)
+              if(GTSstr(4)(1:1).ne.'/')then
+                read(GTSstr(4)(1:3),*)SurfTemp_int  ! temperature is characters 1-3, dew-point 4-5
               else
-                SurfTemp = -1.0_sp*real(dum_int,kind=sp)
+                SurfTemp_int = -9999
               endif
-              read(GTSstr(4)(4:5),*)dum_int
+              if (mod(SurfTemp_int,2).eq.0)then
+                SurfTemp =  0.1_sp*real(SurfTemp_int,kind=sp)
+              else
+                SurfTemp = -0.1_sp*real(SurfTemp_int,kind=sp)
+              endif
+              SurfTemp = SurfTemp 
+              if(GTSstr(4)(4:4).ne.'/')then
+                read(GTSstr(4)(4:5),*)dum_int
+              else
+                dum_int = -9999
+              endif
               SurfDewPoint = real(dum_int,kind=sp)
 
               ! Block E: Wind direction and speed for last pressure
-              read(GTSstr(5)(1:3),*)dum_int  ! Wind direction is char 1-3
+              if(GTSstr(5)(1:1).ne.'/')then
+                read(GTSstr(5)(1:3),*)dum_int  ! Wind direction is char 1-3
+              else
+                dum_int = -9999
+              endif
               SurfWindDir = real(dum_int,kind=sp)
-              read(GTSstr(5)(4:5),*)dum_int  ! Wind speed (knts) is char 4-5
+              if(GTSstr(5)(4:4).ne.'/')then
+                read(GTSstr(5)(4:5),*)dum_int  ! Wind speed (knts) is char 4-5
+              else
+                dum_int = -9999
+              endif
               SurfWindSpeed = real(dum_int,kind=sp)
 
               if(HasTTCC)then
@@ -830,29 +880,45 @@
                 istr2 = 6 + (il-1)*3 +1 ! block for temperature/dew-point
                 istr3 = 6 + (il-1)*3 +2 ! block for wind direction/speed
 
-                read(GTSstr(istr1)(1:2),*)dum_int ! this is a pressure indicator that we could double-check
-                MR_SndVars_metP(iloc,itime,1,il) = pres_Snd_tmp(il)
-                read(GTSstr(istr1)(3:5),*)H_tmp(il) ! height a.s.l
-                read(GTSstr(istr2)(1:3),*)dum_int  ! temperature in C is characters 1-3, dew-point 4-5
-                if (mod(dum_int,2).eq.0)then
-                  MR_SndVars_metP(iloc,itime,5,il) =  0.1_sp*real(dum_int,kind=sp)
+                !  Block 1 of the 3-block level data (pressure, height)
+                if(GTSstr(istr1)(1:1).ne.'/')then
+                  read(GTSstr(istr1)(1:2),*)dum_int ! this is a pressure indicator that we could double-check
                 else
-                  MR_SndVars_metP(iloc,itime,5,il) = -0.1_sp*real(dum_int,kind=sp)
-                endif
-                if(GTSstr(istr3)(1:3).eq.'///')then
                   dum_int = -9999
+                endif
+                MR_SndVars_metP(iloc,itime,1,il) = pres_Snd_tmp(il)
+                if(GTSstr(istr1)(3:3).ne.'/')then
+                  read(GTSstr(istr1)(3:5),*)H_tmp(il) ! height a.s.l
                 else
+                  H_tmp(il) = -9999
+                endif
+                !  Block 2 of the 3-block level data (temperature, dew point (not read))
+                if(GTSstr(istr2)(1:1).ne.'/')then
+                  read(GTSstr(istr2)(1:3),*)T_tmp(il)  ! temperature in C is characters 1-3, dew-point 4-5
+                else
+                  T_tmp(il) = -9999
+                endif
+                !  Block 3 of the 3-block level data (wind direction, wind speed)
+                if(GTSstr(istr3)(1:1).ne.'/')then
                   read(GTSstr(istr3)(1:3),*)dum_int  ! Wind direction is char 1-3
+                else
+                  dum_int = -9999
                 endif
                 WindDirection(il) = real(dum_int,kind=sp)
-                read(GTSstr(istr3)(4:5),*)dum_int  ! Wind speed (knts) is char 4-5
+                if(GTSstr(istr3)(4:4).ne.'/')then
+                  read(GTSstr(istr3)(4:5),*)dum_int  ! Wind speed (knts) is char 4-5
+                else
+                  dum_int = -9999
+                endif
                 WindVelocity(il) = real(dum_int,kind=sp)
               enddo
-              ! Now convert to the proper units.
-              MR_SndVars_metP(iloc,itime,1,:) = MR_SndVars_metP(iloc,itime,1,:) * 100.0_sp ! convert to Pa
 
-              ! For height, do the block-specific adjustments to get the correct m
-              !  blocks for 1000 mb 
+              !--------------------------------
+              ! Now convert to the proper units.
+              !  Pressure: No error-checking
+              MR_SndVars_metP(iloc,itime,1,:) = MR_SndVars_metP(iloc,itime,1,:) * 100.0_sp ! convert to Pa
+              ! Height:  also assume valid
+              !  do the block-specific adjustments to get the correct m blocks for 1000 mb 
               if(H_tmp(1).ge.500)then   ! kludge for negative heights
                 MR_SndVars_metP(iloc,itime,2,1)  = -1.0_sp * real(H_tmp(1)-500,kind=sp)
               else
@@ -875,18 +941,111 @@
                 MR_SndVars_metP(iloc,itime,2,il) = scl_a(scl_idx) + scl_m(scl_idx)* &
                                                     real(H_tmp(il),kind=sp)
               enddo
-              MR_SndVars_metP(iloc,itime,2,:) = MR_SndVars_metP(iloc,itime,2,:)*1.0e-3_sp  ! convert to km
+              MR_SndVars_metP(iloc,itime,2,:) = MR_SndVars_metP(iloc,itime,2,:)*1.0e-3_sp  ! convert m to km
 
-              MR_SndVars_metP(iloc,itime,5,:) = MR_SndVars_metP(iloc,itime,5,:) + 273.0_sp   ! convert to K
-              WindVelocity(:)   = WindVelocity(:)*0.514444444_sp
+              ! Temperature: do error checking
+              do il = 1,ulev
+                if(T_tmp(il).ne.-9999)then
+                  if (mod(dum_int,2).eq.0)then
+                    MR_SndVars_metP(iloc,itime,5,il) =  0.1_sp*real(T_tmp(il),kind=sp)
+                  else
+                    MR_SndVars_metP(iloc,itime,5,il) = -0.1_sp*real(T_tmp(il),kind=sp)
+                  endif
+                else
+                  MR_SndVars_metP(iloc,itime,5,il) = real(T_tmp(il),kind=sp)
+                endif
+              enddo
+              do il = 1,ulev
+                ! Set NaN's below the surface to the surface value
+                if(pres_Snd_tmp(il).gt.SurfPres.or.il.eq.1)then
+                  if(T_tmp(il).eq.-9999) &
+                     MR_SndVars_metP(iloc,itime,5,il) = SurfTemp
+                else
+                  ! For NaN's above the surface, interpolate to the next valid value
+                  if(T_tmp(il).eq.-9999)then
+                    il_bot=il-1
+                    do ill=il,ulev
+                      if(T_tmp(ill).ne.-9999)then
+                        il_top = ill
+                        exit
+                      endif
+                    enddo
+                    zhere=MR_SndVars_metP(iloc,itime,2,il)
+                    zbot=MR_SndVars_metP(iloc,itime,2,il_bot)
+                    ztop=MR_SndVars_metP(iloc,itime,2,il_top)
+                    vbot=MR_SndVars_metP(iloc,itime,5,il_bot)
+                    vtop=MR_SndVars_metP(iloc,itime,5,il_top)
+                    MR_SndVars_metP(iloc,itime,5,il) = vbot + (vtop-vbot)*(zhere-zbot)/(ztop-zbot)
+                  endif
+                endif
+              enddo
+              MR_SndVars_metP(iloc,itime,5,:) = MR_SndVars_metP(iloc,itime,5,:) + 273.0_sp   ! convert C to K
+
+              ! Wind velocity: do error checking
+              do il = 1,ulev
+                ! Set NaN's below the surface to zero
+                if(pres_Snd_tmp(il).gt.SurfPres.or.il.eq.1)then
+                  if(WindVelocity(il).lt.-9998.0_sp) &
+                     WindVelocity(il) = 0.0_sp
+                else
+                  ! For NaN's above the surface, interpolate to the next valid value
+                  if(WindVelocity(il).lt.-9998.0_sp)then
+                    il_bot=il-1
+                    do ill=il,ulev
+                      if(WindVelocity(ill).gt.-9998.0_sp)then
+                        il_top = ill
+                        exit
+                      endif
+                    enddo
+                    zhere=MR_SndVars_metP(iloc,itime,2,il)
+                    zbot=MR_SndVars_metP(iloc,itime,2,il_bot)
+                    ztop=MR_SndVars_metP(iloc,itime,2,il_top)
+                    vbot=MR_SndVars_metP(iloc,itime,5,il_bot)
+                    vtop=MR_SndVars_metP(iloc,itime,5,il_top)
+                    WindVelocity(il) = vbot + (vtop-vbot)*(zhere-zbot)/(ztop-zbot)
+                  endif
+                endif
+              enddo
+              WindVelocity(:)   = WindVelocity(:)*0.514444444_sp                             ! convert Knot to m/s
+
+              ! Wind direction: do error checking
+              do il = 1,ulev
+                ! Set NaN's below the surface to zero
+                if(pres_Snd_tmp(il).gt.SurfPres.or.il.eq.1)then
+                  if(WindDirection(il).lt.-9998.0_sp) &
+                     WindDirection(il) = 0.0_sp
+                else
+                  ! For NaN's above the surface, interpolate to the next valid value
+                  if(WindDirection(il).lt.-9998.0_sp)then
+                    il_bot=il-1
+                    do ill=il,ulev
+                      if(WindDirection(ill).gt.-9998.0_sp)then
+                        il_top = ill
+                        exit
+                      endif
+                    enddo
+                    zhere=MR_SndVars_metP(iloc,itime,2,il)
+                    zbot=MR_SndVars_metP(iloc,itime,2,il_bot)
+                    ztop=MR_SndVars_metP(iloc,itime,2,il_top)
+                    vbot=MR_SndVars_metP(iloc,itime,5,il_bot)
+                    vtop=MR_SndVars_metP(iloc,itime,5,il_top)
+                    WindDirection(il) = vbot + (vtop-vbot)*(zhere-zbot)/(ztop-zbot)
+                  endif
+                endif
+              enddo
+
               MR_SndVars_metP(iloc,itime,3,:) = &
                 real(WindVelocity(:)*sin(pi + DEG2RAD*WindDirection(:)),kind=sp)
               MR_SndVars_metP(iloc,itime,4,:) = &
                 real(WindVelocity(:)*cos(pi + DEG2RAD*WindDirection(:)),kind=sp)
 
-              write(*,*)"==================================================================="
+              write(MR_global_production,*)"==================================================================="
+              write(MR_global_production,140)
+   140        format('Pressure (Pa)','    Height (km)', &
+                     '        Vx (m/s)','        Vy (m/s)', &
+                     '       Temp. (C)','  Wind Vel (m/s)','       Wind Dir.')
               do iil=1,16
-                  write(*,*)MR_SndVars_metP(iloc,itime,1,iil),&
+                  write(MR_global_production,*)MR_SndVars_metP(iloc,itime,1,iil),&
                             MR_SndVars_metP(iloc,itime,2,iil),&
                             MR_SndVars_metP(iloc,itime,3,iil),&
                             MR_SndVars_metP(iloc,itime,4,iil),&
@@ -894,8 +1053,7 @@
                             WindVelocity(iil),&
                             WindDirection(iil)
               enddo
-              write(*,*)"==================================================================="
-
+              write(MR_global_production,*)"==================================================================="
             else
               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
               !  Reading data Textlist format from http://weather.uwyo.edu/
@@ -1018,6 +1176,12 @@
         p_fullmet_Vz_sp = p_fullmet_sp
         p_fullmet_RH_sp = p_fullmet_sp
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
+        allocate(z_approx(np_fullmet))
+        do k=1,np_fullmet
+          ! Calculate heights for US Std Atmos while pressures are still in mbars
+          ! or hPa
+          z_approx(k) = MR_Z_US_StdAtm(p_fullmet_sp(k))
+        enddo
 
       else
         ! Neither MR_iwind.eq.1.and.MR_iwindformat.eq.1 nor 
@@ -1099,8 +1263,10 @@
           ! 1d ascii file or Radiosonde case
         nx_submet     = 1
         ny_submet     = 1
-        allocate(x_submet_sp(nx_submet))
-        allocate(y_submet_sp(ny_submet))
+        allocate(x_submet_sp(1:nx_submet));  x_submet_sp(:)  = 0.0_sp
+        allocate(y_submet_sp(1:ny_submet));  y_submet_sp(:)  = 0.0_sp
+        allocate(MR_dx_submet(1:nx_submet)); MR_dx_submet(:) = 0.0_sp
+        allocate(MR_dy_submet(1:ny_submet)); MR_dy_submet(:) = 0.0_sp
         allocate(MR_dum3d_metP(nx_submet,ny_submet,np_fullmet))
         allocate(MR_dum3d_metH(nx_submet,ny_submet,nz_comp))
         allocate(MR_dum2d_comp_int(nx_comp,ny_comp))
