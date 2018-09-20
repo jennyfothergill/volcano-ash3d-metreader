@@ -36,7 +36,7 @@ SYSTEM = gfortran
 #      PROF  : includes profiling flags with some optimization
 #      OPT   : includes optimizations flags for fastest runtime
 #    This variable cannot be left blank
-RUN = DEBUG
+RUN = OPT
 #
 INSTALLDIR=/opt/USGS
 #INSTALLDIR=~/gcc
@@ -113,7 +113,7 @@ ifeq ($(SYSTEM), gfortran)
     COMPINC = -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules -I$(INSTALLDIR)/include
     COMPLIBS = -L$(FCHOME)/lib64 -L${INSTALLDIR}/lib
 
-    LIBS = $(COMPLIBS) $(COMPINC) -lefence
+    LIBS = $(COMPLIBS) $(COMPINC) #-lefence
     # -lefence 
 # Debugging flags
 ifeq ($(RUN), DEBUG)
@@ -158,7 +158,7 @@ gen_GRIB_index: gen_GRIB_index.f90 MetReader_GRIB_index.o makefile libMetReader.
 endif
 
 
-ifeq ($(USEGRIB2), T)
+ifeq ($(USEGRIB), T)
   GRIBTOOL = gen_GRIB_index
 else
   GRIBTOOL =

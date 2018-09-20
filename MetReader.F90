@@ -196,6 +196,7 @@
                                      !   (=1 for all cases except iwindformat=24)
       integer       :: np_fullmet_pad = 1 ! We might need to pad the top of the pressure grid.
       integer       :: neta_fullmet  ! Only used by WRF
+      real(kind=sp) :: Pressure_Conv_Fac = 100.0_sp  ! factor for converting from Met file units to Pa
 
 #ifdef USEPOINTERS
       real(kind=sp),dimension(:), pointer :: x_fullmet_sp    => null() ! x-coordinates of full met grid
@@ -203,12 +204,24 @@
       real(kind=sp),dimension(:), pointer :: p_fullmet_sp    => null() ! z-coordinates of full met grid for U,V,T,H
       real(kind=sp),dimension(:), pointer :: p_fullmet_Vz_sp => null() ! z-coordinates of full met grid for Vz
       real(kind=sp),dimension(:), pointer :: p_fullmet_RH_sp => null() ! z-coordinates of full met grid for RH
+      real(kind=sp),dimension(:,:), pointer :: levs_fullmet_sp => null() ! This hold each of the numbered level coordinates:
+                                                                         !    i.e. isobaric, isobaric1, isobaric2, but also
+                                                                         !    height_above_ground, depth_below_surface_layer, etc.
+                                                                         !    p_fullmet_sp,p_fullmet_[Vz,RH]sp are copies of one
+                                                                         !    of the slices
+      integer,dimension(:), pointer :: nlevs_fullmet
 #else
-      real(kind=sp),dimension(:), allocatable :: x_fullmet_sp    ! x-coordinates of full met grid
-      real(kind=sp),dimension(:), allocatable :: y_fullmet_sp    ! y-coordinates of full met grid
-      real(kind=sp),dimension(:), allocatable :: p_fullmet_sp    ! z-coordinates of full met grid for U,V,T,H
-      real(kind=sp),dimension(:), allocatable :: p_fullmet_Vz_sp ! z-coordinates of full met grid for Vz
-      real(kind=sp),dimension(:), allocatable :: p_fullmet_RH_sp ! z-coordinates of full met grid for RH
+      real(kind=sp),dimension(:), allocatable :: x_fullmet_sp     ! x-coordinates of full met grid
+      real(kind=sp),dimension(:), allocatable :: y_fullmet_sp     ! y-coordinates of full met grid
+      real(kind=sp),dimension(:), allocatable :: p_fullmet_sp     ! z-coordinates of full met grid for U,V,T,H
+      real(kind=sp),dimension(:), allocatable :: p_fullmet_Vz_sp  ! z-coordinates of full met grid for Vz
+      real(kind=sp),dimension(:), allocatable :: p_fullmet_RH_sp  ! z-coordinates of full met grid for RH
+      real(kind=sp),dimension(:,:),allocatable :: levs_fullmet_sp ! This hold each of the numbered level coordinates:
+                                                                  !    i.e. isobaric, isobaric1, isobaric2, but also
+                                                                  !    height_above_ground, depth_below_surface_layer, etc.
+                                                                  !    p_fullmet_sp,p_fullmet_[Vz,RH]sp are copies of one
+                                                                  !    of the slices
+      integer,dimension(:), allocatable :: nlevs_fullmet
 #endif
 
       logical       :: IsLatLon_MetGrid
@@ -371,7 +384,9 @@
       character(len=71),dimension(MR_MAXVARS)   :: Met_var_names            ! name in the file
       character(len=5) ,dimension(MR_MAXVARS)   :: Met_var_names_WMO        ! WMO version of the name
       integer          ,dimension(MR_MAXVARS)   :: Met_var_ndim             ! 
-      integer          ,dimension(MR_MAXVARS)   :: Met_var_zdimID           ! 
+      integer          ,dimension(MR_MAXVARS)   :: Met_var_zdim_idx         ! The index of this coordinate (used in Met_var_nlevs) 
+      integer          ,dimension(MR_MAXVARS)   :: Met_var_zdim_ncid        ! The dimID of the dimension in the nc file
+      integer                                   :: nlev_coords_detected = 0
       integer          ,dimension(MR_MAXVARS,4) :: Met_var_GRIB2_DPcPnSt    ! Grib2 files have variables identified by
                                                                             ! discpln,param_cat,param_num,surf_class
       character(len=7) ,dimension(MR_MAXVARS)   :: Met_var_GRIB1_MARS       ! Grib1 files have variables identified by
@@ -380,8 +395,10 @@
       character(len=3) ,dimension(MR_MAXVARS)   :: Met_var_GRIB1_St         ! level type (pl, src, 116 etc)
       integer                                   :: MR_GRIB_Version  = 0
 
-      !logical          ,dimension(MR_MAXVARS) :: Met_var_IsFloat  ! true if kind=4 otherwise false
-      real(kind=sp)    ,dimension(MR_MAXVARS) :: Met_var_conversion_factor
+      !logical          ,dimension(MR_MAXVARS)   :: Met_var_IsFloat  ! true if kind=4 otherwise false
+      real(kind=sp)    ,dimension(MR_MAXVARS)   :: Met_var_conversion_factor
+
+      integer          ,dimension(MR_MAXVARS)   :: Met_var_nlevs
 
         ! Variables needed by netcdf reader
       real(kind=sp) :: iwf25_scale_facs(MR_MAXVARS)
@@ -1024,6 +1041,56 @@
           stop 1
         endif
       enddo
+
+      ! Initialize the dimension and variable arrays.  Select slots in these arrays will be
+      ! overwritten from the calls in the case block below
+
+      Met_var_IsAvailable(1:MR_MAXVARS)       = .false.
+      Met_var_zdim_idx(1:MR_MAXVARS)          = 0
+      Met_var_zdim_ncid(1:MR_MAXVARS)         = 0
+      Met_var_GRIB2_DPcPnSt(1:MR_MAXVARS,1:4) = 0
+      Met_var_GRIB1_MARS(1:MR_MAXVARS)        = ""
+      Met_var_GRIB1_St(1:MR_MAXVARS)          = ""
+      Met_var_conversion_factor(1:MR_MAXVARS) = 0.0_sp
+      Met_var_nlevs(1:MR_MAXVARS)             = 0
+      ! Mechanical / State variables
+      Met_var_names( 1)="Geopotential Height";             Met_var_names_WMO( 1)="HGT"; Met_var_ndim( 1)=4
+      Met_var_names( 2)="Vx";                              Met_var_names_WMO( 2)="UGRD";Met_var_ndim( 2)=4
+      Met_var_names( 3)="Vy";                              Met_var_names_WMO( 3)="VGRD";Met_var_ndim( 3)=4
+      Met_var_names( 4)="Vz";                              Met_var_names_WMO( 4)="VVEL";Met_var_ndim( 4)=4
+      Met_var_names( 5)="Temperatuire";                    Met_var_names_WMO( 5)="TMP"; Met_var_ndim( 5)=4
+      ! Surface
+      Met_var_names(10)="Planetary Boundary Layer Height"; Met_var_names_WMO(10)="HPBL"; Met_var_ndim(10)=3
+      Met_var_names(11)="U @ 10m";                         Met_var_names_WMO(11)="UGRD"; Met_var_ndim(11)=4
+      Met_var_names(12)="V @ 10m";                         Met_var_names_WMO(12)="VGRD"; Met_var_ndim(12)=4
+      Met_var_names(13)="Friction velocity";               Met_var_names_WMO(13)="FRICV";Met_var_ndim(13)=3
+      Met_var_names(14)="Displacement Height";             Met_var_names_WMO(14)="";     Met_var_ndim(14)=3
+      Met_var_names(15)="Snow cover";                      Met_var_names_WMO(15)="SNOD"; Met_var_ndim(15)=3
+      Met_var_names(16)="Soil moisture";                   Met_var_names_WMO(16)="SOILW";Met_var_ndim(16)=4
+      Met_var_names(17)="Surface Roughness";               Met_var_names_WMO(17)="SFCR"; Met_var_ndim(17)=3
+      Met_var_names(18)="Wind gust speed";                 Met_var_names_WMO(18)="GUST"; Met_var_ndim(18)=3
+      Met_var_names(19)="surface temperature";             Met_var_names_WMO(19)="";     Met_var_ndim(19)=3
+      ! Atmospheric Structure
+      Met_var_names(20)="pressure at lower cloud base";    Met_var_names_WMO(20)="PRES"; Met_var_ndim(20)=3
+      Met_var_names(21)="pressure at lower cloud top";     Met_var_names_WMO(21)="PRES"; Met_var_ndim(21)=3
+      Met_var_names(22)="temperature at lower cloud top";  Met_var_names_WMO(22)="TMP";  Met_var_ndim(22)=3
+      Met_var_names(23)="Total Cloud cover";               Met_var_names_WMO(23)="TCDC"; Met_var_ndim(23)=3
+      Met_var_names(24)="Cloud cover (low)";               Met_var_names_WMO(24)="";     Met_var_ndim(24)=3
+      Met_var_names(25)="Cloud cover (convective)";        Met_var_names_WMO(25)="";     Met_var_ndim(25)=3
+      ! Moisture
+      Met_var_names(30)="Rel. Hum";                        Met_var_names_WMO(30)="RH";   Met_var_ndim(30)=4
+      Met_var_names(31)="QV (specific humidity)";          Met_var_names_WMO(31)="SPFH"; Met_var_ndim(31)=4
+      Met_var_names(32)="QL (liquid)";                     Met_var_names_WMO(32)="CLWMR";Met_var_ndim(32)=4
+      Met_var_names(33)="QI (ice)";                        Met_var_names_WMO(33)="SNMR"; Met_var_ndim(33)=4
+        ! Precipitation
+      Met_var_names(40)="Categorical rain";                Met_var_names_WMO(40)="CRAIN";Met_var_ndim(40)=3
+      Met_var_names(41)="Categorical snow";                Met_var_names_WMO(41)="CSNOW";Met_var_ndim(41)=3
+      Met_var_names(42)="Categorical frozen rain";         Met_var_names_WMO(42)="CFRZR";Met_var_ndim(42)=3
+      Met_var_names(43)="Categorical ice";                 Met_var_names_WMO(43)="CICEP";Met_var_ndim(43)=3
+      Met_var_names(44)="Precip.rate large-scale (liquid)";Met_var_names_WMO(44)="PRATE";Met_var_ndim(44)=3
+      Met_var_names(45)="Precip.rate convective  (liquid)";Met_var_names_WMO(45)="CPRAT";Met_var_ndim(45)=3
+      Met_var_names(46)="Precip.rate large-scale (ice)";   Met_var_names_WMO(46)="";     Met_var_ndim(46)=3
+      Met_var_names(47)="Precip.rate convective  (ice)";   Met_var_names_WMO(47)="";     Met_var_ndim(47)=3
 
       ! Now set up the full spatial and temporal grids
       select case (MR_iwind)

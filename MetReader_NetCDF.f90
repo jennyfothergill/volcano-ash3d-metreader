@@ -34,6 +34,23 @@
       real(kind=sp) :: xUR_fullmet
       real(kind=sp) :: yUR_fullmet
 
+      integer :: ncid
+      integer :: ivar,in_var_id,var_ndims
+      integer :: i_dim,iivar
+      integer :: dimlen,maxdimlen
+      integer :: nSTAT
+      character(len=NF90_MAX_NAME)  :: name,invar,dimname
+      integer :: var_xtype,var_id,idx
+      integer :: xtype, length, attnum
+
+      integer :: NC_version
+      integer,dimension(:),allocatable :: var_dimIDs
+      logical :: FoundOldDim
+      logical :: IsPressureDimension
+      real(kind=dp),dimension(:), allocatable :: dum1d_dp
+      real(kind=sp),dimension(:), allocatable :: dum1d_sp
+      character(len=31)  :: ustring
+
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                MR_Read_Met_DimVars_netcdf                  ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
@@ -164,7 +181,7 @@
         Met_var_names(13) = "Frictional_Velocity_surface"
           Met_var_IsAvailable(13)=.true.
         Met_var_names(16) = "Volumetric_Soil_Moisture_Content_depth_below_surface_layer"
-          Met_var_IsAvailable(14)=.true.
+          Met_var_IsAvailable(16)=.true.
         ! Atmospheric Structure
         Met_var_names(23) = "Total_cloud_cover_entire_atmosphere"
           Met_var_IsAvailable(23)=.true.
@@ -207,7 +224,6 @@
           Met_dim_IsAvailable(5)=.true.
         Met_dim_names(6) = "isobaric1"  ! pressure coordinate for RH
           Met_dim_IsAvailable(6)=.true.
-
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"
@@ -274,7 +290,6 @@
           Met_dim_IsAvailable(5)=.true.
         Met_dim_names(6) = "isobaric1" ! pressure coordinate for RH
           Met_dim_IsAvailable(6)=.true.
-
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"    !        float 
@@ -379,20 +394,20 @@
         ! Moisture
         Met_var_names(30) = "Relative_humidity_isobaric"      !        float 
           Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "Specific_humidity"
+        Met_var_names(31) = "Specific_humidity_isobaric"
           Met_var_IsAvailable(31)=.true.
-        Met_var_names(32) = "Cloud_mixing_ratio"
+        Met_var_names(32) = "Cloud_mixing_ratio_isobaric"
           Met_var_IsAvailable(32)=.true.
         ! Precipitation
-        Met_var_names(40) = "Categorical_Rain"
+        Met_var_names(40) = "Categorical_Rain_surface"
           Met_var_IsAvailable(40)=.true.
-        Met_var_names(41) = "Categorical_Snow"
+        Met_var_names(41) = "Categorical_Snow_surface"
           Met_var_IsAvailable(41)=.true.
-        Met_var_names(42) = "Categorical_Freezing_Rain"
+        Met_var_names(42) = "Categorical_Freezing_Rain_surface"
           Met_var_IsAvailable(42)=.true.
-        Met_var_names(43) = "Categorical_Ice_Pellets"
+        Met_var_names(43) = "Categorical_Ice_Pellets_surface"
           Met_var_IsAvailable(43)=.true.
-        Met_var_names(45) = "Convective_precipitation"
+        Met_var_names(45) = "Convective_Precipitation_Rate_surface"
           Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
@@ -780,13 +795,6 @@
           Met_var_IsAvailable(17)=.true.
         Met_var_names(18) = "Wind_speed_gust_surface"
           Met_var_IsAvailable(18)=.true.
-        ! Atmospheric Structure
-        !Met_var_names(20) = "Pressure_cloud_base"
-        !  Met_var_IsAvailable(20)=.true.
-        !Met_var_names(21) = "Pressure_cloud_tops"
-        !  Met_var_IsAvailable(21)=.true.
-        !Met_var_names(23) = "Total_cloud_cover_entire_atmosphere"
-        !  Met_var_IsAvailable(23)=.true.
         ! Moisture
         Met_var_names(30) = "Relative_humidity_isobaric"      !        float 
           Met_var_IsAvailable(30)=.true.
@@ -807,8 +815,6 @@
           Met_var_IsAvailable(43)=.true.
         Met_var_names(44) = "Precipitation_rate_surface" !kg/m2/s
           Met_var_IsAvailable(44)=.true.
-        !Met_var_names(45) = "Convective_precipitation_surface_0_Hour_Accumulation" !kg/m2 or
-        !  Met_var_IsAvailable(45)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
 
@@ -1304,10 +1310,12 @@
        elseif (MR_iwindformat.eq.29) then
          ! ECMWF ERA5
          ! https://rda.ucar.edu/datasets/ds630.0
+         ! Note: files are provided as one variable per file
+
         Met_dim_IsAvailable=.false.
         Met_var_IsAvailable=.false.
 
-        Met_dim_names(1) = "time"       ! time
+        Met_dim_names(1) = "time"       ! time (provided in hours since 1990-1-1 00Z)
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "level"      ! pressure (37 levels 1000 -> 1)
           Met_dim_IsAvailable(2)=.true.
@@ -1319,6 +1327,24 @@
           Met_dim_IsAvailable(5)=.true.
         Met_dim_names(6) = "level"      ! pressure coordinate for RH (8 levels 1000 -> 1)
           Met_dim_IsAvailable(6)=.true.
+ 
+        !  Potential vorticity  e5.oper.an.pl.128_060_pv.regn320sc.2018062000_2018062023.nc
+        !  Specific rain water content  e5.oper.an.pl.128_075_crwc.regn320sc.2018062000_2018062023.nc
+        !  Secific snow water content  e5.oper.an.pl.128_076_cswc.regn320sc.2018062000_2018062023.nc
+        !  Geopotential  e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
+        !  Temperature  e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
+        !  U component of wind  e5.oper.an.pl.128_131_u.regn320uv.2018062000_2018062023.nc
+        !  V component of wind  e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
+        !  Specific humidity  e5.oper.an.pl.128_133_q.regn320sc.2018062000_2018062023.nc
+        !  Vertical velocity  e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
+        !  Vorticity  e5.oper.an.pl.128_138_vo.regn320sc.2018062000_2018062023.nc
+        !  Divergence  e5.oper.an.pl.128_155_d.regn320sc.2018062000_2018062023.nc
+        !  Relative humidity  e5.oper.an.pl.128_157_r.regn320sc.2018062000_2018062023.nc
+        !  Ozone nass mixing ratio e5.oper.an.pl.128_203_o3.regn320sc.2018062000_2018062023.nc
+        !  Specific cloud liquid water content e5.oper.an.pl.128_246_clwc.regn320sc.2018062000_2018062023.nc
+        !  Specific cloud ice water content e5.oper.an.pl.128_247_ciwc.regn320sc.2018062000_2018062023.nc
+        !  Cloud cover  e5.oper.an.pl.128_248_cc.regn320sc.2018062000_2018062023.nc
+
 
        elseif (MR_iwindformat.eq.31) then
          ! Catania forecast
@@ -1383,34 +1409,17 @@
         Met_var_names(5) = "Temperature_isobaric"        ! float K
           Met_var_IsAvailable(5)=.true.
         ! Surface
-        !Met_var_names(10) = "Planetary_boundary_layer_height_surface"
-        !  Met_var_IsAvailable(10)=.true.
         Met_var_names(11) = "u-component_of_wind_height_above_ground"
           Met_var_IsAvailable(11)=.true.
         Met_var_names(12) = "v-component_of_wind_height_above_ground"
           Met_var_IsAvailable(12)=.true.
-        !Met_var_names(13) = "Frictional_velocity_surface"
-        !  Met_var_IsAvailable(13)=.true.
         Met_var_names(15) = "Water_equivalent_of_accumulated_snow_depth_surface"
           Met_var_IsAvailable(15)=.false. ! Need to convert from kg/m2 to m
         Met_var_names(16) = "Column-integrated_soil_moisture_depth_below_surface"
           Met_var_IsAvailable(16)=.false. ! Need to convert from kg/m2 to vol%
-        !Met_var_names(17) = "Surface_roughness_surface"
-        !  Met_var_IsAvailable(17)=.true.
-        !Met_var_names(18) = "Wind_speed_gust_height_above_ground"
-        !  Met_var_IsAvailable(18)=.true.
-        ! Atmospheric Structure
-        !Met_var_names(20) = "Cloud_base_cloud_base"
-        !  Met_var_IsAvailable(20)=.false. ! Need to convert from m to Pa
-        !Met_var_names(21) = "Cloud_top_cloud_tops"
-        !  Met_var_IsAvailable(21)=.false. ! Need to convert from m to Pa
-        !Met_var_names(23) = "Total_cloud_cover_entire_atmosphere"
-        !  Met_var_IsAvailable(23)=.true.
         ! Moisture
         Met_var_names(30) = "Relative_humidity_isobaric"      !        float 
           Met_var_IsAvailable(30)=.true.
-        !Met_var_names(32) = "Humidity_mixing_ratio_isobaric" ! isobaric1
-        !  Met_var_IsAvailable(32)=.true.
         ! Precipitation
         Met_var_names(44) = "Large_scale_precipitation_rate_surface" !kg/m2/s
           Met_var_IsAvailable(44)=.true.
@@ -1635,21 +1644,8 @@
           Met_var_IsAvailable(11)=.true.
         Met_var_names(12) = "v-component_of_wind_height_above_ground"
           Met_var_IsAvailable(12)=.true.
-        !Met_var_names(13) = "Frictional_Velocity_surface"
-        !  Met_var_IsAvailable(13)=.true.
         Met_var_names(15) = "Snow_depth_surface"
           Met_var_IsAvailable(15)=.true.
-        !Met_var_names(16) = "Volumetric_soil_moisture_content_layer_between_two_depths_below_surface_layer"
-        !  Met_var_IsAvailable(16)=.true.
-        !Met_var_names(17) = "Surface_roughness_surface"
-        !  Met_var_IsAvailable(17)=.true.
-        !Met_var_names(18) = "Wind_speed_gust_surface"
-        !  Met_var_IsAvailable(18)=.true.
-        ! Atmospheric Structure
-        !Met_var_names(20) = "Pressure_cloud_base"
-        !  Met_var_IsAvailable(20)=.true.
-        !Met_var_names(21) = "Pressure_cloud_tops"
-        !  Met_var_IsAvailable(21)=.true.
         Met_var_names(23) = "Total_cloud_cover_entire_atmosphere"
           Met_var_IsAvailable(23)=.true.
         ! Moisture
@@ -1657,14 +1653,8 @@
           Met_var_IsAvailable(30)=.true.
         Met_var_names(31) = "Specific_humidity_isobaric"
           Met_var_IsAvailable(31)=.true.
-        !Met_var_names(32) = "Cloud_mixing_ratio_isobaric" ! isobaric3
-        !  Met_var_IsAvailable(32)=.true.
-        !Met_var_names(33) = "Snow_mixing_ratio_isobaric" ! isobaric3
-        !  Met_var_IsAvailable(33)=.true.
 
         fill_value_sp(MR_iwindformat) = -9999._sp ! actually NaNf
-
-        !Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
 
       else
         ! Not a recognized MR_iwindformat
@@ -1674,6 +1664,218 @@
       endif
 
       if(Met_var_IsAvailable(4)) Have_Vz = .true.
+
+      !---------------------------------------------------------------------------------
+      ! Now checking level coordinates (pressure, height, depth).
+      !   Assume all files have the same format
+      maxdimlen = 0
+      nSTAT=nf90_open(adjustl(trim(MR_windfiles(1))),NF90_NOWRITE, ncid)
+      if(nSTAT.ne.NF90_NOERR) then
+        write(MR_global_error,*)'MR ERROR: open NC file: ',nf90_strerror(nSTAT)
+        write(MR_global_log  ,*)'MR ERROR: open NC file: ',nf90_strerror(nSTAT)
+        write(MR_global_error,*)'Exiting'
+        stop 1
+      endif
+      do ivar = 1,MR_MAXVARS
+        if (.not.Met_var_IsAvailable(ivar)) cycle  ! Only look at variables that are available
+        if (Met_var_ndim(ivar).ne.4) cycle         !  and only ones with a 'level' dimension
+        invar = Met_var_names(ivar)
+        nSTAT = nf90_inq_varid(ncid,invar,in_var_id)  ! get the var_id for this named variable
+        if(nSTAT.ne.NF90_NOERR)then
+          write(MR_global_error,*)'MR WARNING: inq_varid: ',invar,nf90_strerror(nSTAT)
+          write(MR_global_error,*)'  Cannot find variable ',invar
+          write(MR_global_error,*)'  Setting Met_var_IsAvailable to .false.'
+          write(MR_global_log  ,*)'MR WARNING: inq_varid: ',invar,nf90_strerror(nSTAT)
+          Met_var_IsAvailable(ivar) = .false.
+          cycle
+        endif
+        nSTAT = nf90_inquire_variable(ncid, in_var_id, invar, &
+                  xtype = var_xtype, &
+                  ndims = var_ndims)   ! get the number of dimensions
+        if(nSTAT.ne.NF90_NOERR)then
+          write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+          write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+          stop 1
+        endif
+        if (var_ndims.ne.Met_var_ndim(ivar))then
+          write(MR_global_error,*)'MR ERROR: The actual number of dimensions differs from'
+          write(MR_global_error,*)'          what is expected'
+          write(MR_global_error,*)'      Expected : ',Met_var_ndim(ivar)
+          write(MR_global_error,*)'      Found    : ',var_ndims
+          stop 1
+        endif
+        allocate(var_dimIDs(var_ndims))
+        nSTAT = nf90_inquire_variable(ncid, in_var_id, invar, &
+                  dimids = var_dimIDs(:var_ndims))
+        if(nSTAT.ne.NF90_NOERR)then
+          write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+          write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+          stop 1
+        endif
+  
+        ! 3-d trasient variables should be in the COORDS convention (time, level, y, x)
+        ! Check the third dimension
+        i_dim = 3
+        nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
+                     name =  dimname, & 
+                     len = dimlen)
+        if(nSTAT.ne.NF90_NOERR)then
+          write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+          write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+          stop 1
+        endif
+        if(index(dimname,'lev').ne.0.or.&
+           index(dimname,'isobaric').ne.0.or.&
+           index(dimname,'pressure').ne.0.or.&
+           index(dimname,'height').ne.0.or.&
+           index(dimname,'depth').ne.0.or.&
+           index(dimname,'lv_ISBL1').ne.0.or.&
+           index(dimname,'bottom_top').ne.0.or.&
+           index(dimname,'bottom_top_stag').ne.0)then
+          ! Log this level coordinate if it is the first
+          if (nlev_coords_detected.eq.0)then
+            nlev_coords_detected = nlev_coords_detected + 1
+            Met_var_zdim_idx(ivar)  = nlev_coords_detected
+            Met_var_zdim_ncid(ivar) = var_dimIDs(i_dim)
+            maxdimlen = dimlen
+          else
+            ! Otherwise, check if this level coordinate has already been logged
+            FoundOldDim = .false.
+            do iivar = 1,MR_MAXVARS
+              if (Met_var_zdim_ncid(iivar).eq.var_dimIDs(i_dim))then
+                FoundOldDim = .true.
+                Met_var_zdim_idx(ivar)  = nlev_coords_detected
+                Met_var_zdim_ncid(ivar) = var_dimIDs(i_dim)
+              endif
+            enddo
+            if(.not.FoundOldDim)then
+              nlev_coords_detected = nlev_coords_detected + 1
+              Met_var_zdim_idx(ivar)  = nlev_coords_detected
+              Met_var_zdim_ncid(ivar) = var_dimIDs(i_dim)
+              if (maxdimlen.lt.dimlen) maxdimlen = dimlen
+            endif
+          endif
+        else
+          write(MR_global_error,*)'MR ERROR: level coordinate is not in pos. 3 for ',invar
+          write(MR_global_log  ,*)'MR ERROR: level coordinate is not in pos. 3 for ',invar
+          stop 1
+        endif
+        ! tidy up
+        deallocate(var_dimIDs)
+      enddo
+
+      ! We have all the level dimension names and dim_ids; now we need to get the sizes
+      allocate(nlevs_fullmet(nlev_coords_detected))
+      allocate(levs_fullmet_sp(nlev_coords_detected,maxdimlen))
+      do ivar = 1,MR_MAXVARS
+        if(Met_var_zdim_ncid(ivar).gt.0)then
+          ! log the length of the dimension for this level coordinat
+          nSTAT = nf90_inquire_dimension(ncid,Met_var_zdim_ncid(ivar), &
+                     name =  dimname, &
+                     len = dimlen)
+          idx = Met_var_zdim_idx(ivar)
+          nlevs_fullmet(idx) = dimlen
+          ! Now inquire and populate the dimension variable info
+
+
+          nSTAT = nf90_inq_varid(ncid,dimname,var_id)
+          if(nSTAT.ne.NF90_NOERR)then
+            write(MR_global_error,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
+            write(MR_global_log  ,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
+            stop 1
+          endif
+          ! Check if we need to read into a float or a double
+          nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = var_xtype)
+          if(nSTAT.ne.NF90_NOERR)then
+            write(MR_global_error,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
+            write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
+            stop 1
+          endif
+          if(var_xtype.eq.NF90_FLOAT)then
+            allocate(dum1d_sp(dimlen))
+            nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
+                   start = (/1/),count = (/dimlen/))
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+              stop 1
+            endif
+            ! copy to local variable
+            levs_fullmet_sp(idx,1:nlevs_fullmet(idx)) = dum1d_sp(1:nlevs_fullmet(idx))
+            deallocate(dum1d_sp)
+          elseif(var_xtype.eq.NF90_DOUBLE)then
+            allocate(dum1d_dp(dimlen))
+            nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
+                   start = (/1/),count = (/dimlen/))
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+              stop 1
+            endif
+            ! copy to local variable
+            levs_fullmet_sp(idx,1:nlevs_fullmet(idx)) = real(dum1d_dp(1:nlevs_fullmet(idx)),kind=sp)
+            deallocate(dum1d_dp)
+          endif
+          ! Check the units
+          nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
+                                         "units",xtype, length, attnum)
+          if(nSTAT.ne.NF90_NOERR)then
+            write(MR_global_error,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
+            write(MR_global_log  ,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
+          else
+            nSTAT = nf90_get_att(ncid, var_id,"units",ustring)
+            if(nSTAT.ne.NF90_NOERR) then
+              write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+              stop 1
+            endif
+            if(index(ustring,'Pa').gt.0.or.&
+               index(ustring,'millibar').gt.0)then
+              ! This is a pressure level
+              IsPressureDimension = .true.
+              if(index(ustring,'hPa').gt.0.or.&
+                 index(ustring,'millibar').gt.0)then
+                Pressure_Conv_Fac = 100.0_sp
+              else
+                Pressure_Conv_Fac = 1.0_sp
+              endif
+            else
+              IsPressureDimension = .false.
+            endif
+          endif
+          ! Finally, check for orientation
+          if(IsPressureDimension)then
+            if(levs_fullmet_sp(idx,1).lt.levs_fullmet_sp(idx,2))then
+              z_inverted = .true.
+            else
+              z_inverted = .false.
+            endif
+          endif
+        endif
+      enddo
+      ! Close file
+      nSTAT = nf90_close(ncid)
+      if(nSTAT.ne.NF90_NOERR)then
+         write(MR_global_error,*)'MR ERROR: close WRF file: ',nf90_strerror(nSTAT)
+         write(MR_global_log  ,*)'MR ERROR: close WRF file: ',nf90_strerror(nSTAT)
+         stop 1
+      endif
+
+      !write(*,*)" Found these levels"
+      !do ivar = 1,MR_MAXVARS
+      !  if (Met_var_IsAvailable(ivar)) &
+      !      write(*,*)ivar,Met_var_zdim_idx(ivar),Met_var_zdim_ncid(ivar)
+      !enddo
+      !do idx = 1,nlev_coords_detected
+      !  write(*,*)"------------"
+      !  do i = 1,nlevs_fullmet(idx)
+      !    write(*,*)levs_fullmet_sp(idx,i)
+      !  enddo
+      !enddo
+
+      !stop 5
+      !---------------------------------------------------------------------------------
+
 
       if(MR_iwindformat.eq.0)then
         ! Template windfile (example for nam198)

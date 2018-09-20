@@ -1529,6 +1529,21 @@
           cond2 = x_fullmet_sp(i+1).ge.xUR
           if(cond1.and.cond2) iend = i+1
         enddo
+        if(iend.eq.1)then
+          if(IsGlobal_MetGrid)then
+          ! If iend was not assigned, then the wrap back to the beginning
+            iend = nx_fullmet
+            do i = 1,nx_fullmet-1
+              ! For the end index, we assign the upper node of the interval
+              cond1 = x_fullmet_sp(i  ).lt.xUR-360.0_sp
+              cond2 = x_fullmet_sp(i+1).ge.xUR-360.0_sp
+              if(cond1.and.cond2) iend = nx_fullmet+i+1
+            enddo
+          else
+            write(MR_global_info,*)"MR ERROR: could not find iend"
+            stop 1
+          endif
+        endif
         nx_submet = iend-istart+1
         write(MR_global_info,*) "Domain is NOT periodic"
       endif
@@ -2563,12 +2578,12 @@
           stop 1
         endif
 
-        if(varID.le.50)then
+        if(varID.le.MR_MAXVARS)then
           Met_var_IsAvailable(varID)       = .true.
           Met_var_names(varID)             = adjustl(trim(vname))
           Met_var_names_WMO(varID)         = adjustl(trim(vname_WMO))
           Met_var_ndim(varID)              = vndim
-          Met_var_zdimID(varID)            = zindx
+          Met_var_zdim_idx(varID)          = zindx
           Met_var_conversion_factor(varID) = fac
           write(MR_global_info,*)varID,Met_var_names_WMO(varID),' ',Met_var_names(varID)
         else
