@@ -308,6 +308,13 @@
         !dy_met_const = 0.15625_sp
         !x_start = 0.117187_dp
         !y_start = -89.921875_dp
+
+        nx_fullmet = 720
+        ny_fullmet = 361
+        dx_met_const = 0.5_sp
+        dy_met_const = 0.5_sp
+
+
         allocate(x_fullmet_sp(0:nx_fullmet+1))
         allocate(y_fullmet_sp(ny_fullmet))
         allocate(MR_dx_met(nx_fullmet))

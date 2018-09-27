@@ -1145,12 +1145,14 @@
 
         nt_fullmet = 1
         np_fullmet = 29
-        np_fullmet_Vz = 29  ! omega
-        np_fullmet_RH = 29  ! rhum
+        !np_fullmet_Vz = 29  ! omega
+        !np_fullmet_T  = 29  ! Temperature
+        !np_fullmet_RH = 29  ! rhum
         np_fullmet_P0 = 1   ! Precip is 2d
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1158,12 +1160,14 @@
              550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, &
              300.0_sp, 275.0_sp, 250.0_sp, 225.0_sp, 200.0_sp, &
              175.0_sp, 150.0_sp, 125.0_sp, 100.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
@@ -1175,12 +1179,14 @@
 
         nt_fullmet = 1
         np_fullmet = 42
-        np_fullmet_Vz = 42  ! omega
-        np_fullmet_RH = 42  ! rhum
+        !np_fullmet_Vz = 42  ! omega
+        !np_fullmet_T  = 42  ! Temperature
+        !np_fullmet_RH = 42  ! rhum
         np_fullmet_P0 = 1   ! Precip is 2d
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1191,12 +1197,14 @@
              250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
              125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
               20.0_sp,  10.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
@@ -1208,12 +1216,13 @@
 
         nt_fullmet = 29
         np_fullmet = 42
-        np_fullmet_Vz = 39 ! omega
-        np_fullmet_RH = 42  ! rhum
-
+        !np_fullmet_Vz = 39 ! omega
+        !np_fullmet_T  = 42  ! Temperature
+        !np_fullmet_RH = 42  ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1224,28 +1233,30 @@
              250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
              125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
               20.0_sp,  10.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
-          (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-             875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-             750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-             625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-             500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-             375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-             250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-             125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = &
-          (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-             875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-             750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-             625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-             500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-             375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-             250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, & 
-             125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
+        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
+        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
+        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
+        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
+        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
+        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
+        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
+        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
+        !!p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
+        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
+        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
+        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
+        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
+        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
+        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
+        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, & 
+        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
@@ -1256,11 +1267,13 @@
 
         nt_fullmet = 29
         np_fullmet = 39
-        np_fullmet_Vz = 39 ! omega
-        np_fullmet_RH = 19  ! rhum
+        !np_fullmet_Vz = 39 ! omega
+        !np_fullmet_T  = 39 ! Temperature
+        !np_fullmet_RH = 19 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1270,16 +1283,18 @@
              375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
              250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
              125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = &
-          (/1000.0_sp, 950.0_sp, 900.0_sp, 850.0_sp, 800.0_sp, &
-             750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
-             500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
-             250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp /)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
+        !  (/1000.0_sp, 950.0_sp, 900.0_sp, 850.0_sp, 800.0_sp, &
+        !     750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
+        !     500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
+        !     250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp /)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
@@ -1290,11 +1305,13 @@
 
         nt_fullmet = 29
         np_fullmet = 39
-        np_fullmet_Vz = 39 ! omega
-        np_fullmet_RH = 39  ! rhum
+        !np_fullmet_Vz = 39 ! omega
+        !np_fullmet_T  = 39 ! Temperature
+        !np_fullmet_RH = 39 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1304,20 +1321,22 @@
              375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
              250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
              125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = &
-          (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-             875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-             750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-             625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-             500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-             375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-             250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-             125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
+        !!p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
+        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
+        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
+        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
+        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
+        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
+        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
+        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
+        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
@@ -1327,11 +1346,13 @@
 
         nt_fullmet = 1
         np_fullmet = 39
-        np_fullmet_Vz = 39 ! omega
-        np_fullmet_RH = 39  ! rhum
+        !np_fullmet_Vz = 39 ! omega
+        !np_fullmet_T  = 39 ! Temperature
+        !np_fullmet_RH = 39 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1341,12 +1362,14 @@
              375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
              250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
              125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
@@ -1356,11 +1379,13 @@
 
         nt_fullmet = 1
         np_fullmet = 42
-        np_fullmet_Vz = 42 ! omega
-        np_fullmet_RH = 42  ! rhum
+        !np_fullmet_Vz = 42 ! omega
+        !np_fullmet_T  = 42 ! Temperature
+        !np_fullmet_RH = 42 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1371,12 +1396,14 @@
              250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
              125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
               20.0_sp,  10.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
@@ -1386,12 +1413,14 @@
 
         nt_fullmet = 29
         np_fullmet = 39
-        np_fullmet_Vz = 29 ! omega
-        np_fullmet_RH = 39  ! rhum
-        np_fullmet_P0 = 1   ! Precip is 2d
+        !np_fullmet_Vz = 29 ! omega
+        !np_fullmet_T  = 39 ! Temperature
+        !np_fullmet_RH = 39 ! rhum
+        np_fullmet_P0 = 1  ! Precip is 2d
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1401,18 +1430,20 @@
              375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
              250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
              125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp/)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
-          (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-             875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-             750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-             625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-             500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
-             250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp /)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
+        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
+        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
+        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
+        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
+        !     500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
+        !     250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp /)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
@@ -1423,12 +1454,14 @@
 
         nt_fullmet = 1
         np_fullmet = 42
-        np_fullmet_Vz = 42 ! omega
-        np_fullmet_RH = 42  ! rhum
-        np_fullmet_P0 = 1   ! Precip is 2d
+        !np_fullmet_Vz = 42 ! omega
+        !np_fullmet_T  = 42 ! Temperature
+        !np_fullmet_RH = 42 ! rhum
+        np_fullmet_P0 = 1  ! Precip is 2d
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1439,12 +1472,14 @@
              250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
              125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
               20.0_sp,  10.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
@@ -1454,12 +1489,14 @@
 
         nt_fullmet = 1
         np_fullmet = 42
-        np_fullmet_Vz = 42 ! omega
-        np_fullmet_RH = 42  ! rhum
-        np_fullmet_P0 = 1   ! Precip is 2d
+        !np_fullmet_Vz = 42 ! omega
+        !np_fullmet_T  = 42 ! Temperature
+        !np_fullmet_RH = 42 ! rhum
+        np_fullmet_P0 = 1  ! Precip is 2d
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1470,12 +1507,14 @@
              250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
              125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
               20.0_sp,  10.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
@@ -1486,12 +1525,14 @@
 
         nt_fullmet = 1
         np_fullmet = 42
-        np_fullmet_Vz = 42 ! omega
-        np_fullmet_RH = 42  ! rhum
-        np_fullmet_P0 = 1   ! Precip is 2d
+        !np_fullmet_Vz = 42 ! omega
+        !np_fullmet_T  = 42 ! Temperature
+        !np_fullmet_RH = 42 ! rhum
+        np_fullmet_P0 = 1  ! Precip is 2d
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1502,12 +1543,14 @@
              250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
              125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
               20.0_sp,  10.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
@@ -1517,11 +1560,13 @@
 
         nt_fullmet = 1
         np_fullmet = 42
-        np_fullmet_Vz = 42 ! omega
-        np_fullmet_RH = 42  ! rhum
+        !np_fullmet_Vz = 42 ! omega
+        !np_fullmet_T  = 42 ! Temperature
+        !np_fullmet_RH = 42 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1532,12 +1577,14 @@
              250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
              125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
               20.0_sp,  10.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
@@ -1548,11 +1595,13 @@
 
         nt_fullmet = 1
         np_fullmet = 26   ! This is for air, hgt, uwnd, vwnd
-        np_fullmet_Vz = 21 ! omega
-        np_fullmet_RH = 25  ! rhum
+        !np_fullmet_Vz = 21 ! omega
+        !np_fullmet_T  = 26 ! Temperature
+        !np_fullmet_RH = 25 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
@@ -1560,22 +1609,24 @@
              350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
              100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
               10.0_sp /)
-        p_fullmet_Vz_sp(1:21) =  &
-          (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-             850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-             600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-             350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, & 
-             100.0_sp /)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = &
-          (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-             850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-             600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-             350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, & 
-             100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  10.0_sp /)
+        !p_fullmet_Vz_sp(1:21) =  &
+        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
+        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
+        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
+        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, & 
+        !     100.0_sp /)
+        !!p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
+        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
+        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
+        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
+        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, & 
+        !     100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  10.0_sp /)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .true.
@@ -1586,11 +1637,13 @@
 
         nt_fullmet = 1
         np_fullmet = 31   ! This is for air, hgt, uwnd, vwnd
-        np_fullmet_Vz = 21 ! omega
-        np_fullmet_RH = 31  ! rhum
+        !np_fullmet_Vz = 21 ! omega
+        !np_fullmet_T  = 31 ! Temperature
+        !np_fullmet_RH = 31 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
@@ -1599,24 +1652,26 @@
              100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
               10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, &
                1.0_sp /)
-        p_fullmet_Vz_sp(1:21) =  &
-          (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-             850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-             600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-             350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-             100.0_sp /)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = &
-          (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-             850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-             600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-             350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-             100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
-              10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, &
-               1.0_sp /)
+        !p_fullmet_Vz_sp(1:21) =  &
+        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
+        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
+        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
+        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
+        !     100.0_sp /)
+        !!p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
+        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
+        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
+        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
+        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
+        !     100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
+        !      10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, &
+        !       1.0_sp /)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .true.
@@ -1627,11 +1682,13 @@
 
         nt_fullmet = 1
         np_fullmet = 31   ! This is for air, hgt, uwnd, vwnd
-        np_fullmet_Vz = 21 ! omega
-        np_fullmet_RH = 31  ! rhum
+        !np_fullmet_Vz = 21 ! omega
+        !np_fullmet_T  = 31 ! Temperature
+        !np_fullmet_RH = 31 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
@@ -1640,24 +1697,26 @@
              100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
               10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, &
                1.0_sp /)
-        p_fullmet_Vz_sp(1:21) =  &
-          (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-             850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-             600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-             350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-             100.0_sp /)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = &
-          (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-             850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-             600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-             350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-             100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
-              10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, & 
-               1.0_sp /)
+        !p_fullmet_Vz_sp(1:21) =  &
+        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
+        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
+        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
+        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
+        !     100.0_sp /)
+        !!p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
+        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
+        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
+        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
+        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
+        !     100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
+        !      10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, & 
+        !       1.0_sp /)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .true.
@@ -1667,22 +1726,26 @@
 
         nt_fullmet = 1
         np_fullmet = 17
-        np_fullmet_Vz = 17 ! omega
-        np_fullmet_RH = 17  ! rhum
+        !np_fullmet_Vz = 17 ! omega
+        !np_fullmet_T  = 17 ! Temperature
+        !np_fullmet_RH = 17 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 925.0_sp, 850.0_sp, 700.0_sp, 600.0_sp, &
              500.0_sp, 400.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, &
              150.0_sp, 100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp, &
               20.0_sp,  10.0_sp /)
-        p_fullmet_Vz_sp = p_fullmet_sp
-        p_fullmet_RH_sp = p_fullmet_sp
+        !p_fullmet_Vz_sp = p_fullmet_sp
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp = p_fullmet_sp
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .false.
@@ -1692,12 +1755,14 @@
 
         nt_fullmet = 1
         np_fullmet = 42
-        np_fullmet_Vz = 42 ! omega
-        np_fullmet_RH = 42  ! rhum
-        np_fullmet_P0 = 42  ! Precip is 3d
+        !np_fullmet_Vz = 42 ! omega
+        !np_fullmet_T  = 42 ! Temperature
+        !np_fullmet_RH = 42 ! rhum
+        np_fullmet_P0 = 42 ! Precip is 3d
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1708,12 +1773,14 @@
               10.0_sp,   7.0_sp,   5.0_sp,   4.0_sp,   3.0_sp, &
                2.0_sp,   1.0_sp,   0.7_sp,   0.5_sp,   0.4_sp, &
                0.3_sp,   0.1_sp /)
-        p_fullmet_Vz_sp = p_fullmet_sp
-        p_fullmet_RH_sp = p_fullmet_sp
+        !p_fullmet_Vz_sp = p_fullmet_sp
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp = p_fullmet_sp
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .false.
@@ -1722,28 +1789,32 @@
         call MR_Set_Met_NCEPGeoGrid(2)
         nt_fullmet = 1460 ! might need to add 4 for a leap year
         np_fullmet = 17   ! This is for air, hgt, uwnd, vwnd
-        np_fullmet_Vz = 12 ! omega
-        np_fullmet_RH = 8  ! rhum
+        !np_fullmet_Vz = 12 ! omega
+        !np_fullmet_T  = 17 ! Temperature
+        !np_fullmet_RH = 8  ! rhum
         np_fullmet_P0 = 1  ! Precip is 2d
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 925.0_sp, 850.0_sp, 700.0_sp, 600.0_sp, &
              500.0_sp, 400.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, &
              150.0_sp, 100.0_sp,  70.0_sp,  50.0_sp, 30.0_sp, &
               20.0_sp,  10.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
-          (/1000.0_sp, 925.0_sp, 850.0_sp, 700.0_sp, 600.0_sp, &
-             500.0_sp, 400.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, &
-             150.0_sp, 100.0_sp /)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = &
-          (/1000.0_sp, 925.0_sp, 850.0_sp, 700.0_sp, 600.0_sp, &
-             500.0_sp, 400.0_sp, 300.0_sp /)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
+        !  (/1000.0_sp, 925.0_sp, 850.0_sp, 700.0_sp, 600.0_sp, &
+        !     500.0_sp, 400.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, &
+        !     150.0_sp, 100.0_sp /)
+        !!p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
+        !  (/1000.0_sp, 925.0_sp, 850.0_sp, 700.0_sp, 600.0_sp, &
+        !     500.0_sp, 400.0_sp, 300.0_sp /)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         ! These additional grids are needed since surface variables are on a
         ! different spatial grid.
         do i = 1,192
@@ -1772,11 +1843,13 @@
 
         nt_fullmet = 1
         np_fullmet = 37   ! This is for air, hgt, uwnd, vwnd
-        np_fullmet_Vz = 37 ! omega
-        np_fullmet_RH = 37  ! rhum
+        !np_fullmet_Vz = 37 ! omega
+        !np_fullmet_T  = 37 ! Temperature
+        !np_fullmet_RH = 37 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1787,13 +1860,15 @@
               20.0_sp,  10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp, &
                2.0_sp,   1.0_sp /)
 
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet_Vz)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet_RH)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet_Vz)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet_RH)
 
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .false.
@@ -1803,11 +1878,13 @@
 
         nt_fullmet = 1460 ! might need to add 4 for a leap year
         np_fullmet = 24   ! This is for HGT, TMP, UGRD, VGRD
-        np_fullmet_Vz = 19 ! omega
-        np_fullmet_RH = 19 ! rhum
+        !np_fullmet_Vz = 19 ! omega
+        !np_fullmet_T  = 24 ! Temperature
+        !np_fullmet_RH = 19 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
          ! NOTE: This is the order we ultimately want, but what is in the files
          !       is stored top-down (10->1000).
         p_fullmet_sp(1:np_fullmet) = &
@@ -1816,16 +1893,18 @@
              500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
              250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp,  70.0_sp, &
               50.0_sp,  30.0_sp,  20.0_sp,  10.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
-          (/1000.0_sp, 950.0_sp, 900.0_sp, 850.0_sp, 800.0_sp, &
-             750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
-             500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
-             250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp /)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_Vz_sp(1:np_fullmet_Vz)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
+        !  (/1000.0_sp, 950.0_sp, 900.0_sp, 850.0_sp, 800.0_sp, &
+        !     750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
+        !     500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
+        !     250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp /)
+        !!p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_Vz_sp(1:np_fullmet_Vz)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .true.
@@ -1837,11 +1916,13 @@
 
         nt_fullmet = 1
         np_fullmet = 37   ! This is for air, hgt, uwnd, vwnd
-        np_fullmet_Vz = 37 ! omega
-        np_fullmet_RH = 37  ! rhum
+        !np_fullmet_Vz = 37 ! omega
+        !np_fullmet_T  = 37 ! Temperature
+        !np_fullmet_RH = 37 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
          ! NOTE: This is the order we ultimately want, but what is in the files
          !       is stored top-down (1->1000).
         p_fullmet_sp(1:np_fullmet) = &
@@ -1853,12 +1934,14 @@
              125.0_sp, 100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp, &
               20.0_sp,  10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp, &
                2.0_sp,   1.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .true.
@@ -1868,11 +1951,13 @@
 
         nt_fullmet = 1
         np_fullmet = 23   ! This is for air, hgt, uwnd, vwnd
-        np_fullmet_Vz = 23 ! omega
-        np_fullmet_RH = 23  ! rhum
+        !np_fullmet_Vz = 23 ! omega
+        !np_fullmet_T  = 23 ! Temperature
+        !np_fullmet_RH = 23 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
          ! NOTE: This is the order we ultimately want, but what is in the files
          !       is stored top-down (1->1000).
         p_fullmet_sp(1:np_fullmet) = &
@@ -1881,12 +1966,14 @@
              150.0_sp, 100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp, &
               10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, &
                1.0_sp,   0.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .true.
         z_inverted = .false.
@@ -1898,21 +1985,25 @@
 
         nt_fullmet = 1
         np_fullmet = 13
-        np_fullmet_Vz = 13 ! omega
-        np_fullmet_RH = 13  ! rhum
+        !np_fullmet_Vz = 13 ! omega
+        !np_fullmet_T  = 13 ! Temperature
+        !np_fullmet_RH = 13 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 950.0_sp, 925.0_sp, 850.0_sp, 700.0_sp, &
              600.0_sp, 500.0_sp, 400.0_sp, 300.0_sp, 250.0_sp, &
              200.0_sp, 150.0_sp, 100.0_sp /)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .false.
@@ -1923,11 +2014,13 @@
 
         nt_fullmet = 1
         np_fullmet = 39
-        np_fullmet_Vz = 31 ! omega
-        np_fullmet_RH = 39  ! rhum
+        !np_fullmet_Vz = 31 ! omega
+        !np_fullmet_T  = 39 ! Temperature
+        !np_fullmet_RH = 39 ! rhum
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1013.0_sp, 1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, &
              900.0_sp,  875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, &
@@ -1937,20 +2030,22 @@
              100.0_sp,   70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
               10.0_sp,    3.0_sp,   2.0_sp,   1.0_sp,   0.5_sp, &
                0.3_sp,    0.2_sp,   0.1_sp,   0.05_sp/)
-        p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
-          (/1013.0_sp, 1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, &
-             900.0_sp,  875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, &
-             775.0_sp,  750.0_sp, 725.0_sp, 700.0_sp, 650.0_sp, &
-             600.0_sp,  550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-             350.0_sp,  300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-             100.0_sp,   70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
-              10.0_sp/)
-        p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
+        !  (/1013.0_sp, 1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, &
+        !     900.0_sp,  875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, &
+        !     775.0_sp,  750.0_sp, 725.0_sp, 700.0_sp, 650.0_sp, &
+        !     600.0_sp,  550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
+        !     350.0_sp,  300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
+        !     100.0_sp,   70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
+        !      10.0_sp/)
+        !!p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
 
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .true.
@@ -1961,12 +2056,14 @@
 
         nt_fullmet = 1
         np_fullmet = 37
-        np_fullmet_Vz = 37 ! omega
-        np_fullmet_RH = 37  ! rhum
-        np_fullmet_P0 = 37  ! Precip is 3d
+        !np_fullmet_Vz = 37 ! omega
+        !np_fullmet_T  = 37 ! Temperature
+        !np_fullmet_RH = 37 ! rhum
+        np_fullmet_P0 = 37 ! Precip is 3d
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -1976,12 +2073,14 @@
               70.0_sp,  50.0_sp,  40.0_sp,  30.0_sp,  20.0_sp, &
               10.0_sp,   7.0_sp,   5.0_sp,   4.0_sp,   3.0_sp, &
                2.0_sp,   1.0_sp /)
-        p_fullmet_Vz_sp = p_fullmet_sp
-        p_fullmet_RH_sp = p_fullmet_sp
+        !p_fullmet_Vz_sp = p_fullmet_sp
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp = p_fullmet_sp
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .false.
@@ -1992,12 +2091,14 @@
 
         nt_fullmet = 1
         np_fullmet = 42
-        np_fullmet_Vz = 42 ! omega
-        np_fullmet_RH = 42  ! rhum
-        np_fullmet_P0 = 42  ! Precip is 3d
+        !np_fullmet_Vz = 42 ! omega
+        !np_fullmet_T  = 42 ! Temperature
+        !np_fullmet_RH = 42 ! rhum
+        np_fullmet_P0 = 42 ! Precip is 3d
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_T_sp( np_fullmet_T))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet) = &
           (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
              875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
@@ -2008,12 +2109,14 @@
               10.0_sp,   7.0_sp,   5.0_sp,   4.0_sp,   3.0_sp, &
                2.0_sp,   1.0_sp,   0.7_sp,   0.5_sp,   0.4_sp, &
                0.3_sp,   0.1_sp /)
-        p_fullmet_Vz_sp = p_fullmet_sp
-        p_fullmet_RH_sp = p_fullmet_sp
+        !p_fullmet_Vz_sp = p_fullmet_sp
+        !p_fullmet_T_sp( 1:np_fullmet_T)  = p_fullmet_sp(1:np_fullmet)
+        !p_fullmet_RH_sp = p_fullmet_sp
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
         p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_T_sp  = p_fullmet_T_sp  * 100.0_sp   ! convert from hPa to Pa
+        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
         x_inverted = .false.
         y_inverted = .false.
         z_inverted = .false.
@@ -2447,7 +2550,9 @@
           write(index_file,126)trim(adjustl(MR_MetStep_File(istep))), &
                            "pgrbanl_mean_",MR_iwind5_year(istep), &
                            "_VVEL_pres.nc"
-          np_met_loc = np_fullmet_Vz
+          write(*,*)"+++++++++++++++++++++++++++++++++++++++++++"
+          write(*,*)"  NEED TO FIX THIS Vz"
+          np_met_loc = np_fullmet
         elseif(ivar.eq.5)then
           write(index_file,125)trim(adjustl(MR_MetStep_File(istep))), &
                            "pgrbanl_mean_",MR_iwind5_year(istep), &
@@ -2469,7 +2574,9 @@
           write(index_file,127)trim(adjustl(MR_MetStep_File(istep))), &
                            "pgrbanl_mean_",MR_iwind5_year(istep), &
                            "_RH_pres.nc"
-          np_met_loc = np_fullmet_RH
+          write(*,*)"+++++++++++++++++++++++++++++++++++++++++++"
+          write(*,*)"  NEED TO FIX THIS : RH"
+          np_met_loc = np_fullmet
         elseif(ivar.eq.44)then
           write(index_file,129)trim(adjustl(MR_MetStep_File(istep))), &
                            "sflxgrbfg_mean_",MR_iwind5_year(istep), &
@@ -2495,11 +2602,13 @@
         ! Set up pressure level index that we will search for
         p_met_loc = 0
         if(ivar.eq.4)then      ! Vertical_velocity_pressure_isobaric
-          np_met_loc = np_fullmet_Vz
+          write(*,*)"+++++++++++++++++++++++++++++++++++++++++++"
+          write(*,*)"  NEED TO FIX THIS Vz"
+          np_met_loc = np_fullmet
           if(MR_GRIB_Version.eq.1)then
-            p_met_loc(1:np_met_loc)  = int(p_fullmet_Vz_sp(1:np_met_loc)/100.0)
+            p_met_loc(1:np_met_loc)  = int(p_fullmet_sp(1:np_met_loc)/100.0)
           else
-            p_met_loc(1:np_met_loc)  = int(p_fullmet_Vz_sp(1:np_met_loc))
+            p_met_loc(1:np_met_loc)  = int(p_fullmet_sp(1:np_met_loc))
           endif
         elseif(ivar.eq.10)then ! Planetary_Boundary_Layer_Height_surface
           np_met_loc = 1
@@ -2536,11 +2645,13 @@
           np_met_loc = 1
           p_met_loc(1:np_met_loc)  = 0
         elseif(ivar.eq.30)then ! Relative_humidity_isobaric
-          np_met_loc = np_fullmet_RH
+          write(*,*)"+++++++++++++++++++++++++++++++++++++++++++"
+          write(*,*)"  NEED TO FIX THIS : RH"
+          np_met_loc = np_fullmet
           if(MR_GRIB_Version.eq.1)then
-            p_met_loc(1:np_met_loc)  = int(p_fullmet_RH_sp(1:np_met_loc)/100.0)
+            p_met_loc(1:np_met_loc)  = int(p_fullmet_sp(1:np_met_loc)/100.0)
           else
-            p_met_loc(1:np_met_loc)  = int(p_fullmet_RH_sp(1:np_met_loc))
+            p_met_loc(1:np_met_loc)  = int(p_fullmet_sp(1:np_met_loc))
           endif
         elseif(ivar.eq.40.or.ivar.eq.41.or.ivar.eq.42.or.ivar.eq.43)then ! categorical precip
           np_met_loc = 1
@@ -3042,11 +3153,11 @@
         if(ivar.eq.2.or.ivar.eq.3.or.ivar.eq.4)then
           ! taper winds (vx,vy,vz) to zero at ground surface
           if(istep.eq.MR_iMetStep_Now)then
-            call MR_QC_3dvar(nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
+            call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
                           np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
                           bc_low_sp=0.0_sp)
           else
-            call MR_QC_3dvar(nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
+            call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
                           np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
                           bc_low_sp=0.0_sp)
           endif
@@ -3055,21 +3166,21 @@
           Z_top = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/real(100.0,kind=sp))
           T_top = MR_Temp_US_StdAtm(Z_top)
           if(istep.eq.MR_iMetStep_Now)then
-            call MR_QC_3dvar(nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
+            call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
                           np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
                           bc_low_sp=293.0_sp, bc_high_sp=T_top)
           else
-            call MR_QC_3dvar(nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
+            call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
                           np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
                           bc_low_sp=293.0_sp, bc_high_sp=T_top)
           endif
         else
           ! For other variables, use the top and bottom non-fill values
           if(istep.eq.MR_iMetStep_Now)then
-            call MR_QC_3dvar(nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
+            call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
                           np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat))
           else
-            call MR_QC_3dvar(nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
+            call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
                           np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat))
           endif
         endif
@@ -3078,12 +3189,14 @@
       if(ivar.eq.4)then
           ! For pressure vertical velocity, convert from Pa s to m/s by dividing
           ! by pressure gradient
+        idx = Met_var_zdim_idx(ivar)
         do k=1,np_met_loc
           do i=1,nx_submet
             do j=1,ny_submet
               if(k.eq.1)then
                 ! Use one-sided gradients for bottom
-                del_P = p_fullmet_Vz_sp(2)-p_fullmet_Vz_sp(1)
+                !del_P = p_fullmet_Vz_sp(2)-p_fullmet_Vz_sp(1)
+                del_p = levs_fullmet_sp(idx,2) - levs_fullmet_sp(idx,1)
                 if(istep.eq.MR_iMetStep_Now)then
                   del_H = MR_geoH_metP_last(i,j,2) - MR_geoH_metP_last(i,j,1)
                 else
@@ -3091,8 +3204,10 @@
                 endif
               elseif(k.eq.np_met_loc)then
                 ! Use one-sided gradients for top
-                del_P = p_fullmet_Vz_sp(np_met_loc) - &
-                         p_fullmet_Vz_sp(np_met_loc-1)
+                !del_P = p_fullmet_Vz_sp(np_met_loc) - &
+                !         p_fullmet_Vz_sp(np_met_loc-1)
+                del_p = levs_fullmet_sp(idx,nlevs_fullmet(idx)) - &
+                        levs_fullmet_sp(idx,nlevs_fullmet(idx)-1)
                 if(istep.eq.MR_iMetStep_Now)then
                   del_H = MR_geoH_metP_last(i,j,np_met_loc) - &
                            MR_geoH_metP_last(i,j,np_met_loc-1)
@@ -3102,7 +3217,9 @@
                 endif
               else
                 ! otherwise, two-sided calculation
-                del_P = p_fullmet_Vz_sp(k+1)-p_fullmet_Vz_sp(k-1)
+                !del_P = p_fullmet_Vz_sp(k+1)-p_fullmet_Vz_sp(k-1)
+                del_p = levs_fullmet_sp(idx,k+1) - &
+                        levs_fullmet_sp(idx,k)
                 if(istep.eq.MR_iMetStep_Now)then
                   del_H = MR_geoH_metP_last(i,j,k+1) - MR_geoH_metP_last(i,j,k-1)
                 else

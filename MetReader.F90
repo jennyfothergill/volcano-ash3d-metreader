@@ -49,10 +49,11 @@
                                        ! 23 NCEP / DOE reanalysis 2.5 degree files  :: ds091.0
                                        ! 24 NASA-MERRA-2 reanalysis 0.625/0.5 degree files
                                        ! 25 NCEP/NCAR reanalysis 2.5 degree files   :: ds090.0
-                                       ! 26 JRA-55                                  :: ds628.0
-                                       ! 27 NOAA-CIRES reanalysis 2.5 degree files  :: ds131.2
-                                       ! 28 ECMWF Interim Reanalysis (ERA-Interim)  :: ds627.0
-                                       ! 29 ECMWF ERA5                              :: ds630.0
+                                       ! 26 JRA-55                                  :: ds628.0  iwind=5
+                                       ! 27 NOAA-CIRES reanalysis 2.5 degree files  :: ds131.2  iwind=5
+                                       ! 28 ECMWF Interim Reanalysis (ERA-Interim)  :: ds627.0  requires catted grib files
+                                       ! 29 ECMWF ERA5                              :: ds630.0  iwind=5
+                                       ! 30 ECMWF 20-Century (ERA-20C)              :: ds626.0  iwind=5
                                        ! 31 Catania forecast
                                        ! 32 Air Force Weather Agency subcenter = 0
                                        ! 33 CCSM3.0 Community Atmosphere Model (CAM)
@@ -189,9 +190,10 @@
       integer       :: nt_fullmet    ! length of t of file
       integer       :: nx_fullmet    ! length of x or lon of full met grid
       integer       :: ny_fullmet    ! length of y or lat of full met grid
-      integer       :: np_fullmet    ! length of pressure of full met grid
-      integer       :: np_fullmet_Vz ! length of pressure of full met grid for Vz
-      integer       :: np_fullmet_RH ! length of pressure of full met grid for RH
+      integer       :: np_fullmet    ! length of pressure of full met grid for H,U,V
+      !integer       :: np_fullmet_Vz ! length of pressure of full met grid for Vz
+      !integer       :: np_fullmet_T  ! length of pressure of full met grid
+      !integer       :: np_fullmet_RH ! length of pressure of full met grid for RH
       integer       :: np_fullmet_P0 ! length of pressure of full met grid for Precip 
                                      !   (=1 for all cases except iwindformat=24)
       integer       :: np_fullmet_pad = 1 ! We might need to pad the top of the pressure grid.
@@ -201,27 +203,41 @@
 #ifdef USEPOINTERS
       real(kind=sp),dimension(:), pointer :: x_fullmet_sp    => null() ! x-coordinates of full met grid
       real(kind=sp),dimension(:), pointer :: y_fullmet_sp    => null() ! y-coordinates of full met grid
-      real(kind=sp),dimension(:), pointer :: p_fullmet_sp    => null() ! z-coordinates of full met grid for U,V,T,H
-      real(kind=sp),dimension(:), pointer :: p_fullmet_Vz_sp => null() ! z-coordinates of full met grid for Vz
-      real(kind=sp),dimension(:), pointer :: p_fullmet_RH_sp => null() ! z-coordinates of full met grid for RH
+      real(kind=sp),dimension(:), pointer :: p_fullmet_sp    => null() ! z-coordinates of full met grid for H
+      !real(kind=sp),dimension(:), pointer :: p_fullmet_Vz_sp => null() ! z-coordinates of full met grid for Vz
+      !real(kind=sp),dimension(:), pointer :: p_fullmet_T_sp  => null() ! z-coordinates of full met grid for T
+      !real(kind=sp),dimension(:), pointer :: p_fullmet_RH_sp => null() ! z-coordinates of full met grid for RH
       real(kind=sp),dimension(:,:), pointer :: levs_fullmet_sp => null() ! This hold each of the numbered level coordinates:
                                                                          !    i.e. isobaric, isobaric1, isobaric2, but also
                                                                          !    height_above_ground, depth_below_surface_layer, etc.
                                                                          !    p_fullmet_sp,p_fullmet_[Vz,RH]sp are copies of one
                                                                          !    of the slices
-      integer,dimension(:), pointer :: nlevs_fullmet
+      integer,dimension(:), pointer :: nlevs_fullmet                     ! length of z coordinate
+      integer,dimension(:), pointer :: levs_code                         ! code indicating how to map to the GPH grid
+                                                                         !   0 = no mapping (not a pressure coordinate)
+                                                                         !   1 = one-to-one mapping (U,V)
+                                                                         !   2 = upper truncation (missing upper levels)
+                                                                         !   3 = interpolation (missing mid-levels)
+                                                                         !   4 = more levels than GPH grid
 #else
       real(kind=sp),dimension(:), allocatable :: x_fullmet_sp     ! x-coordinates of full met grid
       real(kind=sp),dimension(:), allocatable :: y_fullmet_sp     ! y-coordinates of full met grid
-      real(kind=sp),dimension(:), allocatable :: p_fullmet_sp     ! z-coordinates of full met grid for U,V,T,H
-      real(kind=sp),dimension(:), allocatable :: p_fullmet_Vz_sp  ! z-coordinates of full met grid for Vz
-      real(kind=sp),dimension(:), allocatable :: p_fullmet_RH_sp  ! z-coordinates of full met grid for RH
+      real(kind=sp),dimension(:), allocatable :: p_fullmet_sp     ! z-coordinates of full met grid for H
+      !real(kind=sp),dimension(:), allocatable :: p_fullmet_Vz_sp  ! z-coordinates of full met grid for Vz
+      !real(kind=sp),dimension(:), allocatable :: p_fullmet_T_sp   ! z-coordinates of full met grid for T
+      !real(kind=sp),dimension(:), allocatable :: p_fullmet_RH_sp  ! z-coordinates of full met grid for RH
       real(kind=sp),dimension(:,:),allocatable :: levs_fullmet_sp ! This hold each of the numbered level coordinates:
                                                                   !    i.e. isobaric, isobaric1, isobaric2, but also
                                                                   !    height_above_ground, depth_below_surface_layer, etc.
                                                                   !    p_fullmet_sp,p_fullmet_[Vz,RH]sp are copies of one
                                                                   !    of the slices
       integer,dimension(:), allocatable :: nlevs_fullmet
+      integer,dimension(:), allocatable :: levs_code                     ! code indicating how to map to the GPH grid
+                                                                         !   0 = no mapping (not a pressure coordinate)
+                                                                         !   1 = one-to-one mapping (U,V)
+                                                                         !   2 = upper truncation (missing upper levels)
+                                                                         !   3 = interpolation (missing mid-levels)
+                                                                         !   4 = more levels than GPH grid
 #endif
 
       logical       :: IsLatLon_MetGrid
@@ -336,7 +352,8 @@
 
       logical :: Have_Vz = .false.
       real(kind=sp),dimension(0:100) :: fill_value_sp = -9999.0_sp
-      character(len=30),dimension(9) :: Met_dim_names
+      character(len=30),dimension(9) :: Met_dim_names      ! name of dimension
+      character(len=30),dimension(9) :: Met_vardim_names   ! name of variable associated with dimension
       logical          ,dimension(9) :: Met_dim_IsAvailable
       real(kind=sp)    ,dimension(9) :: Met_dim_fac  = 1.0_sp
       ! Here is the list of variables that can be read.  Each iwindformat will
@@ -497,8 +514,8 @@
        if(associated(x_fullmet_sp                  ))deallocate(x_fullmet_sp)
        if(associated(y_fullmet_sp                  ))deallocate(y_fullmet_sp)
        if(associated(p_fullmet_sp                  ))deallocate(p_fullmet_sp)
-       if(associated(p_fullmet_Vz_sp               ))deallocate(p_fullmet_Vz_sp)
-       if(associated(p_fullmet_RH_sp               ))deallocate(p_fullmet_RH_sp)
+       !if(associated(p_fullmet_Vz_sp               ))deallocate(p_fullmet_Vz_sp)
+       !if(associated(p_fullmet_RH_sp               ))deallocate(p_fullmet_RH_sp)
        if(associated(x_submet_sp                   ))deallocate(x_submet_sp)
        if(associated(y_submet_sp                   ))deallocate(y_submet_sp)
        if(associated(z_approx                      ))deallocate(z_approx)
@@ -540,8 +557,8 @@
        if(allocated(x_fullmet_sp                  ))deallocate(x_fullmet_sp)
        if(allocated(y_fullmet_sp                  ))deallocate(y_fullmet_sp)
        if(allocated(p_fullmet_sp                  ))deallocate(p_fullmet_sp)
-       if(allocated(p_fullmet_Vz_sp               ))deallocate(p_fullmet_Vz_sp)
-       if(allocated(p_fullmet_RH_sp               ))deallocate(p_fullmet_RH_sp)
+       !if(allocated(p_fullmet_Vz_sp               ))deallocate(p_fullmet_Vz_sp)
+       !if(allocated(p_fullmet_RH_sp               ))deallocate(p_fullmet_RH_sp)
        if(allocated(x_submet_sp                   ))deallocate(x_submet_sp)
        if(allocated(y_submet_sp                   ))deallocate(y_submet_sp)
        if(allocated(z_approx                      ))deallocate(z_approx)
@@ -2081,7 +2098,6 @@
             endif
           endif
 
-
           if (MR_use_SigmaAlt)then
               ! this recovers the real-world z coordinate from the sigma level and topography
             dumVertCoord_sp(1:nz_comp) = MR_zsurf(i,j) + &
@@ -3054,9 +3070,10 @@
 !##############################################################################
 
       subroutine MR_QC_3dvar(              &
-                 nx_max,ny_max,nz1_max, &
+                 ivar,                     &
+                 nx_max,ny_max,nz1_max,    &
                  z_array_sp,               &
-                 nz2_max,               &
+                 nz2_max,                  &
                  dum_array_sp,             &
                  fill_val_sp,              &
                  bc_low_sp, bc_high_sp)
@@ -3067,17 +3084,87 @@
       integer, parameter :: sp        = 4 ! single precision
       integer, parameter :: dp        = 8 ! double precision
 
+      integer               ,intent(in)    :: ivar
       integer               ,intent(in)    :: nx_max,ny_max,nz1_max
       real(kind=sp)         ,intent(in)    :: z_array_sp(nx_max,ny_max,nz1_max)
       integer               ,intent(in)    :: nz2_max
-      real(kind=sp)         ,intent(inout) :: dum_array_sp(nx_max,ny_max,nz2_max)
+      real(kind=sp)         ,intent(inout) :: dum_array_sp(nx_max,ny_max,nz1_max)
       real(kind=sp)         ,intent(in)    :: fill_val_sp
       real(kind=sp),optional,intent(in)    :: bc_low_sp
       real(kind=sp),optional,intent(in)    :: bc_high_sp
 
       logical,dimension(nz1_max) :: IsFillValue
+      logical,dimension(nz1_max) :: InterpolateLev
 
       integer ::  i,j,k,kk,kkk,klow,khigh
+      integer :: idx
+      real(kind=sp) :: pp,pv,p1,p2,fac
+
+      InterpolateLev = .false.
+
+      ! First check if this variable is on the same pressure grid as GPH
+      idx = Met_var_zdim_idx(ivar)  ! index of pressure level for this variable
+      if(levs_code(idx).eq.1)then
+        ! one-to-one mapping: no special action needed
+      else if (levs_code(idx).eq.2)then
+        ! truncated grid: this will be addressed at the end of this subroutine
+      else if (levs_code(idx).eq.3)then
+        ! interpolated:
+        ! We need the result to live on the same pressure levels as the GPH array, so
+        ! for each level of the primary pressure coordinate, we need to find if a level
+        ! of the variable can be copied or must be interpolated
+        !
+        ! Loop from the top of the variable array (because nz2_max<nz1_max)
+        InterpolateLev = .true.
+        do k=nz2_max,1,-1
+          pv = levs_fullmet_sp(idx,k)  ! Pressure level in question
+          do kk=nz1_max,1,-1           ! Looping over destination pressure levels
+            pp = levs_fullmet_sp(1,kk) 
+            if(abs(pv-pp).lt.MR_EPS_SMALL)then
+              ! pv matched with pp
+              InterpolateLev(kk) = .false.
+              ! if the slices are at the same index, do nothing
+              if (k.ne.kk)then
+                ! Move the slice to the needed position and flag original slice with NaN/Fill_Value
+                dum_array_sp(1:nx_max,1:ny_max,kk) = dum_array_sp(1:nx_max,1:ny_max,k)
+                dum_array_sp(1:nx_max,1:ny_max,k)  = fill_val_sp
+              endif
+            endif
+          enddo
+        enddo
+        ! Now go to each of the layers we need to calculate, assuming we have the end layers
+        do k=2,nz1_max-1
+          if (InterpolateLev(k))then
+            klow = 1
+            do kk = k,1,-1
+              if (.not.InterpolateLev(kk))then
+                klow = kk
+                exit
+              endif
+            enddo
+            do kk = k,nz1_max
+              if (.not.InterpolateLev(kk))then
+                khigh = kk
+                exit
+              endif
+            enddo
+            pp = levs_fullmet_sp(1,k)     ! This is the pressure level we need to populate
+            p1 = levs_fullmet_sp(1,klow)  ! pressure at low-altitude end of bracket
+            p2 = levs_fullmet_sp(1,khigh) ! pressure at high-altitude end of bracket
+
+            fac = (log(pp/p1))/(log(p2/p1))
+            dum_array_sp(1:nx_max,1:ny_max,k) = dum_array_sp(1:nx_max,1:ny_max,klow) + &
+                                                fac * (dum_array_sp(1:nx_max,1:ny_max,khigh) - &
+                                                       dum_array_sp(1:nx_max,1:ny_max,klow))
+          endif
+        enddo
+      else
+        ! Should not be here!
+        ! We assume that the varaible lives on the GPH grid or a subset
+        write(MR_global_error,*)'MR ERROR: Variable has more levels than GPH'
+        write(MR_global_log  ,*)'MR ERROR: Variable has more levels than GPH'
+        stop 1
+      endif
 
       do i=1,nx_max
         do j=1,ny_max
@@ -3136,9 +3223,6 @@
                  do kkk = max(k-1,1),klow,-1
                    if(.not.IsFillValue(kkk))exit
                  enddo
-                 ! Note:  this assumes that nz2_max.le.nz1_max and that the
-                 ! pressure values for dum_array_sp(1:nz2_max) are the same as
-                 ! the pressure for z_array_sp(nz1_max)
                  dum_array_sp(i,j,k) = dum_array_sp(i,j,kk) + &
                        (dum_array_sp(i,j,kk)-dum_array_sp(i,j,kkk)) * &
                        (z_array_sp(i,j,kk)-z_array_sp(i,j,kkk))/ &
@@ -3149,6 +3233,20 @@
           endif
         enddo
       enddo
+
+      if(levs_code(idx).eq.2)then
+        ! For truncated grids, assign truncated (high altitude) values to the top bc, if
+        ! present, or copy the upper-most valid value if not
+        if(present(bc_high_sp))then
+          do k=nz2_max+1,nz1_max
+            dum_array_sp(1:nx_max,1:ny_max,k) = bc_high_sp
+          enddo
+        else
+          do k=nz2_max+1,nz1_max
+            dum_array_sp(1:nx_max,1:ny_max,k) = dum_array_sp(1:nx_max,1:ny_max,nz2_max)
+          enddo
+        endif
+      endif
 
       end subroutine MR_QC_3dvar
 

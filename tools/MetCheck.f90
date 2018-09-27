@@ -39,7 +39,7 @@
       integer      :: HS_YearOfEvent
       integer      :: HS_DayOfYear
       real(kind=8) :: HS_HourOfDay
-
+      integer      :: idx
 
       Met_var_MinMax(1,1:2) = (/ -1000.0_4, 80000.0_4 /)  ! GPH
       Met_var_MinMax(2,1:2) = (/  -200.0_4,   200.0_4 /)  ! U
@@ -210,12 +210,14 @@
                                     HS_HourOfDay(hsince,MR_BaseYear,MR_useLeap)/24.0_8,kind=4)
         endif
         do ivar=1,5
+          idx = Met_var_zdim_idx(ivar)
           if(Met_dim_IsAvailable(ivar).eqv..true.)then
-            if(ivar.eq.4)then
-              np = np_fullmet_Vz
-            else
-              np = np_fullmet
-            endif
+            np = nlevs_fullmet(idx)
+            !if(ivar.eq.4)then
+            !  np = np_fullmet_Vz
+            !else
+            !  np = np_fullmet
+            !endif
             v1 = Met_var_MinMax(ivar,1)
             v2 = Met_var_MinMax(ivar,2)
             call MR_Read_3d_MetP_Variable(ivar,imetstep)

@@ -629,14 +629,14 @@
           enddo
         enddo
         np_fullmet = MR_Snd_np_fullmet(p_lidx,p_tidx)
-        np_fullmet_Vz = np_fullmet
-        np_fullmet_RH = np_fullmet
+        !np_fullmet_Vz = np_fullmet
+        !np_fullmet_RH = np_fullmet
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet)=MR_SndVars_metP(p_lidx,p_tidx,1,1:np_fullmet)
-        p_fullmet_Vz_sp = p_fullmet_sp
-        p_fullmet_RH_sp = p_fullmet_sp
+        !p_fullmet_Vz_sp = p_fullmet_sp
+        !p_fullmet_RH_sp = p_fullmet_sp
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
         do k=1,np_fullmet
           ! Calculate heights for US Std Atmos while pressures are still in mbars
@@ -1167,14 +1167,14 @@
           enddo
         enddo
         np_fullmet = MR_Snd_np_fullmet(p_lidx,p_tidx)
-        np_fullmet_Vz = np_fullmet
-        np_fullmet_RH = np_fullmet
+        !np_fullmet_Vz = np_fullmet
+        !np_fullmet_RH = np_fullmet
         allocate(p_fullmet_sp(np_fullmet))
-        allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        allocate(p_fullmet_RH_sp(np_fullmet_RH))
+        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
+        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
         p_fullmet_sp(1:np_fullmet)=MR_SndVars_metP(p_lidx,p_tidx,1,1:np_fullmet)
-        p_fullmet_Vz_sp = p_fullmet_sp
-        p_fullmet_RH_sp = p_fullmet_sp
+        !p_fullmet_Vz_sp = p_fullmet_sp
+        !p_fullmet_RH_sp = p_fullmet_sp
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
         allocate(z_approx(np_fullmet))
         do k=1,np_fullmet
