@@ -194,7 +194,7 @@
       !integer       :: np_fullmet_Vz ! length of pressure of full met grid for Vz
       !integer       :: np_fullmet_T  ! length of pressure of full met grid
       !integer       :: np_fullmet_RH ! length of pressure of full met grid for RH
-      integer       :: np_fullmet_P0 ! length of pressure of full met grid for Precip 
+      !integer       :: np_fullmet_P0 ! length of pressure of full met grid for Precip 
                                      !   (=1 for all cases except iwindformat=24)
       integer       :: np_fullmet_pad = 1 ! We might need to pad the top of the pressure grid.
       integer       :: neta_fullmet  ! Only used by WRF
@@ -353,7 +353,6 @@
       logical :: Have_Vz = .false.
       real(kind=sp),dimension(0:100) :: fill_value_sp = -9999.0_sp
       character(len=30),dimension(9) :: Met_dim_names      ! name of dimension
-      character(len=30),dimension(9) :: Met_vardim_names   ! name of variable associated with dimension
       logical          ,dimension(9) :: Met_dim_IsAvailable
       real(kind=sp)    ,dimension(9) :: Met_dim_fac  = 1.0_sp
       ! Here is the list of variables that can be read.  Each iwindformat will
@@ -2436,10 +2435,13 @@
 
       if(present(SetComp)) then
         if(SetComp)then
-          MR_dum3d_metP = MR_v_ER_metP
+          MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_fullmet) = &
+            MR_v_ER_metP(1:nx_submet,1:ny_submet,1:np_fullmet)
           call MR_Regrid_MetP_to_CompGrid(istep)
-          MR_dum3d_compH_2 = MR_dum3d_compH
-          MR_dum3d_metP = MR_u_ER_metP
+          MR_dum3d_compH_2(1:nx_comp,1:ny_comp,1:nz_comp) = &
+            MR_dum3d_compH(1:nx_comp,1:ny_comp,1:nz_comp)
+          MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_fullmet) = &
+            MR_u_ER_metP(1:nx_submet,1:ny_submet,1:np_fullmet)
           call MR_Regrid_MetP_to_CompGrid(istep)
         endif
       endif
@@ -2675,7 +2677,6 @@
             ! negative.  If so, reassign to just above boundary.
           if (z_col_metP(2).le.2.0e-4_sp) z_col_metP(2) = 2.0e-4_sp
           if (z_col_metP(3).le.3.0e-4_sp) z_col_metP(3) = 3.0e-4_sp
-
           var_col_metP(1)              = 0.0_sp
           var_col_metP(2:np_fullmet+1) = MR_dum3d_metP(i,j,1:np_fullmet)
           ! Fix occasional erroneous pressure levels that are non-increasing by
@@ -2701,10 +2702,8 @@
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           !   Interpolate these values to a regular grid with
           !   spacing equal to the simulation grid
-
           call MR_Regrid_P2H_linear(np_fullmet+2, z_col_metP,  var_col_metP, & !vx
                                     nz_comp,       z_comp_sp,  var_col_metH)
-
           MR_dum3d_metH(i,j,:) = var_col_metH
         enddo ! j
       enddo  ! i

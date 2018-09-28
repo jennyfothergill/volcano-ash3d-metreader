@@ -40,11 +40,11 @@
       integer :: xdim_id, ydim_id, tdim_id
       integer :: dimlen,maxdimlen
       integer :: nSTAT
-      character(len=NF90_MAX_NAME)  :: name,invar,dimname
+      character(len=NF90_MAX_NAME)  :: invar,dimname
       integer :: var_xtype,var_id,idx
       integer :: xtype, length, attnum
 
-      integer :: NC_version
+      !integer :: NC_version
       integer,dimension(:),allocatable :: var_dimIDs
       logical :: FoundOldDim
       logical :: IsPressureDimension
@@ -80,21 +80,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "reftime"     ! time
-        Met_vardim_names(1) = "reftime"     ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric2" ! pressure
-        Met_vardim_names(2) = "isobaric2" ! pressure
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "y"        ! y
-        Met_vardim_names(3) = "y"        ! y
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "x"        ! x
-        Met_vardim_names(4) = "x"        ! x
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric2" ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric2" ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric" 
@@ -154,21 +146,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"      ! time
-        Met_vardim_names(1) = "time"      ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric3"  ! pressure
-        Met_vardim_names(2) = "isobaric3"  ! pressure
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "y"         ! y
-        Met_vardim_names(3) = "y"         ! y
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "x"         ! x
-        Met_vardim_names(4) = "x"         ! x
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric3" ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric3"  ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"
@@ -223,21 +207,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time1"      ! time
-        Met_vardim_names(1) = "time1"      ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric1"  ! pressure
-        Met_vardim_names(2) = "isobaric1"  ! pressure
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "y"         ! y
-        Met_vardim_names(3) = "y"         ! y
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "x"         ! x
-        Met_vardim_names(4) = "x"         ! x
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric5" ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric1"  ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"
@@ -293,21 +269,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"      ! time
-        Met_vardim_names(1) = "time"      ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric"  ! pressure
-        Met_vardim_names(2) = "isobaric"  ! pressure
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "y"         ! y
-        Met_vardim_names(3) = "y"         ! y
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "x"         ! x
-        Met_vardim_names(4) = "x"         ! x
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric"  ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric1" ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"    !        float 
@@ -365,21 +333,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time1"     ! time
-        Met_vardim_names(1) = "time1"     ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric3" ! pressure
-        Met_vardim_names(2) = "isobaric3" ! pressure
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "y"        ! y
-        Met_vardim_names(3) = "y"        ! y
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "x"        ! x
-        Met_vardim_names(4) = "x"        ! x
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric3" ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric3" ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric" !        float 
@@ -443,21 +403,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"     ! time
-        Met_vardim_names(1) = "time"     ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric1" ! pressure
-        Met_vardim_names(2) = "isobaric1" ! pressure
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "y"        ! y
-        Met_vardim_names(3) = "y"        ! y
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "x"        ! x
-        Met_vardim_names(4) = "x"        ! x
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric1" ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric1" ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric" !        float 
@@ -496,21 +448,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time1"      ! time
-        Met_vardim_names(1) = "time1"      ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric2" ! pressure
-        Met_vardim_names(2) = "isobaric2" ! pressure
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "y"         ! y
-        Met_vardim_names(3) = "y"         ! y
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "x"         ! x
-        Met_vardim_names(4) = "x"         ! x
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric2" ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric2" ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric" !        float 
@@ -566,21 +510,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"      ! time
-        Met_vardim_names(1) = "time"      ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric2"  ! pressure
-        Met_vardim_names(2) = "isobaric2"  ! pressure
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "y"         ! y
-        Met_vardim_names(3) = "y"         ! y
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "x"         ! x
-        Met_vardim_names(4) = "x"         ! x
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric1"  ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric2" ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"    !        float 
@@ -629,21 +565,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"      ! time
-        Met_vardim_names(1) = "time"      ! time
           Met_dim_IsAvailable(1)=.true. 
         Met_dim_names(2) = "isobaric2"  ! pressure
-        Met_vardim_names(2) = "isobaric2"  ! pressure
           Met_dim_IsAvailable(2)=.true. 
         Met_dim_names(3) = "y"         ! y
-        Met_vardim_names(3) = "y"         ! y
           Met_dim_IsAvailable(3)=.true. 
         Met_dim_names(4) = "x"         ! x
-        Met_vardim_names(4) = "x"         ! x
           Met_dim_IsAvailable(4)=.true. 
-        !Met_dim_names(5) = "isobaric2"  ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true. 
-        !Met_dim_names(6) = "isobaric2" ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true. 
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"    !        float 
@@ -710,21 +638,13 @@
         Met_var_IsAvailable=.false.  
 
         Met_dim_names(1) = "time"      ! time
-        Met_vardim_names(1) = "time"      ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric2"  ! pressure
-        Met_vardim_names(2) = "isobaric2"  ! pressure
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "y"         ! y
-        Met_vardim_names(3) = "y"         ! y
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "x"         ! x
-        Met_vardim_names(4) = "x"         ! x
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric2"  ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric2" ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"    !        float 
@@ -797,21 +717,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"      ! time
-        Met_vardim_names(1) = "time"      ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric"  ! pressure
-        Met_vardim_names(2) = "isobaric"  ! pressure
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "y"         ! y
-        Met_vardim_names(3) = "y"         ! y
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "x"         ! x
-        Met_vardim_names(4) = "x"         ! x
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric"  ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric" ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"    !        float 
@@ -871,21 +783,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time1"      ! time
-        Met_vardim_names(1) = "time1"      ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric2" ! pressure
-        Met_vardim_names(2) = "isobaric2" ! pressure
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "y"         ! y
-        Met_vardim_names(3) = "y"         ! y
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "x"         ! x
-        Met_vardim_names(4) = "x"         ! x
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric2" ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric2" ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric" !        float 
@@ -942,21 +846,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"       ! time
-        Met_vardim_names(1) = "time"       ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric3"   ! pressure (1.0e5-1.0e3 Pa or 1000 -> 10.0 hPa in 26 levels)
-        Met_vardim_names(2) = "isobaric3"   ! pressure (1.0e5-1.0e3 Pa or 1000 -> 10.0 hPa in 26 levels)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "lat"        ! y        (90.0 -> -90.0)
-        Met_vardim_names(3) = "lat"        ! y        (90.0 -> -90.0)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "lon"        ! x        (0.0 - 359.5)
-        Met_vardim_names(4) = "lon"        ! x        (0.0 - 359.5)
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric4"  ! pressure coordinate for Vz (to 100 hPa in 21 levels)
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric3"  ! pressure coordinate for RH (to 10 hPa in 25 levels)
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Momentum / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"    ! float gpm
@@ -1009,21 +905,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"       ! time
-        Met_vardim_names(1) = "time"       ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric3"   ! pressure (1.0e5-1.0e3 Pa or 1000 -> 10.0 hPa in 26 levels)
-        Met_vardim_names(2) = "isobaric3"   ! pressure (1.0e5-1.0e3 Pa or 1000 -> 10.0 hPa in 26 levels)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "lat"        ! y        (90.0 -> -90.0)
-        Met_vardim_names(3) = "lat"        ! y        (90.0 -> -90.0)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "lon"        ! x        (0.0 - 359.5)
-        Met_vardim_names(4) = "lon"        ! x        (0.0 - 359.5)
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric2"  ! pressure coordinate for Vz (to 100 hPa in 21 levels)
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric3"  ! pressure coordinate for RH (to 10 hPa in 25 levels)
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Momentum / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"    ! float gpm
@@ -1056,21 +944,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"       ! time
-        Met_vardim_names(1) = "time"       ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric"   ! pressure (1000 -> 10 hPa in 17 levels)
-        Met_vardim_names(2) = "isobaric"   ! pressure (1000 -> 10 hPa in 17 levels)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "lat"        ! y        (90.0 -> -90.0)
-        Met_vardim_names(3) = "lat"        ! y        (90.0 -> -90.0)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "lon"        ! x        (0.0 -> 375.5)
-        Met_vardim_names(4) = "lon"        ! x        (0.0 -> 375.5)
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric"   ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric"   ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Momentum / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"        ! float m^2/s^2
@@ -1099,23 +979,15 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"       ! time
-        Met_vardim_names(1) = "time"       ! time
           Met_dim_IsAvailable(1)=.true. 
         Met_dim_names(2) = "lev"   ! pressure (1000 -> 0.1 hPa in 42 levels)
-        Met_vardim_names(2) = "lev"   ! pressure (1000 -> 0.1 hPa in 42 levels)
           Met_dim_IsAvailable(2)=.true. 
         Met_dim_names(3) = "lat"        ! y        (89.375 -> -89.375)
-        Met_vardim_names(3) = "lat"        ! y        (89.375 -> -89.375)
           Met_dim_IsAvailable(3)=.true. 
         Met_dim_names(4) = "lon"        ! x        (-179.375 -> 179.375)
-        Met_vardim_names(4) = "lon"        ! x        (-179.375 -> 179.375)
           Met_dim_IsAvailable(4)=.true. 
-        !Met_dim_names(5) = "lev"   ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true. 
-        !Met_dim_names(6) = "lev"   ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true. 
 
-        Met_dim_fac(1) = 1.0/60.0
+        Met_dim_fac(1) = 1.0_sp/60.0_sp
 
         ! Momentum / State variables
         ! Available in MERRA2_400.inst3_3d_asm_Np.YYYYMMDD.nc4
@@ -1190,21 +1062,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"       ! time
-        Met_vardim_names(1) = "time"       ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "level"      ! pressure (17 levels 1000 -> 10)
-        Met_vardim_names(2) = "level"      ! pressure (17 levels 1000 -> 10)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "lat"        ! y        (90.0 -> -90.0)
-        Met_vardim_names(3) = "lat"        ! y        (90.0 -> -90.0)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "lon"        ! x        (0.0 -> 357.5)
-        Met_vardim_names(4) = "lon"        ! x        (0.0 -> 357.5)
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "level"      ! pressure coordinate for Vz (12 levels 1000 -> 100)
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "level"      ! pressure coordinate for RH (8 levels 1000 -> 300)
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Momentum / State variables
         Met_var_names(1) = "hgt"        ! short m^2/s^2 (32066.f,1.f)
@@ -1261,21 +1125,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "initial_time0_hours"       ! time
-        Met_vardim_names(1) = "initial_time0_hours"       ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "lv_ISBL1"      ! pressure (17 levels 1000 -> 10)
-        Met_vardim_names(2) = "lv_ISBL1"      ! pressure (17 levels 1000 -> 10)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "g0_lat_2"        ! y        (90.0 -> -90.0)
-        Met_vardim_names(3) = "g0_lat_2"        ! y        (90.0 -> -90.0)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "g0_lat_2"        ! x        (0.0 -> 357.5)
-        Met_vardim_names(4) = "g0_lat_2"        ! x        (0.0 -> 357.5)
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "lv_ISBL1"      ! pressure coordinate for Vz (12 levels 1000 -> 100)
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "lv_ISBL1"      ! pressure coordinate for RH (8 levels 1000 -> 300)
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Momentum / State variables
         Met_var_names(1) = "HGT_GDS0_ISBL"        ! short m^2/s^2 (32066.f,1.f)
@@ -1298,21 +1154,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "initial_time0_hours"       ! time
-        Met_vardim_names(1) = "initial_time0_hours"       ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "lv_ISBL1"      ! pressure (24 levels 10 -> 1000)
-        Met_vardim_names(2) = "lv_ISBL1"      ! pressure (24 levels 10 -> 1000)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "g0_lat_2"      ! y        (90.0 -> -90.0)
-        Met_vardim_names(3) = "g0_lat_2"      ! y        (90.0 -> -90.0)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "g0_lon_3"      ! x        (0.0 -> 378.0)
-        Met_vardim_names(4) = "g0_lon_3"      ! x        (0.0 -> 378.0)
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "lv_ISBL1"      ! pressure coordinate for Vz (19 levels 100 -> 1000)
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "lv_ISBL1"      ! pressure coordinate for RH (19 levels 100 -> 1000)
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Momentum / State variables
         Met_var_names(1) = "HGT_GDS0_ISBL_10"        ! float m^2/s^2
@@ -1353,21 +1201,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"       ! time
-        Met_vardim_names(1) = "time"       ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric"      ! pressure (37 levels 1000 -> 1)
-        Met_vardim_names(2) = "isobaric"      ! pressure (37 levels 1000 -> 1)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "lat"        ! y        (90.0 -> -90.0)
-        Met_vardim_names(3) = "lat"        ! y        (90.0 -> -90.0)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "lon"        ! x        (0.0 -> 357.5)
-        Met_vardim_names(4) = "lon"        ! x        (0.0 -> 357.5)
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric"      ! pressure coordinate for Vz (12 levels 1000 -> 1)
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric"      ! pressure coordinate for RH (8 levels 1000 -> 1)
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Momentum / State variables
         Met_var_names(1) = "Geopotential_isobaric"        ! m^2/s^2
@@ -1398,21 +1238,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"       ! time (provided in hours since 1990-1-1 00Z)
-        Met_vardim_names(1) = "time"       ! time (provided in hours since 1990-1-1 00Z)
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "level"      ! pressure (37 levels 1000 -> 1)
-        Met_vardim_names(2) = "level"      ! pressure (37 levels 1000 -> 1)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "latitude"        ! y        (90.0 -> -90.0)
-        Met_vardim_names(3) = "latitude"        ! y        (90.0 -> -90.0)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "longitude"        ! x        (0.0 -> 357.5)
-        Met_vardim_names(4) = "longitude"        ! x        (0.0 -> 357.5)
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "level"      ! pressure coordinate for Vz (12 levels 1000 -> 1)
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "level"      ! pressure coordinate for RH (8 levels 1000 -> 1)
-        !  Met_dim_IsAvailable(6)=.true.
  
         !  Potential vorticity  e5.oper.an.pl.128_060_pv.regn320sc.2018062000_2018062023.nc
         !  Specific rain water content  e5.oper.an.pl.128_075_crwc.regn320sc.2018062000_2018062023.nc
@@ -1439,21 +1271,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "frtime"       ! time
-        Met_vardim_names(1) = "frtime"       ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "level"      ! pressure (17 levels 1000 -> 100)
-        Met_vardim_names(2) = "level"      ! pressure (17 levels 1000 -> 100)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "lat"      ! y        (34.5 -> -40.32)
-        Met_vardim_names(3) = "lat"      ! y        (34.5 -> -40.32)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "lon"      ! x        (12.5 -> 18.0)
-        Met_vardim_names(4) = "lon"      ! x        (12.5 -> 18.0)
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "level"      ! pressure coordinate for Vz 
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "level"      ! pressure coordinate for RH 
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Momentum / State variables
         Met_var_names(1) = "H"      ! float m
@@ -1482,10 +1306,6 @@
 !          Met_dim_IsAvailable(3)=.true. 
 !        Met_dim_names(4) = "lon"      ! x        (12.5 -> 18.0)
 !          Met_dim_IsAvailable(4)=.true. 
-!        Met_dim_names(5) = "isobaric1"      ! pressure coordinate for Vz 
-!          Met_dim_IsAvailable(5)=.true. 
-!        Met_dim_names(6) = "isobaric2"      ! pressure coordinate for RH 
-!          Met_dim_IsAvailable(6)=.true. 
 !
 !        ! Momentum / State variables
 !        Met_var_names(1) = "Geopotential_height_isobaric"      ! float m
@@ -1525,21 +1345,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"       ! time
-        Met_vardim_names(1) = "time"       ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "isobaric"       ! pressure (39 levels 1013 -> 0.05)
-        Met_vardim_names(2) = "isobaric"       ! pressure (39 levels 1013 -> 0.05)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "lat"      ! y        (34.5 -> -40.32)
-        Met_vardim_names(3) = "lat"      ! y        (34.5 -> -40.32)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "lon"      ! x        (12.5 -> 18.0)
-        Met_vardim_names(4) = "lon"      ! x        (12.5 -> 18.0)
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "isobaric"      ! pressure coordinate for Vz 
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "isobaric1"      ! pressure coordinate for RH 
-        !  Met_dim_IsAvailable(6)=.true.
 
         ! Momentum / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"      ! float m
@@ -1577,21 +1389,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"       ! time
-        Met_vardim_names(1) = "time"       ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "lev"      ! pressure (26 levels ~1000 -> ~3.5)
-        Met_vardim_names(2) = "lev"      ! pressure (26 levels ~1000 -> ~3.5)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "lat"      ! y        (34.5 -> -40.32)
-        Met_vardim_names(3) = "lat"      ! y        (34.5 -> -40.32)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "lon"      ! x        (12.5 -> 18.0)
-        Met_vardim_names(4) = "lon"      ! x        (12.5 -> 18.0)
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "lev"      ! pressure coordinate for Vz 
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "lev"      ! pressure coordinate for RH 
-        !  Met_dim_IsAvailable(6)=.true.
 
         Met_dim_fac(1) = 24.0
 
@@ -1621,23 +1425,15 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"       ! time
-        Met_vardim_names(1) = "time"       ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "lev"   ! pressure (1000 -> 1 hPa in 37 levels)
-        Met_vardim_names(2) = "lev"   ! pressure (1000 -> 1 hPa in 37 levels)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "lat"        ! y        (-90.0 -> 90.0) 361
-        Met_vardim_names(3) = "lat"        ! y        (-90.0 -> 90.0) 361
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "lon"        ! x        (-180.0 -> 179.375) 576
-        Met_vardim_names(4) = "lon"        ! x        (-180.0 -> 179.375) 576
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "lev"   ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "lev"   ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
-        Met_dim_fac(1) = 1.0/60.0
+        Met_dim_fac(1) = 1.0_sp/60.0_sp
 
         ! Momentum / State variables
         Met_var_names(1) = "H"           ! float m^2/s^2
@@ -1660,23 +1456,15 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "time"       ! time
-        Met_vardim_names(1) = "time"       ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "lev"   ! pressure (1000 -> 0.1 hPa in 42 levels)
-        Met_vardim_names(2) = "lev"   ! pressure (1000 -> 0.1 hPa in 42 levels)
           Met_dim_IsAvailable(2)=.true.      
         Met_dim_names(3) = "lat"        ! y        (-90.0 -> 90.0) 721 (0.25)
-        Met_vardim_names(3) = "lat"        ! y        (-90.0 -> 90.0) 721 (0.25)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "lon"        ! x        (-180.0 -> 179.6875) 1152 (0.31250)
-        Met_vardim_names(4) = "lon"        ! x        (-180.0 -> 179.6875) 1152 (0.31250)
           Met_dim_IsAvailable(4)=.true.     
-        !Met_dim_names(5) = "lev"   ! pressure coordinate for Vz
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = "lev"   ! pressure coordinate for RH
-        !  Met_dim_IsAvailable(6)=.true.
 
-        Met_dim_fac(1) = 1.0/60.0
+        Met_dim_fac(1) = 1.0_sp/60.0_sp
 
         ! Momentum / State variables
         Met_var_names(1) = "H"           ! float m^2/s^2
@@ -1699,21 +1487,13 @@
         Met_var_IsAvailable=.false.
 
         Met_dim_names(1) = "Time"       ! time
-        Met_vardim_names(1) = "Time"       ! time
           Met_dim_IsAvailable(1)=.true.
         Met_dim_names(2) = "bottom_top"      ! pressure (24 levels 10 -> 1000)
-        Met_vardim_names(2) = "bottom_top"      ! pressure (24 levels 10 -> 1000)
           Met_dim_IsAvailable(2)=.true.
         Met_dim_names(3) = "south_north"      ! y        (90.0 -> -90.0)
-        Met_vardim_names(3) = "south_north"      ! y        (90.0 -> -90.0)
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "west_east"      ! x        (0.0 -> 378.0)
-        Met_vardim_names(4) = "west_east"      ! x        (0.0 -> 378.0)
           Met_dim_IsAvailable(4)=.true.
-        !Met_dim_names(5) = "bottom_top_stag"      ! pressure coordinate for Vz (19 levels 100 -> 1000)
-        !  Met_dim_IsAvailable(5)=.true.
-        !Met_dim_names(6) = ""      ! pressure coordinate for RH (19 levels 100 -> 1000)
-        !  Met_dim_IsAvailable(6)=.false.
 
         ! for pressure, read "P"  :: perturbation pressure
         !               and  "PB" :: base pressure
@@ -1779,10 +1559,6 @@
           Met_dim_IsAvailable(3)=.true.
         Met_dim_names(4) = "x"         ! x
           Met_dim_IsAvailable(4)=.true.
-        Met_dim_names(5) = "isobaric"  ! pressure coordinate for Vz
-          Met_dim_IsAvailable(5)=.true.
-        Met_dim_names(6) = "isobaric" ! pressure coordinate for RH
-          Met_dim_IsAvailable(6)=.true.
 
         ! Mechanical / State variables
         Met_var_names(1) = "Geopotential_height_isobaric"    !        float 
@@ -2173,7 +1949,7 @@
         levs_code(1) = 1                       ! The first var checked (GPH) should have a one-to-one mapping
         ! Check how each of the pressure coordinates map onto the GPH grid
         if (nlev_coords_detected.gt.1)then
-          ! Only bother if there are multiple perssure coordinates
+          ! Only bother if there are multiple pressure coordinates
           do idx = 2,nlev_coords_detected
             if (nlevs_fullmet(idx).gt.nlevs_fullmet(1))then
               ! This coordinate has more values than the GPH pressure coordinate
@@ -2204,46 +1980,17 @@
   
         ! Now assign these levels to the working arrays
         np_fullmet    = nlevs_fullmet(Met_var_zdim_idx(1))  ! Assign fullmet the length of H,U,V
-        !np_fullmet_Vz = np_fullmet  ! Initialize everything to the same pressure coordinate
-        !np_fullmet_T  = np_fullmet
-        !np_fullmet_RH = np_fullmet
-        np_fullmet_P0 = 1
-  
-        !if(Met_var_IsAvailable(4)) &
-        !  np_fullmet_Vz = nlevs_fullmet(Met_var_zdim_idx(4))  ! omega
-        !if(Met_var_IsAvailable(5)) &
-        !  np_fullmet_T  = nlevs_fullmet(Met_var_zdim_idx(5))  ! temperature
-        !if(Met_var_IsAvailable(30)) &
-        !  np_fullmet_RH = nlevs_fullmet(Met_var_zdim_idx(30)) ! Rel.Hum.
-        if(Met_var_IsAvailable(44)) &
-          np_fullmet_P0 = 1   ! Precip is 2d
   
         ! Geopotential
         allocate(p_fullmet_sp(np_fullmet))
         idx = Met_var_zdim_idx(1)
         p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
-        ! Vertical velocity
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !idx = Met_var_zdim_idx(4)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet_Vz)
-        ! Temperature
-        !allocate(p_fullmet_T_sp(np_fullmet_T))
-        !idx = Met_var_zdim_idx(5)
-        !p_fullmet_T_sp(1:np_fullmet_T) = p_fullmet_sp(1:np_fullmet_T)
-        ! Rel.Hum
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !idx = Met_var_zdim_idx(30)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet_RH)
-  
-  
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
   
         x_inverted = .false. ! This is pretty much never true
         y_inverted = .false. ! This will be changed as needed below
       endif ! MR_iwindformat.eq.50
-      !stop 5
       !---------------------------------------------------------------------------------
-
 
       if(MR_iwindformat.eq.0)then
         ! Template windfile (example for nam198)
@@ -2257,614 +2004,110 @@
           ! 3 = NARR3D NAM221 32 km North America files
         call MR_Set_Met_NCEPGeoGrid(1221) ! This is almost NAM221, but uses a diff Re
         isGridRelative = .false.
-
-        nt_fullmet = 1
-        !np_fullmet = 29
-        !np_fullmet_Vz = 29  ! omega
-        !np_fullmet_RH = 29  ! rhum
-        !np_fullmet_P0 = 1   ! Precip is 2d
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, &
-        !     550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, &
-        !     300.0_sp, 275.0_sp, 250.0_sp, 225.0_sp, 200.0_sp, &
-        !     175.0_sp, 150.0_sp, 125.0_sp, 100.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
-        !y_inverted = .false.
-        !z_inverted = .true.
-
+        x_inverted = .false.
+        y_inverted = .false.
       elseif(MR_iwindformat.eq.4)then
           ! 4 = NAM Regional North America 221 (32 km)
         call MR_Set_Met_NCEPGeoGrid(221) 
         isGridRelative = .true.
-
-        nt_fullmet = 1
-        !np_fullmet = 42
-        !np_fullmet_Vz = 42  ! omega
-        !np_fullmet_RH = 42  ! rhum
-        !np_fullmet_P0 = 1   ! Precip is 2d
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
-        !      20.0_sp,  10.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
-        !y_inverted = .false.
-        !z_inverted = .true.
-
+        x_inverted = .false.
+        y_inverted = .false.
       elseif(MR_iwindformat.eq.5)then
         ! NAM 45-km Polar Sterographic
         call MR_Set_Met_NCEPGeoGrid(216)
-
-        nt_fullmet = 29
-        !np_fullmet = 42
-        !np_fullmet_Vz = 39 ! omega
-        !np_fullmet_RH = 42  ! rhum
-
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
-        !      20.0_sp,  10.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, & 
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
-        !y_inverted = .false.
-        !z_inverted = .true.
+        x_inverted = .false.
+        y_inverted = .false.
       elseif(MR_iwindformat.eq.6)then
           ! 104 converted automatically from grib2
           ! NAM 90-km Polar Sterographic
         call MR_Set_Met_NCEPGeoGrid(104)
-
-        nt_fullmet = 29
-        !np_fullmet = 39
-        !np_fullmet_Vz = 39 ! omega
-        !np_fullmet_RH = 19  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
-        !  (/1000.0_sp, 950.0_sp, 900.0_sp, 850.0_sp, 800.0_sp, &
-        !     750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
-        !     500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
-        !     250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp /)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
-        !y_inverted = .false.
-        !z_inverted = .true.
+        isGridRelative = .true.
+        x_inverted = .false.
+        y_inverted = .false.
       elseif(MR_iwindformat.eq.7)then
           ! 212 converted automatically from grib2
           ! CONUS 40-km Lambert Conformal
         call MR_Set_Met_NCEPGeoGrid(212)
-
-        nt_fullmet = 29
-        !np_fullmet = 39
-        !np_fullmet_Vz = 39 ! omega
-        !np_fullmet_RH = 39  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
-        !y_inverted = .false.
-        !z_inverted = .true.
-
+        isGridRelative = .true.
+        x_inverted = .false.
+        y_inverted = .false.
       elseif(MR_iwindformat.eq.8)then
           !  12 KM CONUS
         call MR_Set_Met_NCEPGeoGrid(218)
-
-        nt_fullmet = 1
-        !np_fullmet = 39
-        !np_fullmet_Vz = 39 ! omega
-        !np_fullmet_RH = 39  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
-        !y_inverted = .false.
-        !z_inverted = .true.
+        isGridRelative = .true.
+        x_inverted = .false.
+        y_inverted = .false.
       elseif(MR_iwindformat.eq.9)then
           !  5.08 KM CONUS
         call MR_Set_Met_NCEPGeoGrid(227)
-
-        nt_fullmet = 1
-        !np_fullmet = 42
-        !np_fullmet_Vz = 42 ! omega
-        !np_fullmet_RH = 42  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
-        !      20.0_sp,  10.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
-        !y_inverted = .false.
-        !z_inverted = .true.
-
+        isGridRelative = .true.
+        x_inverted = .false.
+        y_inverted = .false.
       elseif(MR_iwindformat.eq.10)then
           ! NAM AK 242
         call MR_Set_Met_NCEPGeoGrid(242)
-
-        nt_fullmet = 29
-        !np_fullmet = 39
-        !np_fullmet_Vz = 29 ! omega
-        !np_fullmet_RH = 39  ! rhum
-        !np_fullmet_P0 = 1   ! Precip is 2d
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp/)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
-        !     250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp /)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
-        !y_inverted = .false.
-        !z_inverted = .true.
-
+        isGridRelative = .true.
+        x_inverted = .false.
+        y_inverted = .false.
       elseif(MR_iwindformat.eq.11)then
           ! NAM196 converted automatically from grib2
         call MR_Set_Met_NCEPGeoGrid(196)
-
-        nt_fullmet = 1
-        !np_fullmet = 42
-        !np_fullmet_Vz = 42 ! omega
-        !np_fullmet_RH = 42  ! rhum
-        !np_fullmet_P0 = 1   ! Precip is 2d
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
-        !      20.0_sp,  10.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
-        !y_inverted = .false.
-        !z_inverted = .true.
+        isGridRelative = .true.
+        x_inverted = .false.
+        y_inverted = .false.
       elseif(MR_iwindformat.eq.12)then
           ! NAM198 converted automatically from grib2
         call MR_Set_Met_NCEPGeoGrid(198)
-
-        nt_fullmet = 1
-        !np_fullmet = 42
-        !np_fullmet_Vz = 42 ! omega
-        !np_fullmet_RH = 42  ! rhum
-        !np_fullmet_P0 = 1   ! Precip is 2d
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
-        !      20.0_sp,  10.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
-        !y_inverted = .false.
-        !z_inverted = .true.
-
+        isGridRelative = .true.
+        x_inverted = .false.
+        y_inverted = .false.
       elseif(MR_iwindformat.eq.13)then
           ! NAM91 converted automatically from grib2
         call MR_Set_Met_NCEPGeoGrid(91)
-
-        nt_fullmet = 1
-        !np_fullmet = 42
-        !np_fullmet_Vz = 42 ! omega
-        !np_fullmet_RH = 42  ! rhum
-        !np_fullmet_P0 = 1   ! Precip is 2d
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
-        !      20.0_sp,  10.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
-        !y_inverted = .false.
-        !z_inverted = .true.
+        isGridRelative = .true.
+        x_inverted = .false.
+        y_inverted = .false.
       elseif(MR_iwindformat.eq.14)then
           !  3 KM CONUS)
         call MR_Set_Met_NCEPGeoGrid(1227)
-
-        nt_fullmet = 1
-        !np_fullmet = 42
-        !np_fullmet_Vz = 42 ! omega
-        !np_fullmet_RH = 42  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 675.0_sp, 650.0_sp, &
-        !     625.0_sp, 600.0_sp, 575.0_sp, 550.0_sp, 525.0_sp, &
-        !     500.0_sp, 475.0_sp, 450.0_sp, 425.0_sp, 400.0_sp, &
-        !     375.0_sp, 350.0_sp, 325.0_sp, 300.0_sp, 275.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  75.0_sp,  50.0_sp,  30.0_sp, &
-        !      20.0_sp,  10.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
-        !y_inverted = .false.
-        !z_inverted = .true.
-
+        isGridRelative = .true.
+        x_inverted = .false.
+        y_inverted = .false.
       elseif(MR_iwindformat.eq.20)then
         ! GFS 0.5
         call MR_Set_Met_NCEPGeoGrid(4)
-
-        nt_fullmet = 1
-        !np_fullmet = 31   ! This is for air, hgt, uwnd, vwnd
-        !np_fullmet_Vz = 21 ! omega
-        !np_fullmet_RH = 31  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-        !     100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
-        !      10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, &
-        !       1.0_sp /)
-        !p_fullmet_Vz_sp(1:21) =  &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, & 
-        !     100.0_sp /)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, & 
-        !     100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
-        !      10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, &
-        !       1.0_sp /)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .true.
-        !z_inverted = .true.
-
       elseif(MR_iwindformat.eq.21)then
         ! GFS 1.0
         call MR_Set_Met_NCEPGeoGrid(3)
-
-        nt_fullmet = 1
-        !np_fullmet = 31   ! This is for air, hgt, uwnd, vwnd
-        !np_fullmet_Vz = 21 ! omega
-        !np_fullmet_RH = 31  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-        !     100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
-        !      10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, &
-        !       1.0_sp /)
-        !p_fullmet_Vz_sp(1:21) =  &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-        !     100.0_sp /)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-        !     100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
-        !      10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, &
-        !       1.0_sp /)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .true.
-        !z_inverted = .true.
-
       elseif(MR_iwindformat.eq.22)then
         ! GFS 0.25
         call MR_Set_Met_NCEPGeoGrid(193)
-
-        nt_fullmet = 1
-        !np_fullmet = 31   ! This is for air, hgt, uwnd, vwnd
-        !np_fullmet_Vz = 21 ! omega
-        !np_fullmet_RH = 31  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-        !     100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
-        !      10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, &
-        !       1.0_sp /)
-        !p_fullmet_Vz_sp(1:21) =  &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-        !     100.0_sp /)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     850.0_sp, 800.0_sp, 750.0_sp, 700.0_sp, 650.0_sp, &
-        !     600.0_sp, 550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-        !     350.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-        !     100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
-        !      10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp,   2.0_sp, & 
-        !       1.0_sp /)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .true.
-        !z_inverted = .true.
       elseif(MR_iwindformat.eq.23)then
-        ! NCEP doE reanalysis
+        ! NCEP DOE reanalysis
         call MR_Set_Met_NCEPGeoGrid(2)
-
-        nt_fullmet = 1
-        !np_fullmet = 17
-        !np_fullmet_Vz = 17 ! omega
-        !np_fullmet_RH = 17  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 925.0_sp, 850.0_sp, 700.0_sp, 600.0_sp, &
-        !     500.0_sp, 400.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, &
-        !     150.0_sp, 100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp, &
-        !      20.0_sp,  10.0_sp /)
-        !p_fullmet_Vz_sp = p_fullmet_sp
-        !p_fullmet_RH_sp = p_fullmet_sp
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .true.
-        !z_inverted = .false.
       elseif(MR_iwindformat.eq.24)then
         ! NASA MERRA2 reanalysis
         call MR_Set_Met_NCEPGeoGrid(1024)
-
-        nt_fullmet = 1
-        !np_fullmet = 42
-        !np_fullmet_Vz = 42 ! omega
-        !np_fullmet_RH = 42  ! rhum
-        !np_fullmet_P0 = 42  ! Precip is 3d
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, &
-        !     550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, &
-        !     300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp, &
-        !      70.0_sp,  50.0_sp,  40.0_sp,  30.0_sp,  20.0_sp, &
-        !      10.0_sp,   7.0_sp,   5.0_sp,   4.0_sp,   3.0_sp, &
-        !       2.0_sp,   1.0_sp,   0.7_sp,   0.5_sp,   0.4_sp, &
-        !       0.3_sp,   0.1_sp /)
-        !p_fullmet_Vz_sp = p_fullmet_sp
-        !p_fullmet_RH_sp = p_fullmet_sp
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
-        !!y_inverted = .true.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .false.
-        !z_inverted = .false.
       elseif(MR_iwindformat.eq.25)then
         ! NCEP-1 1948 reanalysis
         call MR_Set_Met_NCEPGeoGrid(2)
-        nt_fullmet = 1460 ! might need to add 4 for a leap year
-        !np_fullmet = 17   ! This is for air, hgt, uwnd, vwnd
-        !np_fullmet_Vz = 12 ! omega
-        !np_fullmet_RH = 8  ! rhum
-        !np_fullmet_P0 = 1  ! Precip is 2d
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 925.0_sp, 850.0_sp, 700.0_sp, 600.0_sp, &
-        !     500.0_sp, 400.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, &
-        !     150.0_sp, 100.0_sp,  70.0_sp,  50.0_sp, 30.0_sp, &
-        !      20.0_sp,  10.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
-        !  (/1000.0_sp, 925.0_sp, 850.0_sp, 700.0_sp, 600.0_sp, &
-        !     500.0_sp, 400.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, &
-        !     150.0_sp, 100.0_sp /)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = &
-        !  (/1000.0_sp, 925.0_sp, 850.0_sp, 700.0_sp, 600.0_sp, &
-        !     500.0_sp, 400.0_sp, 300.0_sp /)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        isGridRelative = .true.
+
         ! These additional grids are needed since surface variables are on a
         ! different spatial grid.
         do i = 1,192
@@ -2884,328 +2127,73 @@
        -54.2846_sp, -56.1893_sp, -58.0939_sp, -59.9986_sp, -61.9033_sp,  -63.8079_sp, -65.7125_sp, &
        -67.6171_sp, -69.5217_sp, -71.4262_sp, -73.3307_sp, -75.2351_sp,  -77.1394_sp, -79.0435_sp, &
        -80.9473_sp, -82.8508_sp, -84.7532_sp, -86.6531_sp,  -88.542_sp /)
-        !x_inverted = .false.
+        x_inverted = .false.
         y_inverted = .true.
-        !z_inverted = .false.
       elseif(MR_iwindformat.eq.26)then
         ! JRA-55 1.25
         call MR_Set_Met_NCEPGeoGrid(45)
-
-        nt_fullmet = 1
-        !np_fullmet = 37   ! This is for air, hgt, uwnd, vwnd
-        !np_fullmet_Vz = 37 ! omega
-        !np_fullmet_RH = 37  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
-        !     500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp, &
-        !      20.0_sp,  10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp, &
-        !       2.0_sp,   1.0_sp /)
-
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet_Vz)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet_RH)
-
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .true.
-        !z_inverted = .true.
       elseif(MR_iwindformat.eq.27)then
         ! NOAA reanalysis
         call MR_Set_Met_NCEPGeoGrid(1027)
-
-        nt_fullmet = 1460 ! might need to add 4 for a leap year
-        !np_fullmet = 24   ! This is for HGT, TMP, UGRD, VGRD
-        !np_fullmet_Vz = 19 ! omega
-        !np_fullmet_RH = 19 ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        ! ! NOTE: This is the order we ultimately want, but what is in the files
-        ! !       is stored top-down (10->1000).
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 950.0_sp, 900.0_sp, 850.0_sp, 800.0_sp, &
-        !     750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
-        !     500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
-        !     250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp,  70.0_sp, &
-        !      50.0_sp,  30.0_sp,  20.0_sp,  10.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
-        !  (/1000.0_sp, 950.0_sp, 900.0_sp, 850.0_sp, 800.0_sp, &
-        !     750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
-        !     500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
-        !     250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp /)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_Vz_sp(1:np_fullmet_Vz)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .true.
-        !z_inverted = .true.
       elseif(MR_iwindformat.eq.28)then
         ! ECMWF Global Gaussian Lat/Lon grid 170
           ! Note: grid is not regular
           !       pressure values are from low to high
         call MR_Set_Met_NCEPGeoGrid(170)
-
-        nt_fullmet = 1
-        !np_fullmet = 37   ! This is for air, hgt, uwnd, vwnd
-        !np_fullmet_Vz = 37 ! omega
-        !np_fullmet_RH = 37  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        ! ! NOTE: This is the order we ultimately want, but what is in the files
-        ! !       is stored top-down (1->1000).
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
-        !     500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp, &
-        !      20.0_sp,  10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp, &
-        !       2.0_sp,   1.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .true.
-        !z_inverted = .true.
       elseif(MR_iwindformat.eq.29)then
         ! ECMWF Global Gaussian Lat/Lon 
         call MR_Set_Met_NCEPGeoGrid(1029)
-
-        nt_fullmet = 1
-        !np_fullmet = 37   ! This is for air, hgt, uwnd, vwnd
-        !np_fullmet_Vz = 37 ! omega
-        !np_fullmet_RH = 37  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
-        !     500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
-        !     250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
-        !     125.0_sp, 100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp, &
-        !      20.0_sp,  10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp, &
-        !       2.0_sp,   1.0_sp /)
-
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet_Vz)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet_RH)
-
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .true.
-        !z_inverted = .true.
-
       elseif(MR_iwindformat.eq.31)then
           ! Catania forecasts
         call MR_Set_Met_NCEPGeoGrid(1031)
-
-        nt_fullmet = 1
-        !np_fullmet = 13
-        !np_fullmet_Vz = 13 ! omega
-        !np_fullmet_RH = 13  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 950.0_sp, 925.0_sp, 850.0_sp, 700.0_sp, &
-        !     600.0_sp, 500.0_sp, 400.0_sp, 300.0_sp, 250.0_sp, &
-        !     200.0_sp, 150.0_sp, 100.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .false.
-        !z_inverted = .false.
-
       elseif(MR_iwindformat.eq.32)then
           ! Air Force Weather Agency
         call MR_Set_Met_NCEPGeoGrid(1032)
-
-! isobaric = 1000, 5000, 10000, 20000, 25000, 30000, 40000, 50000, 70000, 
-!    85000, 92500, 100000 ;
-! isobaric1 = 85000 ;
-! isobaric2 = 1000, 5000, 10000, 20000, 25000, 50000, 70000, 85000, 92500, 
-!    100000 ;
-
-        nt_fullmet = 1
-        !np_fullmet = 39
-        !np_fullmet_Vz = 31 ! omega
-        !np_fullmet_RH = 39  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1013.0_sp, 1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, &
-        !     900.0_sp,  875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, &
-        !     775.0_sp,  750.0_sp, 725.0_sp, 700.0_sp, 650.0_sp, &
-        !     600.0_sp,  550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-        !     350.0_sp,  300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-        !     100.0_sp,   70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
-        !      10.0_sp,    3.0_sp,   2.0_sp,   1.0_sp,   0.5_sp, &
-        !       0.3_sp,    0.2_sp,   0.1_sp,   0.05_sp/)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = &
-        !  (/1013.0_sp, 1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, &
-        !     900.0_sp,  875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, &
-        !     775.0_sp,  750.0_sp, 725.0_sp, 700.0_sp, 650.0_sp, &
-        !     600.0_sp,  550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, &
-        !     350.0_sp,  300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, &
-        !     100.0_sp,   70.0_sp,  50.0_sp,  30.0_sp,  20.0_sp, &
-        !      10.0_sp/)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
+        isGridRelative = .true.
         x_inverted = .false.
         y_inverted = .false.
-        !z_inverted = .true.
-
       elseif(MR_iwindformat.eq.33)then
           ! CAM paleoclimate
         call MR_Set_Met_NCEPGeoGrid(1033)
-
-        nt_fullmet = 120
-        !np_fullmet = 26
-        !np_fullmet_Vz = 26 ! omega
-        !np_fullmet_RH = 26  ! rhum
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/ 992.6_sp,  970.6_sp, 929.6_sp, 867.2_sp, 787.7_sp, &
-        !     696.8_sp,  600.5_sp, 510.5_sp, 433.9_sp, 368.8_sp, &
-        !     313.5_sp,  266.5_sp, 226.5_sp, 192.5_sp, 163.7_sp, &
-        !     139.1_sp,  118.3_sp, 100.5_sp,  85.4_sp,  70.1_sp, &
-        !      53.1_sp,   37.2_sp,  23.9_sp,  14.0_sp,   7.4_sp, &
-        !       3.5_sp/)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .false.
-        !z_inverted = .true.
-
       elseif(MR_iwindformat.eq.40)then
         ! NASA GEOS Cp
         call MR_Set_Met_NCEPGeoGrid(1040)
-
-        nt_fullmet = 1
-        !np_fullmet = 37
-        !np_fullmet_Vz = 37 ! omega
-        !np_fullmet_RH = 37  ! rhum
-        !np_fullmet_P0 = 37  ! Precip is 3d
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, &
-        !     550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, &
-        !     300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp, &
-        !      70.0_sp,  50.0_sp,  40.0_sp,  30.0_sp,  20.0_sp, &
-        !      10.0_sp,   7.0_sp,   5.0_sp,   4.0_sp,   3.0_sp, &
-        !       2.0_sp,   1.0_sp /)
-        !p_fullmet_Vz_sp = p_fullmet_sp
-        !p_fullmet_RH_sp = p_fullmet_sp
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .false.
-        !z_inverted = .false.
-
       elseif(MR_iwindformat.eq.41)then
         ! NASA GEOS Np
         call MR_Set_Met_NCEPGeoGrid(1041)
-
-        nt_fullmet = 1
-        !np_fullmet = 42
-        !np_fullmet_Vz = 42 ! omega
-        !np_fullmet_RH = 42  ! rhum
-        np_fullmet_P0 = 42  ! Precip is 3d
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
-        !     750.0_sp, 725.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, &
-        !     550.0_sp, 500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, &
-        !     300.0_sp, 250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp, &
-        !      70.0_sp,  50.0_sp,  40.0_sp,  30.0_sp,  20.0_sp, &
-        !      10.0_sp,   7.0_sp,   5.0_sp,   4.0_sp,   3.0_sp, &
-        !       2.0_sp,   1.0_sp,   0.7_sp,   0.5_sp,   0.4_sp, &
-        !       0.3_sp,   0.1_sp /)
-        !p_fullmet_Vz_sp = p_fullmet_sp
-        !p_fullmet_RH_sp = p_fullmet_sp
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .false.
-        !z_inverted = .false.
-
       elseif(MR_iwindformat.eq.50)then
          ! WRF - output
-
         call MR_Get_WRF_grid
-
       elseif(MR_iwindformat.eq.51)then
           ! SENAMHI WRF 22 km
         call MR_Set_Met_NCEPGeoGrid(1051)
-
-        nt_fullmet = 1
-        !np_fullmet = 15
-        !np_fullmet_Vz = 15 ! omega
-        !np_fullmet_RH = 15  ! rhum
-        !np_fullmet_P0 = 1   ! Precip is 2d
-        !allocate(p_fullmet_sp(np_fullmet))
-        !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-        !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-        !p_fullmet_sp(1:np_fullmet) = &
-        !  (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
-        !     850.0_sp, 700.0_sp, 600.0_sp, 500.0_sp, 400.0_sp, &
-        !     300.0_sp, 250.0_sp, 200.0_sp, 100.0_sp,  50.0_sp /)
-        !p_fullmet_Vz_sp(1:np_fullmet_Vz) = p_fullmet_sp(1:np_fullmet)
-        !p_fullmet_RH_sp(1:np_fullmet_RH) = p_fullmet_sp(1:np_fullmet)
-        !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet))
-        !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-        !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
-        !x_inverted = .false.
+        isGridRelative = .true.
+        x_inverted = .false.
         y_inverted = .false.
-        !z_inverted = .true.
-
       else
         ! Not a recognized MR_iwindformat
         ! call reading of template windfile pressure,grid values
@@ -3795,7 +2783,7 @@
       integer :: filetime_in_int
 
       integer            :: var_xtype
-      character(len=NF90_MAX_NAME)  :: name,invar
+      character(len=NF90_MAX_NAME)  :: invar
       integer            :: xtype, length, attnum
       character(len=20)  :: tstring
       character(len=31)  :: tstring2
@@ -4298,7 +3286,7 @@
       integer, parameter :: dp        = 8 ! double precision
       real(kind=sp), parameter :: tol = 1.0e-7_sp
 
-      integer :: iw,pi,i
+      integer :: iw,i
 
       integer :: nSTAT
       integer :: ncid
@@ -4307,7 +3295,7 @@
       integer            :: xtype, length, attnum
       character(len=40)  :: invar
       character(len = nf90_max_name) :: name_dum
-      integer :: t_dim_id,x_dim_id,y_dim_id,z_dim_id
+      integer :: t_dim_id,x_dim_id,y_dim_id
       integer :: var_id
       real(kind=dp),dimension(:), allocatable :: dum1d_dp
       real(kind=sp),dimension(:), allocatable :: dum1d_sp
@@ -4845,6 +3833,10 @@
       real(kind=sp) :: Z_top, T_top
       real(kind=sp) :: pp
       integer       :: idx
+
+      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      !write(MR_global_production,*)"----------                MR_Read_MetP_Variable_netcdf                ----------"
+      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       if(.not.Met_var_IsAvailable(ivar))then
         write(MR_global_error,*)"MR ERROR:  Variable not available for this windfile"

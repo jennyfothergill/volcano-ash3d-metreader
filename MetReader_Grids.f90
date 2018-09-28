@@ -2324,6 +2324,10 @@
 
       real(kind=sp),dimension(:,:),allocatable :: wrk_loc
 
+      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      !write(MR_global_production,*)"----------      MR_Regrid_Met2Comp                                    ----------"
+      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
       if(IsPeriodic_CompGrid)then
         nx_max = nx1+1
         allocate(wrk_loc(0:nx1+1,0:ny1+1))
@@ -2416,6 +2420,11 @@
       real(kind=sp) :: a1,a2,dz,z1
 
       logical :: found_interv
+
+      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      !write(MR_global_production,*)"----------      MR_Regrid_P2H_linear                                  ----------"
+      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
 
       var_comp = -9999.0_sp
       ! Loop over all comp points
