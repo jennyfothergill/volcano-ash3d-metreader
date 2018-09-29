@@ -14,7 +14,7 @@
 !
 !     After this subroutine completes, the following variables will be set:
 !       All the projection parameters of NWP grid
-!       Met_dim_names, Met_var_names, Met_var_conversion_factor, Met_var_IsAvailable
+!       Met_dim_names, Met_var_GRIB_names, Met_var_conversion_factor, Met_var_IsAvailable
 !       The lengths of all the dimensions of the file
 !       p_fullmet_sp (converted to Pa)
 !       x_fullmet_sp, y_fullmet_sp
@@ -57,8 +57,13 @@
       character(len=3) :: iv_typeSfc
 
       integer(kind=4)  :: numberOfPoints
-      integer(kind=4)  :: Ni
-      integer(kind=4)  :: Nj
+      integer(kind=4)  :: Ni,Nx
+      integer(kind=4)  :: Nj,Ny
+      integer(kind=4)  :: dum_int
+      real(kind=8)     :: dum_dp
+      character(len=10) :: dum_str
+      real(kind=dp) :: x_start,y_start
+      real(kind=dp) :: Lon_start,Lat_start
       integer(kind=4)  :: typeOfFirstFixedSurface
       integer            :: count1=0
         ! Stores values of keys read from grib file
@@ -79,1035 +84,6 @@
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                MR_Read_Met_DimVars_GRIB                    ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
-
-      if(MR_iwindformat.ne.0)then
-        Met_dim_names = ""
-        Met_var_names = ""
-        Met_var_conversion_factor(:)  = 1.0_sp
-      endif
-
-      Met_var_GRIB2_DPcPnSt(:,:) = 0
-      ! To determine these grib1 paramters, use
-      !   grib_ls -p marsParam,level,date,time,indicatorOfTypeOfLevel NPW_file.grib
-      Met_var_GRIB1_MARS(:)      = ""
-      Met_var_GRIB1_St(:)        = ""
-
-      ! Initialize dimension and variable names
-      if(MR_iwindformat.eq.0)then
-          ! This expects that MR_iwf_template has been filled by the calling program
-        call MR_Read_Met_Template
-      elseif(MR_iwindformat.eq.2)then
-        ! This is reserved for reading Radiosonde data
-      elseif(MR_iwindformat.eq.3)then
-          ! NARR3D NAM221 50 km North America files
-          ! Note that winds are "earth-relative" and must be rotated!
-          ! See
-          ! http://www.emc.ncep.noaa.gov/mmb/rreanl/faq.html#eta-winds
-          ! https://rda.ucar.edu/datasets/ds608.0/
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        ! These names are not used for reading GRIB files
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric2"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1)               = "gh"
-          Met_var_GRIB1_MARS(1)        = "7.131"
-          Met_var_GRIB1_St(1)          = "pl"
-          Met_var_IsAvailable(1)       = .true.
-        Met_var_names(2)               = "u"
-          Met_var_GRIB1_MARS(2)        = "33.131"
-          Met_var_GRIB1_St(2)          = "pl"
-          Met_var_IsAvailable(2)       = .true.
-        Met_var_names(3)               = "v"
-          Met_var_GRIB1_MARS(3)        = "34.131"
-          Met_var_GRIB1_St(3)          = "pl"
-          Met_var_IsAvailable(3)       = .true.
-        Met_var_names(4)               = "w"
-          Met_var_GRIB1_MARS(4)        = "39.131"
-          Met_var_GRIB1_St(4)          = "pl"
-          Met_var_IsAvailable(4)       = .true.
-        Met_var_names(5)               = "t"
-          Met_var_GRIB1_MARS(5)        = "11.131"
-          Met_var_GRIB1_St(5)          = "pl"
-          Met_var_IsAvailable(5)       = .true.
-
-        ! Surface
-!        Met_var_names(10)              = "hpbl"
-!        Met_var_names(11)              = "u"
-!        Met_var_names(12)              = "v"
-!        Met_var_names(13)              = "fricv"
-!        !  14 = Displacement Height
-!        Met_var_names(15)              = "sd"
-!        Met_var_names(16)              = "soilw"
-!        Met_var_names(17)              = "sr"
-!        Met_var_names(18)              = "gust"
-!        ! Atmospheric Structure
-!        Met_var_names(20)              = "pres"
-!        Met_var_names(21)              = "pres"
-!        Met_var_names(23)              = "tcc"
-!        ! Moisture
-!        Met_var_names(30)              = "r"
-        Met_var_names(31)              = "q"
-          Met_var_GRIB1_MARS(31)       = "51.131"
-          Met_var_GRIB1_St(31)         = "pl"
-          Met_var_IsAvailable(31)      = .true.
-!        Met_var_names(32)              = "clwmr"
-!        Met_var_names(33)              = "snmr"
-!        ! Precipitation
-!        Met_var_names(40)              = "crain"
-!        Met_var_names(41)              = "csnow"
-!        Met_var_names(42)              = "cfrzr"
-!        Met_var_names(43)              = "cicep"
-!        Met_var_names(44)              = "prate"
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif(MR_iwindformat.eq.4)then
-        ! NAM Regional North America 221 32 km North America files
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "reftime"     ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric3" ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"        ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"        ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1)               = "gh"
-          Met_var_GRIB2_DPcPnSt(1,1:4) = (/0, 3, 5, 100/)
-          Met_var_IsAvailable(1)       = .true.
-        Met_var_names(2)               = "u"
-          Met_var_GRIB2_DPcPnSt(2,1:4) = (/0, 2, 2, 100/)
-          Met_var_IsAvailable(2)       = .true.
-        Met_var_names(3)               = "v"
-          Met_var_GRIB2_DPcPnSt(3,1:4) = (/0, 2, 3, 100/)
-          Met_var_IsAvailable(3)       = .true.
-        Met_var_names(4)               = "w"
-          Met_var_GRIB2_DPcPnSt(4,1:4) = (/0, 2, 8, 100/)
-          Met_var_IsAvailable(4)       = .true.
-        Met_var_names(5)               = "t"
-          Met_var_GRIB2_DPcPnSt(5,1:4) = (/0, 0, 0, 100/)
-          Met_var_IsAvailable(5)       =.true.
-
-        ! Surface
-        Met_var_names(10)              = "hpbl"
-          Met_var_GRIB2_DPcPnSt(10,1:4)= (/0, 3, 196, 1/)
-          Met_var_IsAvailable(10)      = .true.
-        Met_var_names(11)              = "u"
-          Met_var_GRIB2_DPcPnSt(11,1:4)= (/0, 2, 2, 103/)
-          Met_var_IsAvailable(11)      = .true.
-        Met_var_names(12)              = "v"
-          Met_var_GRIB2_DPcPnSt(12,1:4)= (/0, 2, 3, 103/)
-          Met_var_IsAvailable(12)      = .true.
-        Met_var_names(13)              = "fricv"
-          Met_var_GRIB2_DPcPnSt(13,1:4)= (/0, 2, 197, 1/)
-          Met_var_IsAvailable(13)      = .true.
-
-        ! Moisture
-        Met_var_names(30)              = "r"
-          Met_var_GRIB2_DPcPnSt(30,1:4)= (/0, 1, 1, 100/)
-          Met_var_IsAvailable(30)      = .true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-      elseif(MR_iwindformat.eq.5)then
-          ! NAM216 AK 45km
-      elseif(MR_iwindformat.eq.6)then
-          ! NAM Regional 90 km grid 104
-      elseif(MR_iwindformat.eq.7)then
-          ! CONUS 212 40km
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"     ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric3" ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"        ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"        ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1)               = "gh"
-          Met_var_GRIB2_DPcPnSt(1,1:4) = (/0, 3, 5, 100/)
-          Met_var_IsAvailable(1)       = .true.
-        Met_var_names(2)               = "u"
-          Met_var_GRIB2_DPcPnSt(2,1:4) = (/0, 2, 2, 100/)
-          Met_var_IsAvailable(2)       = .true.
-        Met_var_names(3)               = "v"
-          Met_var_GRIB2_DPcPnSt(3,1:4) = (/0, 2, 3, 100/)
-          Met_var_IsAvailable(3)       = .true.
-        Met_var_names(4)               = "w"
-          Met_var_GRIB2_DPcPnSt(4,1:4) = (/0, 2, 8, 100/)
-          Met_var_IsAvailable(4)       = .true.
-        Met_var_names(5)               = "t"
-          Met_var_GRIB2_DPcPnSt(5,1:4) = (/0, 0, 0, 100/)
-          Met_var_IsAvailable(5)       =.true.
-
-        ! Surface
-        Met_var_names(10)              = "hpbl"
-          Met_var_GRIB2_DPcPnSt(10,1:4)= (/0, 3, 196, 1/)
-          Met_var_IsAvailable(10)      = .true.
-        Met_var_names(11)              = "u"
-          Met_var_GRIB2_DPcPnSt(11,1:4)= (/0, 2, 2, 103/)
-          Met_var_IsAvailable(11)      = .true.
-        Met_var_names(12)              = "v"
-          Met_var_GRIB2_DPcPnSt(12,1:4)= (/0, 2, 3, 103/)
-          Met_var_IsAvailable(12)      = .true.
-        Met_var_names(13)              = "fricv"
-          Met_var_GRIB2_DPcPnSt(13,1:4)= (/0, 2, 197, 1/)
-          Met_var_IsAvailable(13)      = .true.
-
-        ! Moisture
-        Met_var_names(30)              = "r"
-          Met_var_GRIB2_DPcPnSt(30,1:4)= (/0, 1, 1, 100/)
-          Met_var_IsAvailable(30)      = .true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-      elseif(MR_iwindformat.eq.8)then
-          ! CONUS 218 (12km)
-          ! wget
-          ! ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.20121231/nam.t00z.awphys${fh[$i]}.grb2.tm00
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"     ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric1" ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"        ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"        ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1)               = "gh"
-          Met_var_GRIB2_DPcPnSt(1,1:4) = (/0, 3, 5, 100/)
-          Met_var_IsAvailable(1)       = .true.
-        Met_var_names(2)               = "u"
-          Met_var_GRIB2_DPcPnSt(2,1:4) = (/0, 2, 2, 100/)
-          Met_var_IsAvailable(2)       = .true.
-        Met_var_names(3)               = "v"
-          Met_var_GRIB2_DPcPnSt(3,1:4) = (/0, 2, 3, 100/)
-          Met_var_IsAvailable(3)       = .true.
-        Met_var_names(4)               = "w"
-          Met_var_GRIB2_DPcPnSt(4,1:4) = (/0, 2, 8, 100/)
-          Met_var_IsAvailable(4)       = .true.
-        Met_var_names(5)               = "t"
-          Met_var_GRIB2_DPcPnSt(5,1:4) = (/0, 0, 0, 100/)
-          Met_var_IsAvailable(5)       =.true.
-
-        ! Surface
-        Met_var_names(10)              = "hpbl"
-          Met_var_GRIB2_DPcPnSt(10,1:4)= (/0, 3, 196, 1/)
-          Met_var_IsAvailable(10)      = .true.
-        Met_var_names(11)              = "u"
-          Met_var_GRIB2_DPcPnSt(11,1:4)= (/0, 2, 2, 103/)
-          Met_var_IsAvailable(11)      = .true.
-        Met_var_names(12)              = "v"
-          Met_var_GRIB2_DPcPnSt(12,1:4)= (/0, 2, 3, 103/)
-          Met_var_IsAvailable(12)      = .true.
-        Met_var_names(13)              = "fricv"
-          Met_var_GRIB2_DPcPnSt(13,1:4)= (/0, 2, 197, 1/)
-          Met_var_IsAvailable(13)      = .true.
-
-        ! Moisture
-        Met_var_names(30)              = "r"
-          Met_var_GRIB2_DPcPnSt(30,1:4)= (/0, 1, 1, 100/)
-          Met_var_IsAvailable(30)      = .true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-      elseif(MR_iwindformat.eq.9)then
-          ! CONUS 227 (5.08 km)
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric2"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1)               = "gh"
-          Met_var_GRIB2_DPcPnSt(1,1:4) = (/0, 3, 5, 100/)
-          Met_var_IsAvailable(1)       = .true.
-        Met_var_names(2)               = "u"
-          Met_var_GRIB2_DPcPnSt(2,1:4) = (/0, 2, 2, 100/)
-          Met_var_IsAvailable(2)       = .true.
-        Met_var_names(3)               = "v"
-          Met_var_GRIB2_DPcPnSt(3,1:4) = (/0, 2, 3, 100/)
-          Met_var_IsAvailable(3)       = .true.
-        Met_var_names(4)               = "w"
-          Met_var_GRIB2_DPcPnSt(4,1:4) = (/0, 2, 8, 100/)
-          Met_var_IsAvailable(4)       = .true.
-        Met_var_names(5)               = "t"
-          Met_var_GRIB2_DPcPnSt(5,1:4) = (/0, 0, 0, 100/)
-          Met_var_IsAvailable(5)       =.true.
-
-        ! Surface
-        Met_var_names(10)              = "hpbl"
-          Met_var_GRIB2_DPcPnSt(10,1:4)= (/0, 3, 196, 1/)
-          Met_var_IsAvailable(10)      = .true.
-        Met_var_names(11)              = "u"
-          Met_var_GRIB2_DPcPnSt(11,1:4)= (/0, 2, 2, 103/)
-          Met_var_IsAvailable(11)      = .true.
-        Met_var_names(12)              = "v"
-          Met_var_GRIB2_DPcPnSt(12,1:4)= (/0, 2, 3, 103/)
-          Met_var_IsAvailable(12)      = .true.
-        Met_var_names(13)              = "fricv"
-          Met_var_GRIB2_DPcPnSt(13,1:4)= (/0, 2, 197, 1/)
-          Met_var_IsAvailable(13)      = .true.
-        !  14 = Displacement Height
-        Met_var_names(15)              = "sd"
-          Met_var_GRIB2_DPcPnSt(15,1:4)= (/0, 1, 11, 1/)
-          Met_var_IsAvailable(15)      = .true.
-        Met_var_names(16)              = "soilw"
-          Met_var_GRIB2_DPcPnSt(16,1:4)= (/2, 0, 192, 106/)
-          Met_var_IsAvailable(16)      = .true.
-        Met_var_names(17)              = "sr"
-          Met_var_GRIB2_DPcPnSt(17,1:4)= (/2, 0, 1, 1/)
-          Met_var_IsAvailable(17)      = .true.
-        Met_var_names(18)              = "gust"
-          Met_var_GRIB2_DPcPnSt(18,1:4)= (/0, 2, 22, 1/)
-          Met_var_IsAvailable(18)      = .true.
-        ! Atmospheric Structure
-        Met_var_names(20)              = "pres"
-          Met_var_GRIB2_DPcPnSt(20,1:4)= (/0, 3, 0, 2/)
-          Met_var_IsAvailable(20)      = .true.
-        Met_var_names(21)              = "pres"
-          Met_var_GRIB2_DPcPnSt(21,1:4)= (/0, 3, 0, 3/)
-          Met_var_IsAvailable(21)      = .true.
-        Met_var_names(23)              = "tcc"
-          Met_var_GRIB2_DPcPnSt(23,1:4)= (/0, 6, 1, 200/)
-          Met_var_IsAvailable(23)      = .true.
-        ! Moisture
-        Met_var_names(30)              = "r"
-          Met_var_GRIB2_DPcPnSt(30,1:4)= (/0, 1, 1, 100/)
-          Met_var_IsAvailable(30)      = .true.
-        Met_var_names(31)              = "q"
-          Met_var_GRIB2_DPcPnSt(31,1:4) = (/0, 1, 0, 100/)
-          Met_var_IsAvailable(31)      = .true.
-        Met_var_names(32)              = "clwmr"
-          Met_var_GRIB2_DPcPnSt(32,1:4) = (/0, 1, 22, 100/)
-          Met_var_IsAvailable(32)      = .true.
-        Met_var_names(33)              = "snmr"
-          Met_var_GRIB2_DPcPnSt(33,1:4)= (/0, 1, 25, 100/)
-          Met_var_IsAvailable(33)      = .true.
-        ! Precipitation
-        Met_var_names(40)              = "crain"
-          Met_var_GRIB2_DPcPnSt(40,1:4)= (/0, 1, 192, 1/)
-          Met_var_IsAvailable(40)      = .true.
-        Met_var_names(41)              = "csnow"
-          Met_var_GRIB2_DPcPnSt(41,1:4)= (/0, 1, 195, 1/)
-          Met_var_IsAvailable(41)      = .true.
-        Met_var_names(42)              = "cfrzr"
-          Met_var_GRIB2_DPcPnSt(42,1:4)= (/0, 1, 193, 1/)
-          Met_var_IsAvailable(42)      = .true.
-        Met_var_names(43)              = "cicep"
-          Met_var_GRIB2_DPcPnSt(43,1:4)= (/0, 1, 194, 1/)
-          Met_var_IsAvailable(43)      = .true.
-        Met_var_names(44)              = "prate"
-          Met_var_GRIB2_DPcPnSt(44,1:4)= (/0, 1, 7, 1/)
-          Met_var_IsAvailable(44)      = .true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif(MR_iwindformat.eq.11)then
-          ! NAM 196 2.5 km HI
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true. 
-        Met_dim_names(2) = "isobaric2"  ! pressure
-          Met_dim_IsAvailable(2)=.true. 
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true. 
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true. 
-
-        ! Mechanical / State variables
-        Met_var_names(1)               = "gh"
-          Met_var_GRIB2_DPcPnSt(1,1:4) = (/0, 3, 5, 100/)
-          Met_var_IsAvailable(1)       = .true.
-        Met_var_names(2)               = "u"
-          Met_var_GRIB2_DPcPnSt(2,1:4) = (/0, 2, 2, 100/)
-          Met_var_IsAvailable(2)       = .true.
-        Met_var_names(3)               = "v"
-          Met_var_GRIB2_DPcPnSt(3,1:4) = (/0, 2, 3, 100/)
-          Met_var_IsAvailable(3)       = .true.
-        Met_var_names(4)               = "w"
-          Met_var_GRIB2_DPcPnSt(4,1:4) = (/0, 2, 8, 100/)
-          Met_var_IsAvailable(4)       = .true.
-        Met_var_names(5)               = "t"
-          Met_var_GRIB2_DPcPnSt(5,1:4) = (/0, 0, 0, 100/)
-          Met_var_IsAvailable(5)       =.true.
-
-        ! Surface
-        Met_var_names(10)              = "hpbl"
-          Met_var_GRIB2_DPcPnSt(10,1:4)= (/0, 3, 196, 1/)
-          Met_var_IsAvailable(10)      = .true.
-        Met_var_names(11)              = "u"
-          Met_var_GRIB2_DPcPnSt(11,1:4)= (/0, 2, 2, 103/)
-          Met_var_IsAvailable(11)      = .true.
-        Met_var_names(12)              = "v"
-          Met_var_GRIB2_DPcPnSt(12,1:4)= (/0, 2, 3, 103/)
-          Met_var_IsAvailable(12)      = .true.
-        Met_var_names(13)              = "fricv"
-          Met_var_GRIB2_DPcPnSt(13,1:4)= (/0, 2, 197, 1/)
-          Met_var_IsAvailable(13)      = .true.
-        !  14 = Displacement Height
-        Met_var_names(15)              = "sd"
-          Met_var_GRIB2_DPcPnSt(15,1:4)= (/0, 1, 11, 1/)
-          Met_var_IsAvailable(15)      = .true.
-        Met_var_names(16)              = "soilw"
-          Met_var_GRIB2_DPcPnSt(16,1:4)= (/2, 0, 192, 106/)
-          Met_var_IsAvailable(16)      = .true.
-        Met_var_names(17)              = "sr"
-          Met_var_GRIB2_DPcPnSt(17,1:4)= (/2, 0, 1, 1/)
-          Met_var_IsAvailable(17)      = .true.
-        Met_var_names(18)              = "gust"
-          Met_var_GRIB2_DPcPnSt(18,1:4)= (/0, 2, 22, 1/)
-          Met_var_IsAvailable(18)      = .true.
-        ! Atmospheric Structure
-        Met_var_names(20)              = "pres"
-          Met_var_GRIB2_DPcPnSt(20,1:4)= (/0, 3, 0, 2/)
-          Met_var_IsAvailable(20)      = .true.
-        Met_var_names(21)              = "pres"
-          Met_var_GRIB2_DPcPnSt(21,1:4)= (/0, 3, 0, 3/)
-          Met_var_IsAvailable(21)      = .true.
-        Met_var_names(23)              = "tcc"
-          Met_var_GRIB2_DPcPnSt(23,1:4)= (/0, 6, 1, 200/)
-          Met_var_IsAvailable(23)      = .true.
-        ! Moisture
-        Met_var_names(30)              = "r"
-          Met_var_GRIB2_DPcPnSt(30,1:4)= (/0, 1, 1, 100/)
-          Met_var_IsAvailable(30)      = .true.
-        Met_var_names(31)              = "q"
-          Met_var_GRIB2_DPcPnSt(31,1:4) = (/0, 1, 0, 100/)
-          Met_var_IsAvailable(31)      = .true.
-        Met_var_names(32)              = "clwmr"
-          Met_var_GRIB2_DPcPnSt(32,1:4) = (/0, 1, 22, 100/)
-          Met_var_IsAvailable(32)      = .true.
-        Met_var_names(33)              = "snmr"
-          Met_var_GRIB2_DPcPnSt(33,1:4)= (/0, 1, 25, 100/)
-          Met_var_IsAvailable(33)      = .true.
-        ! Precipitation
-        Met_var_names(40)              = "crain"
-          Met_var_GRIB2_DPcPnSt(40,1:4)= (/0, 1, 192, 1/)
-          Met_var_IsAvailable(40)      = .true.
-        Met_var_names(41)              = "csnow"
-          Met_var_GRIB2_DPcPnSt(41,1:4)= (/0, 1, 195, 1/)
-          Met_var_IsAvailable(41)      = .true.
-        Met_var_names(42)              = "cfrzr"
-          Met_var_GRIB2_DPcPnSt(42,1:4)= (/0, 1, 193, 1/)
-          Met_var_IsAvailable(42)      = .true.
-        Met_var_names(43)              = "cicep"
-          Met_var_GRIB2_DPcPnSt(43,1:4)= (/0, 1, 194, 1/)
-          Met_var_IsAvailable(43)      = .true.
-        Met_var_names(44)              = "prate"
-          Met_var_GRIB2_DPcPnSt(44,1:4)= (/0, 1, 7, 1/)
-          Met_var_IsAvailable(44)      = .true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif(MR_iwindformat.eq.12)then
-          ! NAM 198 5.953 km AK
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.  
-
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric2"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1)               = "gh"
-          Met_var_GRIB2_DPcPnSt(1,1:4) = (/0, 3, 5, 100/)
-          Met_var_IsAvailable(1)       = .true.
-        Met_var_names(2)               = "u"
-          Met_var_GRIB2_DPcPnSt(2,1:4) = (/0, 2, 2, 100/)
-          Met_var_IsAvailable(2)       = .true.
-        Met_var_names(3)               = "v"
-          Met_var_GRIB2_DPcPnSt(3,1:4) = (/0, 2, 3, 100/)
-          Met_var_IsAvailable(3)       = .true.
-        Met_var_names(4)               = "w"
-          Met_var_GRIB2_DPcPnSt(4,1:4) = (/0, 2, 8, 100/)
-          Met_var_IsAvailable(4)       = .true.
-        Met_var_names(5)               = "t"
-          Met_var_GRIB2_DPcPnSt(5,1:4) = (/0, 0, 0, 100/)
-          Met_var_IsAvailable(5)       =.true.
-
-        ! Surface
-        Met_var_names(10)              = "hpbl"
-          Met_var_GRIB2_DPcPnSt(10,1:4)= (/0, 3, 196, 1/)
-          Met_var_IsAvailable(10)      = .true.
-        Met_var_names(11)              = "u"
-          Met_var_GRIB2_DPcPnSt(11,1:4)= (/0, 2, 2, 103/)
-          Met_var_IsAvailable(11)      = .true.
-        Met_var_names(12)              = "v"
-          Met_var_GRIB2_DPcPnSt(12,1:4)= (/0, 2, 3, 103/)
-          Met_var_IsAvailable(12)      = .true.
-        Met_var_names(13)              = "fricv"
-          Met_var_GRIB2_DPcPnSt(13,1:4)= (/0, 2, 197, 1/)
-          Met_var_IsAvailable(13)      = .true.
-        !  14 = Displacement Height
-        Met_var_names(15)              = "sd"
-          Met_var_GRIB2_DPcPnSt(15,1:4)= (/0, 1, 11, 1/)
-          Met_var_IsAvailable(15)      = .true.
-        Met_var_names(16)              = "soilw"
-          Met_var_GRIB2_DPcPnSt(16,1:4)= (/2, 0, 192, 106/)
-          Met_var_IsAvailable(16)      = .true.
-        Met_var_names(17)              = "sr"
-          Met_var_GRIB2_DPcPnSt(17,1:4)= (/2, 0, 1, 1/)
-          Met_var_IsAvailable(17)      = .true.
-        Met_var_names(18)              = "gust"
-          Met_var_GRIB2_DPcPnSt(18,1:4)= (/0, 2, 22, 1/)
-          Met_var_IsAvailable(18)      = .true.
-        ! Atmospheric Structure
-        Met_var_names(20)              = "pres"
-          Met_var_GRIB2_DPcPnSt(20,1:4)= (/0, 3, 0, 2/)
-          Met_var_IsAvailable(20)      = .true.
-        Met_var_names(21)              = "pres"
-          Met_var_GRIB2_DPcPnSt(21,1:4)= (/0, 3, 0, 3/)
-          Met_var_IsAvailable(21)      = .true.
-        Met_var_names(23)              = "tcc"
-          Met_var_GRIB2_DPcPnSt(23,1:4)= (/0, 6, 1, 200/)
-          Met_var_IsAvailable(23)      = .true.
-        ! Moisture
-        Met_var_names(30)              = "r"
-          Met_var_GRIB2_DPcPnSt(30,1:4)= (/0, 1, 1, 100/)
-          Met_var_IsAvailable(30)      = .true.
-        Met_var_names(31)              = "q"
-          Met_var_GRIB2_DPcPnSt(31,1:4) = (/0, 1, 0, 100/)
-          Met_var_IsAvailable(31)      = .true.
-        Met_var_names(32)              = "clwmr"
-          Met_var_GRIB2_DPcPnSt(32,1:4) = (/0, 1, 22, 100/)
-          Met_var_IsAvailable(32)      = .true.
-        Met_var_names(33)              = "snmr"
-          Met_var_GRIB2_DPcPnSt(33,1:4)= (/0, 1, 25, 100/)
-          Met_var_IsAvailable(33)      = .true.
-        ! Precipitation
-        Met_var_names(40)              = "crain"
-          Met_var_GRIB2_DPcPnSt(40,1:4)= (/0, 1, 192, 1/)
-          Met_var_IsAvailable(40)      = .true.
-        Met_var_names(41)              = "csnow"
-          Met_var_GRIB2_DPcPnSt(41,1:4)= (/0, 1, 195, 1/)
-          Met_var_IsAvailable(41)      = .true.
-        Met_var_names(42)              = "cfrzr"
-          Met_var_GRIB2_DPcPnSt(42,1:4)= (/0, 1, 193, 1/)
-          Met_var_IsAvailable(42)      = .true.
-        Met_var_names(43)              = "cicep"
-          Met_var_GRIB2_DPcPnSt(43,1:4)= (/0, 1, 194, 1/)
-          Met_var_IsAvailable(43)      = .true.
-        Met_var_names(44)              = "prate"
-          Met_var_GRIB2_DPcPnSt(44,1:4)= (/0, 1, 7, 1/)
-          Met_var_IsAvailable(44)      = .true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif(MR_iwindformat.eq.13)then
-          ! NAM 91 2.976 km AK (nam198 at twice the resolution)
-          !    all the variables below should be the same as iwf12=n198
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1)               = "gh"
-          Met_var_GRIB2_DPcPnSt(1,1:4) = (/0, 3, 5, 100/)
-          Met_var_IsAvailable(1)       = .true.
-        Met_var_names(2)               = "u"
-          Met_var_GRIB2_DPcPnSt(2,1:4) = (/0, 2, 2, 100/)
-          Met_var_IsAvailable(2)       = .true.
-        Met_var_names(3)               = "v"
-          Met_var_GRIB2_DPcPnSt(3,1:4) = (/0, 2, 3, 100/)
-          Met_var_IsAvailable(3)       = .true.
-        Met_var_names(4)               = "w"
-          Met_var_GRIB2_DPcPnSt(4,1:4) = (/0, 2, 8, 100/)
-          Met_var_IsAvailable(4)       = .true.
-        Met_var_names(5)               = "t"
-          Met_var_GRIB2_DPcPnSt(5,1:4) = (/0, 0, 0, 100/)
-          Met_var_IsAvailable(5)       =.true.
-
-        ! Surface
-        Met_var_names(10)              = "hpbl"
-          Met_var_GRIB2_DPcPnSt(10,1:4)= (/0, 3, 196, 1/)
-          Met_var_IsAvailable(10)      = .true.
-        Met_var_names(11)              = "u"
-          Met_var_GRIB2_DPcPnSt(11,1:4)= (/0, 2, 2, 103/)
-          Met_var_IsAvailable(11)      = .true.
-        Met_var_names(12)              = "v"
-          Met_var_GRIB2_DPcPnSt(12,1:4)= (/0, 2, 3, 103/)
-          Met_var_IsAvailable(12)      = .true.
-        Met_var_names(13)              = "fricv"
-          Met_var_GRIB2_DPcPnSt(13,1:4)= (/0, 2, 197, 1/)
-          Met_var_IsAvailable(13)      = .true.
-        !  14 = Displacement Height
-        Met_var_names(15)              = "sd"
-          Met_var_GRIB2_DPcPnSt(15,1:4)= (/0, 1, 11, 1/)
-          Met_var_IsAvailable(15)      = .true.
-        Met_var_names(16)              = "soilw"
-          Met_var_GRIB2_DPcPnSt(16,1:4)= (/2, 0, 192, 106/)
-          Met_var_IsAvailable(16)      = .true.
-        Met_var_names(17)              = "sr"
-          Met_var_GRIB2_DPcPnSt(17,1:4)= (/2, 0, 1, 1/)
-          Met_var_IsAvailable(17)      = .true.
-        Met_var_names(18)              = "gust"
-          Met_var_GRIB2_DPcPnSt(18,1:4)= (/0, 2, 22, 1/)
-          Met_var_IsAvailable(18)      = .true.
-        ! Atmospheric Structure
-        Met_var_names(20)              = "pres"
-          Met_var_GRIB2_DPcPnSt(20,1:4)= (/0, 3, 0, 2/)
-          Met_var_IsAvailable(20)      = .true.
-        Met_var_names(21)              = "pres"
-          Met_var_GRIB2_DPcPnSt(21,1:4)= (/0, 3, 0, 3/)
-          Met_var_IsAvailable(21)      = .true.
-        Met_var_names(23)              = "tcc"
-          Met_var_GRIB2_DPcPnSt(23,1:4)= (/0, 6, 1, 200/)
-          Met_var_IsAvailable(23)      = .true.
-        ! Moisture
-        Met_var_names(30)              = "r"
-          Met_var_GRIB2_DPcPnSt(30,1:4)= (/0, 1, 1, 100/)
-          Met_var_IsAvailable(30)      = .true.
-        Met_var_names(31)              = "q"
-          Met_var_GRIB2_DPcPnSt(31,1:4) = (/0, 1, 0, 100/)
-          Met_var_IsAvailable(31)      = .true.
-        Met_var_names(32)              = "clwmr"
-          Met_var_GRIB2_DPcPnSt(32,1:4) = (/0, 1, 22, 100/)
-          Met_var_IsAvailable(32)      = .true.
-        Met_var_names(33)              = "snmr"
-          Met_var_GRIB2_DPcPnSt(33,1:4)= (/0, 1, 25, 100/)
-          Met_var_IsAvailable(33)      = .true.
-        ! Precipitation
-        Met_var_names(40)              = "crain"
-          Met_var_GRIB2_DPcPnSt(40,1:4)= (/0, 1, 192, 1/)
-          Met_var_IsAvailable(40)      = .true.
-        Met_var_names(41)              = "csnow"
-          Met_var_GRIB2_DPcPnSt(41,1:4)= (/0, 1, 195, 1/)
-          Met_var_IsAvailable(41)      = .true.
-        Met_var_names(42)              = "cfrzr"
-          Met_var_GRIB2_DPcPnSt(42,1:4)= (/0, 1, 193, 1/)
-          Met_var_IsAvailable(42)      = .true.
-        Met_var_names(43)              = "cicep"
-          Met_var_GRIB2_DPcPnSt(43,1:4)= (/0, 1, 194, 1/)
-          Met_var_IsAvailable(43)      = .true.
-        Met_var_names(44)              = "prate"
-          Met_var_GRIB2_DPcPnSt(44,1:4)= (/0, 1, 7, 1/)
-          Met_var_IsAvailable(44)      = .true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif(MR_iwindformat.eq.14)then
-          ! CONUS 1227 (3.0 km)
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric2"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1)               = "gh"
-          Met_var_GRIB2_DPcPnSt(1,1:4) = (/0, 3, 5, 100/)
-          Met_var_IsAvailable(1)       = .true.
-        Met_var_names(2)               = "u"
-          Met_var_GRIB2_DPcPnSt(2,1:4) = (/0, 2, 2, 100/)
-          Met_var_IsAvailable(2)       = .true.
-        Met_var_names(3)               = "v"
-          Met_var_GRIB2_DPcPnSt(3,1:4) = (/0, 2, 3, 100/)
-          Met_var_IsAvailable(3)       = .true.
-        Met_var_names(4)               = "w"
-          Met_var_GRIB2_DPcPnSt(4,1:4) = (/0, 2, 8, 100/)
-          Met_var_IsAvailable(4)       = .true.
-        Met_var_names(5)               = "t"
-          Met_var_GRIB2_DPcPnSt(5,1:4) = (/0, 0, 0, 100/)
-          Met_var_IsAvailable(5)       =.true.
-
-        ! Surface
-        Met_var_names(10)              = "hpbl"
-          Met_var_GRIB2_DPcPnSt(10,1:4)= (/0, 3, 196, 1/)
-          Met_var_IsAvailable(10)      = .true.
-        Met_var_names(11)              = "u"
-          Met_var_GRIB2_DPcPnSt(11,1:4)= (/0, 2, 2, 103/)
-          Met_var_IsAvailable(11)      = .true.
-        Met_var_names(12)              = "v"
-          Met_var_GRIB2_DPcPnSt(12,1:4)= (/0, 2, 3, 103/)
-          Met_var_IsAvailable(12)      = .true.
-        Met_var_names(13)              = "fricv"
-          Met_var_GRIB2_DPcPnSt(13,1:4)= (/0, 2, 197, 1/)
-          Met_var_IsAvailable(13)      = .true.
-        !  14 = Displacement Height
-        Met_var_names(15)              = "sd"
-          Met_var_GRIB2_DPcPnSt(15,1:4)= (/0, 1, 11, 1/)
-          Met_var_IsAvailable(15)      = .true.
-        Met_var_names(16)              = "soilw"
-          Met_var_GRIB2_DPcPnSt(16,1:4)= (/2, 0, 192, 106/)
-          Met_var_IsAvailable(16)      = .true.
-        Met_var_names(17)              = "sr"
-          Met_var_GRIB2_DPcPnSt(17,1:4)= (/2, 0, 1, 1/)
-          Met_var_IsAvailable(17)      = .true.
-        Met_var_names(18)              = "gust"
-          Met_var_GRIB2_DPcPnSt(18,1:4)= (/0, 2, 22, 1/)
-          Met_var_IsAvailable(18)      = .true.
-        ! Atmospheric Structure
-        Met_var_names(20)              = "pres"
-          Met_var_GRIB2_DPcPnSt(20,1:4)= (/0, 3, 0, 2/)
-          Met_var_IsAvailable(20)      = .true.
-        Met_var_names(21)              = "pres"
-          Met_var_GRIB2_DPcPnSt(21,1:4)= (/0, 3, 0, 3/)
-          Met_var_IsAvailable(21)      = .true.
-        Met_var_names(23)              = "tcc"
-          Met_var_GRIB2_DPcPnSt(23,1:4)= (/0, 6, 1, 200/)
-          Met_var_IsAvailable(23)      = .true.
-        ! Moisture
-        Met_var_names(30)              = "r"
-          Met_var_GRIB2_DPcPnSt(30,1:4)= (/0, 1, 1, 100/)
-          Met_var_IsAvailable(30)      = .true.
-        Met_var_names(31)              = "q"
-          Met_var_GRIB2_DPcPnSt(31,1:4) = (/0, 1, 0, 100/)
-          Met_var_IsAvailable(31)      = .true.
-        Met_var_names(32)              = "clwmr"
-          Met_var_GRIB2_DPcPnSt(32,1:4) = (/0, 1, 22, 100/)
-          Met_var_IsAvailable(32)      = .true.
-        Met_var_names(33)              = "snmr"
-          Met_var_GRIB2_DPcPnSt(33,1:4)= (/0, 1, 25, 100/)
-          Met_var_IsAvailable(33)      = .true.
-        ! Precipitation
-        Met_var_names(40)              = "crain"
-          Met_var_GRIB2_DPcPnSt(40,1:4)= (/0, 1, 192, 1/)
-          Met_var_IsAvailable(40)      = .true.
-        Met_var_names(41)              = "csnow"
-          Met_var_GRIB2_DPcPnSt(41,1:4)= (/0, 1, 195, 1/)
-          Met_var_IsAvailable(41)      = .true.
-        Met_var_names(42)              = "cfrzr"
-          Met_var_GRIB2_DPcPnSt(42,1:4)= (/0, 1, 193, 1/)
-          Met_var_IsAvailable(42)      = .true.
-        Met_var_names(43)              = "cicep"
-          Met_var_GRIB2_DPcPnSt(43,1:4)= (/0, 1, 194, 1/)
-          Met_var_IsAvailable(43)      = .true.
-        Met_var_names(44)              = "prate"
-          Met_var_GRIB2_DPcPnSt(44,1:4)= (/0, 1, 7, 1/)
-          Met_var_IsAvailable(44)      = .true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif (MR_iwindformat.eq.20.or. &
-              MR_iwindformat.eq.21.or. &
-              MR_iwindformat.eq.22) then
-           ! GFS 0.5 / 1.0 / 0.25 deg from http://www.nco.ncep.noaa.gov/pmb/products/gfs/
-           ! or
-           ! http://motherlode.ucar.edu/native/conduit/data/nccf/com/gfs/prod/
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric3"   ! pressure (1.0e5-1.0e3 Pa or 1000 -> 10.0 hPa in 26 levels)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "lat"        ! y        (90.0 -> -90.0)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "lon"        ! x        (0.0 - 359.5)
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1)               = "gh"
-          Met_var_GRIB2_DPcPnSt(1,1:4) = (/0, 3, 5, 100/)
-          Met_var_IsAvailable(1)       = .true.
-        Met_var_names(2)               = "u"
-          Met_var_GRIB2_DPcPnSt(2,1:4) = (/0, 2, 2, 100/)
-          Met_var_IsAvailable(2)       = .true.
-        Met_var_names(3)               = "v"
-          Met_var_GRIB2_DPcPnSt(3,1:4) = (/0, 2, 3, 100/)
-          Met_var_IsAvailable(3)       = .true.
-        Met_var_names(4)               = "w"
-          Met_var_GRIB2_DPcPnSt(4,1:4) = (/0, 2, 8, 100/)
-          Met_var_IsAvailable(4)       = .true.
-        Met_var_names(5)               = "t"
-          Met_var_GRIB2_DPcPnSt(5,1:4) = (/0, 0, 0, 100/)
-          Met_var_IsAvailable(5)       =.true.
-
-        ! Surface
-        Met_var_names(10)              = "hpbl"
-          !Met_var_GRIB2_DPcPnSt(10,1:4)= (/0, 3, 196, 1/)
-          Met_var_GRIB2_DPcPnSt(10,1:4)= (/0, 3, 18, 1/)
-          Met_var_IsAvailable(10)      = .true.
-        ! Moisture
-        Met_var_names(30)              = "r"
-          Met_var_GRIB2_DPcPnSt(30,1:4)= (/0, 1, 1, 100/)
-          Met_var_IsAvailable(30)      = .true.
-        Met_var_names(32)              = "clwmr"
-          !Met_var_GRIB2_DPcPnSt(32,1:4) = (/0, 1, 22, 100/)
-          Met_var_GRIB2_DPcPnSt(32,1:4) = (/0, 1, 2, 100/)
-          Met_var_IsAvailable(32)      = .true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-       elseif (MR_iwindformat.eq.23) then
-         ! NCEP / doE reanalysis 2.5 degree fileA
-         ! https://rda.ucar.edu/datasets/ds091.0
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        ! These names are not used for reading GRIB files
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "lat"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "lon"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1)               = "hgt"
-          Met_var_GRIB1_MARS(1)        = "7.132"
-          Met_var_GRIB1_St(1)          = "pl"
-          Met_var_IsAvailable(1)       = .true.
-        Met_var_names(2)               = "u"
-          Met_var_GRIB1_MARS(2)        = "33.132"
-          Met_var_GRIB1_St(2)          = "pl"
-          Met_var_IsAvailable(2)       = .true.
-        Met_var_names(3)               = "v"
-          Met_var_GRIB1_MARS(3)        = "34.132"
-          Met_var_GRIB1_St(3)          = "pl"
-          Met_var_IsAvailable(3)       = .true.
-        Met_var_names(4)               = "w"
-          Met_var_GRIB1_MARS(4)        = "39.132"
-          Met_var_GRIB1_St(4)          = "pl"
-          Met_var_IsAvailable(4)       = .true.
-        Met_var_names(5)               = "t"
-          Met_var_GRIB1_MARS(5)        = "11.132"
-          Met_var_GRIB1_St(5)          = "pl"
-          Met_var_IsAvailable(5)       = .true.
-
-        ! Moisture
-        Met_var_names(30)              = "rh"
-          Met_var_GRIB1_MARS(30)       = "52.132"
-          Met_var_GRIB1_St(30)         = "pl"
-          Met_var_IsAvailable(30)      = .true.
-        ! Precipitation
-        Met_var_names(44)              = "prate"
-          Met_var_GRIB1_MARS(44)       = "59.132"
-          Met_var_GRIB1_St(44)         = "pl"
-          Met_var_IsAvailable(44)      = .true.
-
-        fill_value_sp(MR_iwindformat) = 9.999_sp
-
-       elseif (MR_iwindformat.eq.24) then
-         ! NASA-MERRA-2 reanalysis 0.625/0.5 degree files 
-       elseif (MR_iwindformat.eq.25) then
-         ! NCEP/NCAR reanalysis 2.5 degree files 
-         ! https://rda.ucar.edu/datasets/ds090.0
-       elseif (MR_iwindformat.eq.26) then
-         ! JRA-55 reanalysis
-         ! https://rda.ucar.edu/datasets/ds628.0/
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        ! These names are not used for reading GRIB files
-        Met_dim_names(1) = "initial_time0_hours"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "lv_ISBL1"      ! pressure (17 levels 1000 -> 10)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "g0_lat_2"        ! y        (90.0 -> -90.0)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "g0_lat_2"        ! x        (0.0 -> 357.5)
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1)               = "hgt"
-          Met_var_GRIB1_MARS(1)        = "7.200"
-          Met_var_GRIB1_St(1)          = "pl"
-          Met_var_IsAvailable(1)       = .true.
-        Met_var_names(2)               = "u"
-          Met_var_GRIB1_MARS(2)        = "33.200"
-          Met_var_GRIB1_St(2)          = "pl"
-          Met_var_IsAvailable(2)       = .true.
-        Met_var_names(3)               = "v"
-          Met_var_GRIB1_MARS(3)        = "34.200"
-          Met_var_GRIB1_St(3)          = "pl"
-          Met_var_IsAvailable(3)       = .true.
-        Met_var_names(4)               = "w"
-          Met_var_GRIB1_MARS(4)        = "39.200"
-          Met_var_GRIB1_St(4)          = "pl"
-          Met_var_IsAvailable(4)       = .true.
-        Met_var_names(5)               = "t"
-          Met_var_GRIB1_MARS(5)        = "11.200"
-          Met_var_GRIB1_St(5)          = "pl"
-          Met_var_IsAvailable(5)       = .true.
-
-        ! Moisture
-        Met_var_names(31)              = "sh"
-          Met_var_GRIB1_MARS(31)       = "51.200"
-          Met_var_GRIB1_St(31)         = "pl"
-          Met_var_IsAvailable(31)      = .true.
-
-        fill_value_sp(MR_iwindformat) = 9.999_sp
-
-       elseif (MR_iwindformat.eq.27) then
-         ! NOAA-CIRES reanalysis 2.5 degree files 
-         ! https://rda.ucar.edu/datasets/ds131.2/
-       elseif (MR_iwindformat.eq.28) then
-         ! ECMWF Interim Reanalysis (ERA-Interim)
-         ! https://rda.ucar.edu/datasets/ds627.0
-       elseif (MR_iwindformat.eq.29) then
-         ! ECMWF ERA5
-         ! https://rda.ucar.edu/datasets/ds630.0
-       elseif (MR_iwindformat.eq.31) then
-         ! Catania forecast
-       elseif (MR_iwindformat.eq.32) then
-         ! Air Force Weather Agency subcenter = 0
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1)               = "gh"
-          Met_var_GRIB2_DPcPnSt(1,1:4) = (/0, 3, 5, 100/)
-          Met_var_IsAvailable(1)       = .true.
-        Met_var_names(2)               = "u"
-          Met_var_GRIB2_DPcPnSt(2,1:4) = (/0, 2, 2, 100/)
-          Met_var_IsAvailable(2)       = .true.
-        Met_var_names(3)               = "v"
-          Met_var_GRIB2_DPcPnSt(3,1:4) = (/0, 2, 3, 100/)
-          Met_var_IsAvailable(3)       = .true.
-        Met_var_names(4)               = "w"
-          Met_var_GRIB2_DPcPnSt(4,1:4) = (/0, 2, 8, 100/)
-          Met_var_IsAvailable(4)       = .true.
-        Met_var_names(5)               = "t"
-          Met_var_GRIB2_DPcPnSt(5,1:4) = (/0, 0, 0, 100/)
-          Met_var_IsAvailable(5)       =.true.
-
-        ! Surface
-        Met_var_names(10)              = "hpbl"
-          !Met_var_GRIB2_DPcPnSt(10,1:4)= (/0, 3, 196, 1/)
-          Met_var_GRIB2_DPcPnSt(10,1:4)= (/0, 3, 18, 1/)
-          Met_var_IsAvailable(10)      = .true.
-        Met_var_names(11)              = "u"
-          Met_var_GRIB2_DPcPnSt(11,1:4)= (/0, 2, 2, 103/)
-          Met_var_IsAvailable(11)      = .true.
-        Met_var_names(12)              = "v"
-          Met_var_GRIB2_DPcPnSt(12,1:4)= (/0, 2, 3, 103/)
-          Met_var_IsAvailable(12)      = .true.
-        Met_var_names(13)              = "fricv"
-          !Met_var_GRIB2_DPcPnSt(13,1:4)= (/0, 2, 197, 1/)
-          Met_var_GRIB2_DPcPnSt(13,1:4)= (/0, 2, 30, 1/)
-          Met_var_IsAvailable(13)      = .true.
-
-        !  14 = Displacement Height
-        Met_var_names(15)              = "sd"
-          !Met_var_GRIB2_DPcPnSt(15,1:4)= (/0, 1, 11, 1/)
-          Met_var_GRIB2_DPcPnSt(15,1:4)= (/0, 1, 13, 1/)
-          Met_var_IsAvailable(15)      = .true.
-        Met_var_names(16)              = "soilw"
-          !Met_var_GRIB2_DPcPnSt(16,1:4)= (/2, 0, 192, 106/)
-          Met_var_GRIB2_DPcPnSt(16,1:4)= (/2, 3, 20, 106/)
-          Met_var_IsAvailable(16)      = .true.
-        Met_var_names(17)              = "sr"
-          Met_var_GRIB2_DPcPnSt(17,1:4)= (/2, 0, 1, 1/)
-          Met_var_IsAvailable(17)      = .true.
-        Met_var_names(18)              = "gust"
-          !Met_var_GRIB2_DPcPnSt(18,1:4)= (/0, 2, 22, 1/)
-          Met_var_GRIB2_DPcPnSt(18,1:4)= (/0, 2, 22, 103/)
-          Met_var_IsAvailable(18)      = .true.
-        ! Atmospheric Structure
-        Met_var_names(20)              = "pres"
-          !Met_var_GRIB2_DPcPnSt(20,1:4)= (/0, 3, 0, 2/)
-          Met_var_GRIB2_DPcPnSt(20,1:4)= (/0, 6, 11, 2/)
-          Met_var_IsAvailable(20)      = .true.
-        Met_var_names(21)              = "pres"
-          !Met_var_GRIB2_DPcPnSt(21,1:4)= (/0, 3, 0, 3/)
-          Met_var_GRIB2_DPcPnSt(21,1:4)= (/0, 6, 12, 3/)
-          Met_var_IsAvailable(21)      = .true.
-        Met_var_names(23)              = "tcc"
-          !Met_var_GRIB2_DPcPnSt(23,1:4)= (/0, 6, 1, 200/)
-          Met_var_GRIB2_DPcPnSt(23,1:4)= (/0, 6, 1, 10/)
-          Met_var_IsAvailable(23)      = .true.
-        ! Moisture
-        Met_var_names(30)              = "r"
-          Met_var_GRIB2_DPcPnSt(30,1:4)= (/0, 1, 1, 100/)
-          Met_var_IsAvailable(30)      = .true.
-        Met_var_names(32)              = "clwmr"
-          !Met_var_GRIB2_DPcPnSt(32,1:4) = (/0, 1, 22, 100/)
-          Met_var_GRIB2_DPcPnSt(32,1:4) = (/0, 1, 2, 100/)
-          Met_var_IsAvailable(32)      = .true.
-        ! Precipitation
-        Met_var_names(44)              = "prate"
-          !Met_var_GRIB2_DPcPnSt(44,1:4)= (/0, 1, 7, 1/)
-          Met_var_GRIB2_DPcPnSt(44,1:4)= (/0, 1, 54, 1/)
-          Met_var_IsAvailable(44)      = .true.
-        Met_var_names(45)              = "prate"
-          Met_var_GRIB2_DPcPnSt(44,1:4)= (/0, 1, 37, 1/)
-          Met_var_IsAvailable(44)      = .true.
-
-
-        fill_value_sp(MR_iwindformat) = 9999.0_sp ! actually NaNf
-
-       elseif (MR_iwindformat.eq.40) then
-         ! NASA-GEOS Cp
-       elseif (MR_iwindformat.eq.41) then
-         ! NASA-GEOS Np
-      else
-        ! Not a recognized MR_iwindformat
-        ! call reading of custom windfile variable names
-        write(MR_global_error,*)"MR ERROR : windfile format not recognized."
-        stop 1
-      endif
 
       if(Met_var_IsAvailable(4)) Have_Vz = .true.
 
@@ -1149,6 +125,91 @@
         zlev_dum(:,:) = 0
         do while (iret/=GRIB_END_OF_FILE)
           count1=count1+1
+          if(count1.eq.1)then
+            ! For the first record, get the x,y grid info
+            call grib_get(igrib,'gridType',dum_str)
+            call grib_get(igrib,'latitudeOfFirstGridPointInDegrees',dum_dp)
+            Lat_start = dum_dp
+            call grib_get(igrib,'longitudeOfFirstGridPointInDegrees',dum_dp)
+            Lon_start = dum_dp
+
+            if(index(dum_str,'regular_ll').ne.0)then
+              IsLatLon_MetGrid = .true.
+              Lat_start = y_start
+              Lon_start = x_start
+              call grib_get(igrib,'latitudeOfLastGridPointInDegrees',dum_dp)
+              if(Lat_start.gt.dum_dp)then
+                y_inverted = .true.
+              else
+                y_inverted = .false.
+              endif
+              call grib_get(igrib,'longitudeOfLastGridPointInDegrees',dum_dp)
+              if(Lon_start.gt.dum_dp)then
+                x_inverted = .true.
+              else
+                x_inverted = .false.
+              endif
+              call grib_get(igrib,'iDirectionIncrementInDegrees',dum_dp)
+              dx_met_const = real(dum_dp,kind=4)
+              call grib_get(igrib,'jDirectionIncrementInDegrees',dum_dp)
+              dy_met_const = real(dum_dp,kind=4)
+
+            elseif(index(dum_str,'lambert').ne.0)then
+              IsLatLon_MetGrid = .false.
+              Met_iprojflag     = 4
+              call grib_get(igrib,'LoVInDegrees',dum_int)
+              Met_lam0 = real(dum_int,kind=8)
+              call grib_get(igrib,'LaDInDegrees',dum_int)
+              Met_phi0 = real(dum_int,kind=8)
+              call grib_get(igrib,'Latin1InDegrees',dum_int)
+              Met_phi1 = real(dum_int,kind=8)
+              call grib_get(igrib,'Latin2InDegrees',dum_int)
+              Met_phi2 = real(dum_int,kind=8)
+              Met_k0            =  0.933_8
+              Met_Re            =  6371.229_8
+            endif
+
+            if(.not.IsLatLon_MetGrid)then
+              call grib_get(igrib,'DxInMetres',dum_int)
+              dx_met_const = real(dum_int,kind=4)/1000.0_sp
+              call grib_get(igrib,'DyInMetres',dum_int)
+              dy_met_const = real(dum_int,kind=4)/1000.0_sp
+
+              call PJ_proj_for(Lon_start,Lat_start, Met_iprojflag, &
+                       Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re, &
+                       x_start,y_start)
+            endif
+
+            call grib_get(igrib,'Nx',nx_fullmet)
+            call grib_get(igrib,'Ny',ny_fullmet)
+            allocate(x_fullmet_sp(0:nx_fullmet+1))
+            allocate(y_fullmet_sp(ny_fullmet))
+            allocate(MR_dx_met(nx_fullmet))
+            allocate(MR_dy_met(ny_fullmet))
+            do i = 0,nx_fullmet+1
+              x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
+            enddo
+            if(y_inverted)then
+              do i = 1,ny_fullmet
+                y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
+              enddo
+            else
+            do i = 1,ny_fullmet
+              y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
+            enddo
+            endif
+            do i = 1,nx_fullmet
+              MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+            enddo
+            do i = 1,ny_fullmet-1
+              MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+            enddo
+            MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+            !write(*,*)x_fullmet_sp
+            !write(*,*)y_fullmet_sp
+            !stop 5
+          endif
+
           call grib_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
           ! for populating z-levels, we are only concerned with specific level types
           if(typeOfFirstFixedSurface.eq.100.or. & ! Isobaric surface  (Pa)
@@ -1300,213 +361,180 @@
         stop 1
       endif
 
-
-
-
-
-
-
-
-      if(MR_iwindformat.eq.0)then
-        ! Custom windfile (example for nam198)
-        !  Need to populate
-        !call MR_Set_Met_Dims_Custom_GRIB
-        write(MR_global_error,*)"MR ERROR : Currently, grib reader only works for known grib files."
-        write(MR_global_error,*)"           Custom reader forthcoming"
-        stop 1
-      elseif(MR_iwindformat.eq.2)then
-        write(MR_global_error,*)"MR ERROR : MR_iwindformat = 2: should not be here."
-        stop 1
-      elseif(MR_iwindformat.eq.3)then
-          ! 3 = NARR3D NAM221 32 km North America files
-          ! We really should not be here since NARR is provided as GRIB1 not GRIB2
-        call MR_Set_Met_NCEPGeoGrid(1221)
-        isGridRelative = .false.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.4)then
-          ! 4 = NAM Regional North America 221 (32 km)
-        call MR_Set_Met_NCEPGeoGrid(221)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.5)then
-        ! NAM 45-km Polar Sterographic
-        call MR_Set_Met_NCEPGeoGrid(216)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.6)then
-          ! 104 converted automatically from grib2
-          ! NAM 90-km Polar Sterographic
-        call MR_Set_Met_NCEPGeoGrid(104)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.7)then
-          ! 212 converted automatically from grib2
-          ! CONUS 40-km Lambert Conformal
-        call MR_Set_Met_NCEPGeoGrid(212)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.8)then
-          !  12 KM CONUS)
-        call MR_Set_Met_NCEPGeoGrid(218)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.9)then
-          !  5.08 KM CONUS
-        call MR_Set_Met_NCEPGeoGrid(227)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.10)then
-          ! NAM AK 242
-        call MR_Set_Met_NCEPGeoGrid(242)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.11)then
-          ! NAM196 converted automatically from grib2
-        call MR_Set_Met_NCEPGeoGrid(196)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.12)then
-          ! NAM198 converted automatically from grib2
-        call MR_Set_Met_NCEPGeoGrid(198)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.13)then
-          ! NAM91 converted automatically from grib2
-        call MR_Set_Met_NCEPGeoGrid(91)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.14)then
-          !  3 KM CONUS)
-        call MR_Set_Met_NCEPGeoGrid(1227)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.20)then
-        ! GFS 0.5
-        call MR_Set_Met_NCEPGeoGrid(4)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
-      elseif(MR_iwindformat.eq.21)then
-        ! GFS 1.0
-        call MR_Set_Met_NCEPGeoGrid(3)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
-      elseif(MR_iwindformat.eq.22)then
-        ! GFS 0.25
-        call MR_Set_Met_NCEPGeoGrid(193)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
-      elseif(MR_iwindformat.eq.23)then
-        ! NCEP DOE reanalysis
-        call MR_Set_Met_NCEPGeoGrid(2)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
-      elseif(MR_iwindformat.eq.24)then
-        ! NASA MERRA reanalysis
-        call MR_Set_Met_NCEPGeoGrid(1024)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
-      elseif(MR_iwindformat.eq.25)then
-        ! NCEP-1 1948 reanalysis
-        call MR_Set_Met_NCEPGeoGrid(2)
-        isGridRelative = .true.
-
-        !nt_fullmet = 1460 ! might need to add 4 for a leap year
-        ! These additional grids are needed since surface variables are on a
-        ! different spatial grid.
-        do i = 1,192
-          x_in_iwf25_sp(i)=(i-1)*1.875_sp
-        enddo
-        y_in_iwf25_sp(1:94) = (/ &
-         88.542_sp,  86.6531_sp,  84.7532_sp,  82.8508_sp,  80.9473_sp,   79.0435_sp,  77.1394_sp, 75.2351_sp, &
-        73.3307_sp,  71.4262_sp,  69.5217_sp,  67.6171_sp,  65.7125_sp,   63.8079_sp,  61.9033_sp, 59.9986_sp, &
-        58.0939_sp,  56.1893_sp,  54.2846_sp,  52.3799_sp,  50.4752_sp,   48.5705_sp,  46.6658_sp, 44.7611_sp, &
-        42.8564_sp,  40.9517_sp,   39.047_sp,  37.1422_sp,  35.2375_sp,   33.3328_sp,  31.4281_sp, 29.5234_sp, &
-        27.6186_sp,  25.7139_sp,  23.8092_sp,  21.9044_sp,  19.9997_sp,    18.095_sp,  16.1902_sp, 14.2855_sp, &
-        12.3808_sp, 10.47604_sp,  8.57131_sp,  6.66657_sp,  4.76184_sp,    2.8571_sp, 0.952368_sp, &
-      -0.952368_sp,  -2.8571_sp, -4.76184_sp, -6.66657_sp, -8.57131_sp, -10.47604_sp, -12.3808_sp, &
-       -14.2855_sp, -16.1902_sp,  -18.095_sp, -19.9997_sp, -21.9044_sp,  -23.8092_sp, -25.7139_sp, &
-       -27.6186_sp, -29.5234_sp, -31.4281_sp, -33.3328_sp, -35.2375_sp,  -37.1422_sp,  -39.047_sp, &
-       -40.9517_sp, -42.8564_sp, -44.7611_sp, -46.6658_sp, -48.5705_sp,  -50.4752_sp, -52.3799_sp, &
-       -54.2846_sp, -56.1893_sp, -58.0939_sp, -59.9986_sp, -61.9033_sp,  -63.8079_sp, -65.7125_sp, &
-       -67.6171_sp, -69.5217_sp, -71.4262_sp, -73.3307_sp, -75.2351_sp,  -77.1394_sp, -79.0435_sp, &
-       -80.9473_sp, -82.8508_sp, -84.7532_sp, -86.6531_sp,  -88.542_sp /)
-        x_inverted = .false.
-        y_inverted = .true.
-      elseif(MR_iwindformat.eq.26)then
-        ! JRA-55 1.25
-        call MR_Set_Met_NCEPGeoGrid(45)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
-      elseif(MR_iwindformat.eq.27)then
-        ! NOAA reanalysis
-        call MR_Set_Met_NCEPGeoGrid(1027)
-        isGridRelative = .true.
-
-        !nt_fullmet = 1460 ! might need to add 4 for a leap year
-        x_inverted = .false.
-        y_inverted = .true.
-      elseif(MR_iwindformat.eq.28)then
-        ! ECMWF Global Gaussian Lat/Lon grid 170
-          ! Note: grid is not regular
-          !       pressure values are from low to high
-        call MR_Set_Met_NCEPGeoGrid(170)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
-      elseif(MR_iwindformat.eq.29)then
-        ! Japanese 25-year reanalysis
-        call MR_Set_Met_NCEPGeoGrid(2)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
-      elseif(MR_iwindformat.eq.31)then
-          ! Catania forecasts
-        call MR_Set_Met_NCEPGeoGrid(1031)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.32)then
-          ! Air Force Weather Agency
-        call MR_Set_Met_NCEPGeoGrid(1032)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.40)then
-        ! NASA GEOS Cp
-        call MR_Set_Met_NCEPGeoGrid(1040)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      elseif(MR_iwindformat.eq.41)then
-        ! NASA GEOS Np
-        call MR_Set_Met_NCEPGeoGrid(1041)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
-      else
-        ! Not a recognized MR_iwindformat
-        ! call reading of custom windfile pressure,grid values
-        write(MR_global_error,*)"MR ERROR : windfile format not recognized."
-        stop 1
-      endif
+!      if(MR_iwindformat.eq.0)then
+!        ! Custom windfile (example for nam198)
+!        !  Need to populate
+!        !call MR_Set_Met_Dims_Custom_GRIB
+!        write(MR_global_error,*)"MR ERROR : Currently, grib reader only works for known grib files."
+!        write(MR_global_error,*)"           Custom reader forthcoming"
+!        stop 1
+!      elseif(MR_iwindformat.eq.2)then
+!        write(MR_global_error,*)"MR ERROR : MR_iwindformat = 2: should not be here."
+!        stop 1
+!      elseif(MR_iwindformat.eq.3)then
+!          ! 3 = NARR3D NAM221 32 km North America files
+!          ! We really should not be here since NARR is provided as GRIB1 not GRIB2
+!        call MR_Set_Met_NCEPGeoGrid(1221)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.4)then
+!          ! 4 = NAM Regional North America 221 (32 km)
+!        call MR_Set_Met_NCEPGeoGrid(221)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.5)then
+!        ! NAM 45-km Polar Sterographic
+!        call MR_Set_Met_NCEPGeoGrid(216)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.6)then
+!          ! 104 converted automatically from grib2
+!          ! NAM 90-km Polar Sterographic
+!        call MR_Set_Met_NCEPGeoGrid(104)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.7)then
+!          ! 212 converted automatically from grib2
+!          ! CONUS 40-km Lambert Conformal
+!        call MR_Set_Met_NCEPGeoGrid(212)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.8)then
+!          !  12 KM CONUS)
+!        call MR_Set_Met_NCEPGeoGrid(218)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.9)then
+!          !  5.08 KM CONUS
+!        call MR_Set_Met_NCEPGeoGrid(227)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.10)then
+!          ! NAM AK 242
+!        call MR_Set_Met_NCEPGeoGrid(242)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.11)then
+!          ! NAM196 converted automatically from grib2
+!        call MR_Set_Met_NCEPGeoGrid(196)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.12)then
+!          ! NAM198 converted automatically from grib2
+!        call MR_Set_Met_NCEPGeoGrid(198)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.13)then
+!          ! NAM91 converted automatically from grib2
+!        call MR_Set_Met_NCEPGeoGrid(91)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.14)then
+!          !  3 KM CONUS)
+!        call MR_Set_Met_NCEPGeoGrid(1227)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.20)then
+!        ! GFS 0.5
+!        call MR_Set_Met_NCEPGeoGrid(4)
+!        x_inverted = .false.
+!        y_inverted = .true.
+!      elseif(MR_iwindformat.eq.21)then
+!        ! GFS 1.0
+!        call MR_Set_Met_NCEPGeoGrid(3)
+!        x_inverted = .false.
+!        y_inverted = .true.
+!      elseif(MR_iwindformat.eq.22)then
+!        ! GFS 0.25
+!        call MR_Set_Met_NCEPGeoGrid(193)
+!        x_inverted = .false.
+!        y_inverted = .true.
+!      elseif(MR_iwindformat.eq.23)then
+!        ! NCEP DOE reanalysis
+!        call MR_Set_Met_NCEPGeoGrid(2)
+!        x_inverted = .false.
+!        y_inverted = .true.
+!      elseif(MR_iwindformat.eq.24)then
+!        ! NASA MERRA reanalysis
+!        call MR_Set_Met_NCEPGeoGrid(1024)
+!        x_inverted = .false.
+!        y_inverted = .true.
+!      elseif(MR_iwindformat.eq.25)then
+!        ! NCEP-1 1948 reanalysis
+!        call MR_Set_Met_NCEPGeoGrid(2)
+!
+!        !nt_fullmet = 1460 ! might need to add 4 for a leap year
+!        ! These additional grids are needed since surface variables are on a
+!        ! different spatial grid.
+!        do i = 1,192
+!          x_in_iwf25_sp(i)=(i-1)*1.875_sp
+!        enddo
+!        y_in_iwf25_sp(1:94) = (/ &
+!         88.542_sp,  86.6531_sp,  84.7532_sp,  82.8508_sp,  80.9473_sp,   79.0435_sp,  77.1394_sp, 75.2351_sp, &
+!        73.3307_sp,  71.4262_sp,  69.5217_sp,  67.6171_sp,  65.7125_sp,   63.8079_sp,  61.9033_sp, 59.9986_sp, &
+!        58.0939_sp,  56.1893_sp,  54.2846_sp,  52.3799_sp,  50.4752_sp,   48.5705_sp,  46.6658_sp, 44.7611_sp, &
+!        42.8564_sp,  40.9517_sp,   39.047_sp,  37.1422_sp,  35.2375_sp,   33.3328_sp,  31.4281_sp, 29.5234_sp, &
+!        27.6186_sp,  25.7139_sp,  23.8092_sp,  21.9044_sp,  19.9997_sp,    18.095_sp,  16.1902_sp, 14.2855_sp, &
+!        12.3808_sp, 10.47604_sp,  8.57131_sp,  6.66657_sp,  4.76184_sp,    2.8571_sp, 0.952368_sp, &
+!      -0.952368_sp,  -2.8571_sp, -4.76184_sp, -6.66657_sp, -8.57131_sp, -10.47604_sp, -12.3808_sp, &
+!       -14.2855_sp, -16.1902_sp,  -18.095_sp, -19.9997_sp, -21.9044_sp,  -23.8092_sp, -25.7139_sp, &
+!       -27.6186_sp, -29.5234_sp, -31.4281_sp, -33.3328_sp, -35.2375_sp,  -37.1422_sp,  -39.047_sp, &
+!       -40.9517_sp, -42.8564_sp, -44.7611_sp, -46.6658_sp, -48.5705_sp,  -50.4752_sp, -52.3799_sp, &
+!       -54.2846_sp, -56.1893_sp, -58.0939_sp, -59.9986_sp, -61.9033_sp,  -63.8079_sp, -65.7125_sp, &
+!       -67.6171_sp, -69.5217_sp, -71.4262_sp, -73.3307_sp, -75.2351_sp,  -77.1394_sp, -79.0435_sp, &
+!       -80.9473_sp, -82.8508_sp, -84.7532_sp, -86.6531_sp,  -88.542_sp /)
+!        x_inverted = .false.
+!        y_inverted = .true.
+!      elseif(MR_iwindformat.eq.26)then
+!        ! JRA-55 1.25
+!        call MR_Set_Met_NCEPGeoGrid(45)
+!        x_inverted = .false.
+!        y_inverted = .true.
+!      elseif(MR_iwindformat.eq.27)then
+!        ! NOAA reanalysis
+!        call MR_Set_Met_NCEPGeoGrid(1027)
+!
+!        !nt_fullmet = 1460 ! might need to add 4 for a leap year
+!        x_inverted = .false.
+!        y_inverted = .true.
+!      elseif(MR_iwindformat.eq.28)then
+!        ! ECMWF Global Gaussian Lat/Lon grid 170
+!          ! Note: grid is not regular
+!          !       pressure values are from low to high
+!        call MR_Set_Met_NCEPGeoGrid(170)
+!        x_inverted = .false.
+!        y_inverted = .true.
+!      elseif(MR_iwindformat.eq.29)then
+!        ! Japanese 25-year reanalysis
+!        call MR_Set_Met_NCEPGeoGrid(2)
+!        x_inverted = .false.
+!        y_inverted = .true.
+!      elseif(MR_iwindformat.eq.31)then
+!          ! Catania forecasts
+!        call MR_Set_Met_NCEPGeoGrid(1031)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.32)then
+!          ! Air Force Weather Agency
+!        call MR_Set_Met_NCEPGeoGrid(1032)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.40)then
+!        ! NASA GEOS Cp
+!        call MR_Set_Met_NCEPGeoGrid(1040)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      elseif(MR_iwindformat.eq.41)then
+!        ! NASA GEOS Np
+!        call MR_Set_Met_NCEPGeoGrid(1041)
+!        x_inverted = .false.
+!        y_inverted = .false.
+!      else
+!        ! Not a recognized MR_iwindformat
+!        ! call reading of custom windfile pressure,grid values
+!        write(MR_global_error,*)"MR ERROR : windfile format not recognized."
+!        stop 1
+!      endif
 
       allocate(z_approx(np_fullmet))
       do k=1,np_fullmet
@@ -1818,7 +846,7 @@
       if(.not.Met_var_IsAvailable(ivar))then
         write(MR_global_error,*)"MR ERROR:  Variable not available for this windfile"
         write(MR_global_error,*)"             ivar = ",ivar
-        write(MR_global_error,*)"            vname = ",Met_var_names(ivar)
+        write(MR_global_error,*)"            vname = ",Met_var_GRIB_names(ivar)
         write(MR_global_error,*)"             iwf  = ",MR_iwindformat
         stop 1
       endif
@@ -1851,7 +879,7 @@
       iw     = MR_MetStep_findex(istep)
       iwstep = MR_MetStep_tindex(istep)
 
-      if(Met_var_names(ivar).eq."")then
+      if(Met_var_GRIB_names(ivar).eq."")then
         write(MR_global_error,*)"Variable ",ivar," not available for MR_iwindformat = ",&
                   MR_iwindformat
         stop 1
@@ -2051,7 +1079,7 @@
         grib_file = MR_MetStep_File(istep)(fn_idx+1:)
         index_file      = trim(adjustl(MR_MetStep_File(istep))) // ".index"
       endif
-      invar = Met_var_names(ivar)
+      invar = Met_var_GRIB_names(ivar)
 
       ! Load data variables for just the subgrid defined above
       if (wrapgrid) then

@@ -9,7 +9,7 @@
 !
 !     After this subroutine completes, the following variables will be set:
 !       All the projection parameters of NWP grid
-!       Met_dim_names, Met_var_names, Met_var_conversion_factor, Met_var_IsAvailable
+!       Met_dim_names, Met_var_NC_names, Met_var_conversion_factor, Met_var_IsAvailable
 !       The lengths of all the dimensions of the file
 !       p_fullmet_sp (converted to Pa)
 !       x_fullmet_sp, y_fullmet_sp
@@ -43,6 +43,8 @@
       character(len=NF90_MAX_NAME)  :: invar,dimname
       integer :: var_xtype,var_id,idx
       integer :: xtype, length, attnum
+      real(kind=dp), parameter :: tol = 1.0e-3_dp
+      real(kind=dp) :: x_start,y_start
 
       !integer :: NC_version
       integer,dimension(:),allocatable :: var_dimIDs
@@ -57,1047 +59,9 @@
       write(MR_global_production,*)"----------                MR_Read_Met_DimVars_netcdf                  ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
-      if(MR_iwindformat.ne.0)then
-        Met_dim_names = ""
-        Met_var_names = ""
-        Met_var_conversion_factor(:)  = 1.0_sp
-      endif
-
-      ! Initialize dimension and variable names
-      if(MR_iwindformat.eq.0)then
-          ! This expects that MR_iwf_template has been filled by the calling program
-        call MR_Read_Met_Template
-      elseif(MR_iwindformat.eq.2)then
-        ! This is reserved for reading Radiosonde data
-      elseif(MR_iwindformat.eq.3)then
-          ! NARR3D NAM221 32 km North America files (RAW : assumes full set of
-          ! variables)
-          ! Note that winds are "earth-relative" and must be rotated!
-          ! See
-          ! http://www.emc.ncep.noaa.gov/mmb/rreanl/faq.html#eta-winds
-          ! https://rda.ucar.edu/datasets/ds608.0/
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "reftime"     ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric2" ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"        ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"        ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric" 
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u_wind_isobaric"              
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v_wind_isobaric"              
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Pressure_vertical_velocity_isobaric"
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temp_isobaric"
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(10)= "Planetary_boundary_layer_height"
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11)= "u_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12)= "v_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        Met_var_names(13)= "Surface_friction_velocity_surface"
-          Met_var_IsAvailable(13)=.true.
-        Met_var_names(15) = "Snow_depth_surface"
-          Met_var_IsAvailable(15)=.true.
-
-        ! Atmospheric Structure
-        Met_var_names(20) = "Pressure_cloud_base"
-          Met_var_IsAvailable(20)=.true.
-        Met_var_names(21) = "Pressure_cloud_tops"
-          Met_var_IsAvailable(21)=.true.
-        ! Moisture
-        !Met_var_names(30) = "Relative_humidity_isobaric"
-        !  Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "Specific_humidity_isobaric"
-          Met_var_IsAvailable(31)=.true.
-        Met_var_names(32) = "Cloud_water"
-          Met_var_IsAvailable(32)=.true.
-        Met_var_names(33) = "Ice_mixing_ratio"
-          Met_var_IsAvailable(33)=.true.
-        ! Precipitation
-        Met_var_names(40) = "Categorical_rain_yes1_no0_surface"
-          Met_var_IsAvailable(40)=.true.
-        Met_var_names(41) = "Categorical_snow_yes1_no0_surface"
-          Met_var_IsAvailable(41)=.true.
-        Met_var_names(42) = "Categorical_freezing_rain_yes1_no0_surface"
-          Met_var_IsAvailable(42)=.true.
-        Met_var_names(43) = "Categorical_ice_pellets_yes1_no0_surface"
-          Met_var_IsAvailable(43)=.true.
-        Met_var_names(44) = "Precipitation_rate_surface"
-          Met_var_IsAvailable(44)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-      elseif(MR_iwindformat.eq.4)then
-        ! NAM Regional North America 221 32 km North America files
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric3"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric"
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric"
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric"
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric"
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(10) = "Planetary_Boundary_Layer_Height_surface"
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11) = "u-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "v-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        Met_var_names(13) = "Frictional_Velocity_surface"
-          Met_var_IsAvailable(13)=.true.
-        Met_var_names(16) = "Volumetric_Soil_Moisture_Content_depth_below_surface_layer"
-          Met_var_IsAvailable(16)=.true.
-        ! Atmospheric Structure
-        Met_var_names(23) = "Total_cloud_cover_entire_atmosphere"
-          Met_var_IsAvailable(23)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "Specific_humidity_isobaric"
-          Met_var_IsAvailable(31)=.true.
-        Met_var_names(32) = "Cloud_mixing_ratio_isobaric"
-          Met_var_IsAvailable(32)=.true.
-        ! Precipitation
-        Met_var_names(40) = "Categorical_Rain_surface"
-          Met_var_IsAvailable(40)=.true.
-        Met_var_names(41) = "Categorical_Snow_surface"
-          Met_var_IsAvailable(41)=.true.
-        Met_var_names(42) = "Categorical_Freezing_Rain_surface"
-          Met_var_IsAvailable(42)=.true.
-        Met_var_names(43) = "Categorical_Ice_Pellets_surface"
-          Met_var_IsAvailable(43)=.true.
-        Met_var_names(45) = "Convective_Precipitation_Rate_surface"
-          Met_var_IsAvailable(45)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif(MR_iwindformat.eq.5)then
-          ! NAM216 AK 45km
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time1"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric1"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric"
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric"
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric"
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric"
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(10) = "Planetary_Boundary_Layer_Height"
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11) = "U-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "V-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        Met_var_names(13) = "Frictional_Velocity"
-          Met_var_IsAvailable(13)=.true.
-        Met_var_names(16) = "Volumetric_Soil_Moisture_Content"
-          Met_var_IsAvailable(14)=.true.
-        ! Atmospheric Structure
-        Met_var_names(23) = "Total_cloud_cover"
-          Met_var_IsAvailable(23)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity"
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "Specific_humidity"
-          Met_var_IsAvailable(31)=.true.
-        Met_var_names(32) = "Cloud_mixing_ratio"
-          Met_var_IsAvailable(32)=.true.
-        ! Precipitation
-        Met_var_names(40) = "Categorical_Rain"
-          Met_var_IsAvailable(40)=.true.
-        Met_var_names(41) = "Categorical_Snow"
-          Met_var_IsAvailable(41)=.true.
-        Met_var_names(42) = "Categorical_Freezing_Rain"
-          Met_var_IsAvailable(42)=.true.
-        Met_var_names(43) = "Categorical_Ice_Pellets"
-          Met_var_IsAvailable(43)=.true.
-        Met_var_names(44) = "Large_scale_precipitation_non-convective"
-          Met_var_IsAvailable(44)=.true.
-        Met_var_names(45) = "Convective_precipitation"
-          Met_var_IsAvailable(45)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif(MR_iwindformat.eq.6)then
-          ! NAM Regional 90 km grid 104
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric"    !        float 
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric"    !        float 
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric"    !        float 
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric"  ! float
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"            !        float 
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(11) = "u-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "v-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        Met_var_names(13) = "Frictional_Velocity_surface"
-          Met_var_IsAvailable(13)=.true.
-        Met_var_names(16) = "Volumetric_Soil_Moisture_Content_depth_below_surface_layer"
-          Met_var_IsAvailable(16)=.true.
-        ! Atmospheric Structure
-        Met_var_names(23) = "Total_cloud_cover_entire_atmosphere_0_Hour_Average"
-          Met_var_IsAvailable(23)=.true.
-        !Met_var_names(23) = "Low_cloud_cover_low_cloud"
-        !  Met_var_IsAvailable(23)=.true.
-        Met_var_names(24) = "Convective_cloud_cover_entire_atmosphere_0_Hour_Average"
-          Met_var_IsAvailable(24)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"      !        float 
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "Specific_humidity_isobaric"
-          Met_var_IsAvailable(31)=.true.
-        Met_var_names(32) = "Cloud_mixing_ratio_isobaric"
-          Met_var_IsAvailable(32)=.true.
-        ! Precipitation
-        Met_var_names(40) = "Categorical_Rain_surface"
-          Met_var_IsAvailable(40)=.true.
-        Met_var_names(41) = "Categorical_Snow_surface"
-          Met_var_IsAvailable(41)=.true.
-        Met_var_names(42) = "Categorical_Freezing_Rain_surface"
-          Met_var_IsAvailable(42)=.true.
-        Met_var_names(43) = "Categorical_Ice_Pellets_surface"
-          Met_var_IsAvailable(43)=.true.
-        Met_var_names(44) = "Large_scale_precipitation_non-convective_surface_0_Hour_Accumulation"
-          Met_var_IsAvailable(44)=.true.
-        Met_var_names(45) = "Convective_precipitation_surface_0_Hour_Accumulation"
-          Met_var_IsAvailable(45)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif(MR_iwindformat.eq.7)then
-          ! CONUS 212 40km
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time1"     ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric3" ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"        ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"        ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric" !        float 
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric" !        float 
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric" !        float 
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric" ! float Pa/s
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"         !        float
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(10) = "Planetary_Boundary_Layer_Height_surface"
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11) = "u-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "v-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        Met_var_names(13) = "Frictional_Velocity_surface"
-          Met_var_IsAvailable(13)=.true.
-        !  14 = Displacement Height
-        Met_var_names(15) = "Snow_depth_surface"
-          Met_var_IsAvailable(15)=.true.
-        Met_var_names(16) = "Volumetric_Soil_Moisture_Content_depth_below_surface_layer"
-          Met_var_IsAvailable(16)=.true.
-        ! Atmospheric Structure
-        Met_var_names(23) = "Total_cloud_cover"
-          Met_var_IsAvailable(23)=.true.
-        !Met_var_names(23) = "Low_cloud_cover"
-        !  Met_var_IsAvailable(23)=.true.
-        Met_var_names(24) = "Convective_cloud_cover"
-          Met_var_IsAvailable(24)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"      !        float 
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "Specific_humidity_isobaric"
-          Met_var_IsAvailable(31)=.true.
-        Met_var_names(32) = "Cloud_mixing_ratio_isobaric"
-          Met_var_IsAvailable(32)=.true.
-        ! Precipitation
-        Met_var_names(40) = "Categorical_Rain_surface"
-          Met_var_IsAvailable(40)=.true.
-        Met_var_names(41) = "Categorical_Snow_surface"
-          Met_var_IsAvailable(41)=.true.
-        Met_var_names(42) = "Categorical_Freezing_Rain_surface"
-          Met_var_IsAvailable(42)=.true.
-        Met_var_names(43) = "Categorical_Ice_Pellets_surface"
-          Met_var_IsAvailable(43)=.true.
-        Met_var_names(45) = "Convective_Precipitation_Rate_surface"
-          Met_var_IsAvailable(45)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif(MR_iwindformat.eq.8)then
-          ! CONUS 218 (12km)
-          ! wget
-          ! ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/nam.20121231/nam.t00z.awphys${fh[$i]}.grb2.tm00
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"     ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric1" ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"        ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"        ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric" !        float 
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric" !        float 
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric" !        float 
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric" ! float Pa/s
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"         !        float
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(10) = "Planetary_Boundary_Layer_Height_surface"
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11) = "u-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "v-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        Met_var_names(13) = "Frictional_Velocity_surface"
-          Met_var_IsAvailable(13)=.true.
-        Met_var_names(15) = "Snow_depth_surface"
-          Met_var_IsAvailable(15)=.true.
-        Met_var_names(16) = "Volumetric_Soil_Moisture_Content_depth_below_surface_layer"
-          Met_var_IsAvailable(16)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"   !        float 
-          Met_var_IsAvailable(30)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-      elseif(MR_iwindformat.eq.9)then
-          ! CONUS 227 (5.08 km)
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time1"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric2" ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric" !        float 
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric" !        float 
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric" !        float 
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric" ! float Pa/s
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"         !        float
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(10) = "Planetary_Boundary_Layer_Height_surface"
-          Met_var_IsAvailable(10)=.true. 
-        Met_var_names(11) = "u-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true. 
-        Met_var_names(12) = "v-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true. 
-        Met_var_names(13) = "Frictional_Velocity_surface"
-          Met_var_IsAvailable(13)=.true. 
-        Met_var_names(15) = "Snow_depth_surface" 
-          Met_var_IsAvailable(15)=.true.
-        Met_var_names(16) = "Volumetric_Soil_Moisture_Content_depth_below_surface_layer"
-          Met_var_IsAvailable(16)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"   !        float 
-          Met_var_IsAvailable(30)=.true. 
-        Met_var_names(31) = "Specific_humidity_isobaric"
-          Met_var_IsAvailable(31)=.true.
-        Met_var_names(32) = "Cloud_mixing_ratio_isobaric" ! isobaric3
-          Met_var_IsAvailable(32)=.true.
-        Met_var_names(33) = "Snow_mixing_ratio_isobaric" ! isobaric3
-          Met_var_IsAvailable(33)=.true.
-        ! Precipitation
-        Met_var_names(40) = "Categorical_Rain_surface"
-          Met_var_IsAvailable(40)=.true.
-        Met_var_names(41) = "Categorical_Snow_surface"
-          Met_var_IsAvailable(41)=.true.
-        Met_var_names(42) = "Categorical_Freezing_Rain_surface"
-          Met_var_IsAvailable(42)=.true.
-        Met_var_names(43) = "Categorical_Ice_Pellets_surface"
-          Met_var_IsAvailable(43)=.true.
-        Met_var_names(44) = "Precipitation_rate_surface" !kg/m2/s
-          Met_var_IsAvailable(44)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-      elseif(MR_iwindformat.eq.10)then
-          ! NAM 242 11.25 km AK
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric2"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric"    !        float 
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric"    !        float 
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric"    !        float 
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric"  ! float
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"            !        float 
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(10) = "Planetary_Boundary_Layer_Height_surface"
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11) = "u-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "v-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        ! Atmospheric Structure
-        Met_var_names(23) = "Total_cloud_cover_entire_atmosphere"
-          Met_var_IsAvailable(23)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"      !        float 
-          Met_var_IsAvailable(30)=.true.
-        ! Precipitation
-        Met_var_names(40) = "Categorical_Rain_surface"
-          Met_var_IsAvailable(40)=.true.
-        Met_var_names(41) = "Categorical_Snow_surface"
-          Met_var_IsAvailable(41)=.true.
-        Met_var_names(42) = "Categorical_Freezing_Rain_surface"
-          Met_var_IsAvailable(42)=.true.
-        Met_var_names(43) = "Categorical_Ice_Pellets_surface"
-          Met_var_IsAvailable(43)=.true.
-        Met_var_names(44) = "Total_precipitation_surface_0_Hour_Accumulation"
-          Met_var_IsAvailable(44)=.true.
-        Met_var_names(45) = "Convective_precipitation_surface_0_Hour_Accumulation"
-          Met_var_IsAvailable(45)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif(MR_iwindformat.eq.11)then
-          ! NAM 196 2.5 km HI
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true. 
-        Met_dim_names(2) = "isobaric2"  ! pressure
-          Met_dim_IsAvailable(2)=.true. 
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true. 
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true. 
-
-        ! Mechanical / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric"    !        float 
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric"    !        float 
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric"    !        float 
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric"  ! float
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"            !        float 
-          Met_var_IsAvailable(5)=.true.
-
-        ! Surface
-        Met_var_names(10) = "Planetary_Boundary_Layer_Height_surface"
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11) = "u-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "v-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        Met_var_names(13) = "Frictional_Velocity_surface"
-          Met_var_IsAvailable(13)=.true.
-        !  14 = Displacement Height
-        Met_var_names(15) = "Snow_Cover_surface"
-          Met_var_IsAvailable(15)=.true.
-        Met_var_names(16) = "Soil_moisture_content_depth_below_surface_layer"
-          Met_var_IsAvailable(16)=.true.
-        Met_var_names(17) = "Surface_roughness_surface"
-          Met_var_IsAvailable(17)=.true.
-        ! Atmospheric Structure
-        Met_var_names(20) = "Pressure_cloud_base"
-          Met_var_IsAvailable(20)=.true.
-        Met_var_names(21) = "Pressure_cloud_tops"
-          Met_var_IsAvailable(21)=.true.
-        Met_var_names(23) = "Total_cloud_cover_entire_atmosphere"
-          Met_var_IsAvailable(23)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"      !        float 
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "Specific_humidity_isobaric"
-          Met_var_IsAvailable(31)=.true.
-        Met_var_names(32) = "Cloud_mixing_ratio_isobaric" ! isobaric3
-          Met_var_IsAvailable(32)=.true.
-        Met_var_names(33) = "Snow_mixing_ratio_isobaric" ! isobaric3
-          Met_var_IsAvailable(33)=.true.
-        ! Precipitation
-        Met_var_names(40) = "Categorical_Rain_surface"
-          Met_var_IsAvailable(40)=.true.
-        Met_var_names(41) = "Categorical_Snow_surface"
-          Met_var_IsAvailable(41)=.true.
-        Met_var_names(42) = "Categorical_Freezing_Rain_surface"
-          Met_var_IsAvailable(42)=.true.
-        Met_var_names(43) = "Categorical_Ice_Pellets_surface"
-          Met_var_IsAvailable(43)=.true.
-        Met_var_names(44) = "Precipitation_rate_surface" !kg/m2/s
-          Met_var_IsAvailable(44)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif(MR_iwindformat.eq.12)then
-          ! NAM 198 5.953 km AK
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.  
-
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric2"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric"    !        float 
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric"    !        float 
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric"    !        float 
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric"  ! float
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"            !        float 
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(10) = "Planetary_Boundary_Layer_Height_surface"
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11) = "u-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "v-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        Met_var_names(13) = "Frictional_Velocity_surface"
-          Met_var_IsAvailable(13)=.true.
-        Met_var_names(15) = "Snow_depth_surface"
-          Met_var_IsAvailable(15)=.true.
-        Met_var_names(16) = "Soil_moisture_content_depth_below_surface_layer"
-          Met_var_IsAvailable(16)=.true.
-        Met_var_names(17) = "Surface_roughness_surface"
-          Met_var_IsAvailable(17)=.true.
-        Met_var_names(18) = "Wind_speed_gust_surface"
-          Met_var_IsAvailable(18)=.true.
-        ! Atmospheric Structure
-        Met_var_names(20) = "Pressure_cloud_base"
-          Met_var_IsAvailable(20)=.true.
-        Met_var_names(21) = "Pressure_cloud_tops"
-          Met_var_IsAvailable(21)=.true.
-        Met_var_names(23) = "Total_cloud_cover_entire_atmosphere"
-          Met_var_IsAvailable(23)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"      !        float 
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "Specific_humidity_isobaric"
-          Met_var_IsAvailable(31)=.true.
-        Met_var_names(32) = "Cloud_mixing_ratio_isobaric" ! isobaric3
-          Met_var_IsAvailable(32)=.true.
-        Met_var_names(33) = "Snow_mixing_ratio_isobaric" ! isobaric3
-          Met_var_IsAvailable(33)=.true.
-        ! Precipitation
-        Met_var_names(40) = "Categorical_Rain_surface"
-          Met_var_IsAvailable(40)=.true.
-        Met_var_names(41) = "Categorical_Snow_surface"
-          Met_var_IsAvailable(41)=.true.
-        Met_var_names(42) = "Categorical_Freezing_Rain_surface"
-          Met_var_IsAvailable(42)=.true.
-        Met_var_names(43) = "Categorical_Ice_Pellets_surface"
-          Met_var_IsAvailable(43)=.true.
-        Met_var_names(44) = "Precipitation_rate_surface" !kg/m2/s
-          Met_var_IsAvailable(44)=.true.
-        Met_var_names(45) = "Convective_precipitation_surface_0_Hour_Accumulation" !kg/m2 or
-          Met_var_IsAvailable(45)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif(MR_iwindformat.eq.13)then
-          ! NAM 91 2.976 km AK
-          ! Note: the dimension names given below are those generated by netcdf-java 4.5
-          !       acting on the truncated grib files generated by get_nam91.sh which 
-          !       uses get_inv.pl to get just the grib layers needed.
-          !       This is relavent because the numbering of the isobaric dimensions
-          !       appears to be in the order they are processed in the grib file
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric"    !        float 
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric"    !        float 
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric"    !        float 
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric"  ! float
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"            !        float 
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(10) = "Planetary_Boundary_Layer_Height_surface"
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11) = "u-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "v-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        Met_var_names(13) = "Frictional_Velocity_surface"
-          Met_var_IsAvailable(13)=.true.
-        Met_var_names(15) = "Snow_depth_surface"
-          Met_var_IsAvailable(15)=.true.
-        Met_var_names(16) = "Volumetric_Soil_Moisture_Content_depth_below_surface_layer"
-          Met_var_IsAvailable(16)=.true.
-        Met_var_names(17) = "Surface_roughness_surface"
-          Met_var_IsAvailable(17)=.true.
-        Met_var_names(18) = "Wind_speed_gust_surface"
-          Met_var_IsAvailable(18)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"      !        float 
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "Specific_humidity_isobaric"
-          Met_var_IsAvailable(31)=.true.
-        Met_var_names(32) = "Cloud_mixing_ratio_isobaric" ! isobaric1
-          Met_var_IsAvailable(32)=.true.
-        Met_var_names(33) = "Snow_mixing_ratio_isobaric" ! isobaric1
-          Met_var_IsAvailable(33)=.true.
-        ! Precipitation
-        Met_var_names(40) = "Categorical_Rain_surface"
-          Met_var_IsAvailable(40)=.true.
-        Met_var_names(41) = "Categorical_Snow_surface"
-          Met_var_IsAvailable(41)=.true.
-        Met_var_names(42) = "Categorical_Freezing_Rain_surface"
-          Met_var_IsAvailable(42)=.true.
-        Met_var_names(43) = "Categorical_Ice_Pellets_surface"
-          Met_var_IsAvailable(43)=.true.
-        Met_var_names(44) = "Precipitation_rate_surface" !kg/m2/s
-          Met_var_IsAvailable(44)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-
-      elseif(MR_iwindformat.eq.14)then
-          ! CONUS 1227 (3.0 km)
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time1"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric2" ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric" !        float 
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric" !        float 
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric" !        float 
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric" ! float Pa/s
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"         !        float
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(10) = "Planetary_Boundary_Layer_Height_surface"
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11) = "u-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "v-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        Met_var_names(13) = "Frictional_Velocity_surface"
-          Met_var_IsAvailable(13)=.true.
-        Met_var_names(15) = "Snow_depth_surface"
-          Met_var_IsAvailable(15)=.true.
-        Met_var_names(16) = "Volumetric_Soil_Moisture_Content_depth_below_surface_layer"
-          Met_var_IsAvailable(16)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"   !        float 
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "Specific_humidity_isobaric"
-          Met_var_IsAvailable(31)=.true.
-        Met_var_names(32) = "Cloud_mixing_ratio_isobaric" ! isobaric3
-          Met_var_IsAvailable(32)=.true.
-        Met_var_names(33) = "Snow_mixing_ratio_isobaric" ! isobaric3
-          Met_var_IsAvailable(33)=.true.
-        ! Precipitation
-        Met_var_names(40) = "Categorical_Rain_surface"
-          Met_var_IsAvailable(40)=.true.
-        Met_var_names(41) = "Categorical_Snow_surface"
-          Met_var_IsAvailable(41)=.true.
-        Met_var_names(42) = "Categorical_Freezing_Rain_surface"
-          Met_var_IsAvailable(42)=.true.
-        Met_var_names(43) = "Categorical_Ice_Pellets_surface"
-          Met_var_IsAvailable(43)=.true.
-        Met_var_names(44) = "Precipitation_rate_surface" !kg/m2/s
-          Met_var_IsAvailable(44)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-      elseif (MR_iwindformat.eq.20.or.MR_iwindformat.eq.22) then
-           ! GFS 0.5 (or 0.25) deg from http://www.nco.ncep.noaa.gov/pmb/products/gfs/
-           ! or
-           ! http://motherlode.ucar.edu/native/conduit/data/nccf/com/gfs/prod/
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric3"   ! pressure (1.0e5-1.0e3 Pa or 1000 -> 10.0 hPa in 26 levels)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "lat"        ! y        (90.0 -> -90.0)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "lon"        ! x        (0.0 - 359.5)
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Momentum / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric"    ! float gpm
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric"    ! float m/s
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric"    ! float m/s
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric" ! float Pa/s
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"            ! float deg K
-          Met_var_IsAvailable(5)=.true.
-
-        ! Surface
-        Met_var_names(10) = "Planetary_Boundary_Layer_Height_surface"
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11) = "U-component_of_wind_height_above_ground" !(time, height_above_ground, lat, lon) 10, 80, 100
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "V-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        ! Atmospheric Structure
-        Met_var_names(22) = "Cloud_Top_Temperature"
-          Met_var_IsAvailable(22)=.true.
-        Met_var_names(23) = "Total_cloud_cover"
-          Met_var_IsAvailable(23)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"      ! float percent
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(32) = "Cloud_mixing_ratio"     ! float kg/kg
-          Met_var_IsAvailable(32)=.true.
-        ! Precipitation
-        Met_var_names(40) = "Categorical_Rain"
-          Met_var_IsAvailable(40)=.true.
-        Met_var_names(41) = "Categorical_Snow"
-          Met_var_IsAvailable(41)=.true.
-        Met_var_names(42) = "Categorical_Freezing_Rain"
-          Met_var_IsAvailable(42)=.true.
-        Met_var_names(43) = "Categorical_Ice_Pellets"
-          Met_var_IsAvailable(43)=.true.
-        Met_var_names(44) = "Precipitation_rate"     ! float liquid surface precip kg/m2/s
-          Met_var_IsAvailable(44)=.true.
-        Met_var_names(45) = "Convective_Precipitation_Rate"       ! float liquid convective precip kg/m2/s
-          Met_var_IsAvailable(45)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-      elseif (MR_iwindformat.eq.21) then
-           ! GFS 1.0 deg from http://www.nco.ncep.noaa.gov/pmb/products/gfs/
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric3"   ! pressure (1.0e5-1.0e3 Pa or 1000 -> 10.0 hPa in 26 levels)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "lat"        ! y        (90.0 -> -90.0)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "lon"        ! x        (0.0 - 359.5)
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Momentum / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric"    ! float gpm
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric"    ! float m/s
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric"    ! float m/s
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric" ! float Pa/s
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"            ! float deg K
-          Met_var_IsAvailable(5)=.true.
-
-        ! Surface
-        Met_var_names(10) = "Planetary_Boundary_Layer_Height_surface"
-          Met_var_IsAvailable(10)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"      ! float percent
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(32) = "Cloud_mixing_ratio_isobaric"     ! float kg/kg
-          Met_var_IsAvailable(32)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-       elseif (MR_iwindformat.eq.23) then
-         ! NCEP / DOE reanalysis 2.5 degree files 
-         ! https://rda.ucar.edu/datasets/ds091.0
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric"   ! pressure (1000 -> 10 hPa in 17 levels)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "lat"        ! y        (90.0 -> -90.0)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "lon"        ! x        (0.0 -> 375.5)
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Momentum / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric"        ! float m^2/s^2
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric"       ! float m/s
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric"       ! float m/s
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_isobaric"       ! float Pa/s
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"        ! float K
-          Met_var_IsAvailable(5)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"         ! float percent
-          Met_var_IsAvailable(30)=.true.
-        ! Precipitation
-        Met_var_names(44) = "Precipitation_rate_surface"         ! float kg/m2/s (all 0's)
-          Met_var_IsAvailable(44)=.true.
-
-        fill_value_sp(MR_iwindformat) = 9.999_sp
-
-       elseif (MR_iwindformat.eq.24) then
-         ! NASA-MERRA-2 reanalysis 0.625 x 0.5 degree files 
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"       ! time
-          Met_dim_IsAvailable(1)=.true. 
-        Met_dim_names(2) = "lev"   ! pressure (1000 -> 0.1 hPa in 42 levels)
-          Met_dim_IsAvailable(2)=.true. 
-        Met_dim_names(3) = "lat"        ! y        (89.375 -> -89.375)
-          Met_dim_IsAvailable(3)=.true. 
-        Met_dim_names(4) = "lon"        ! x        (-179.375 -> 179.375)
-          Met_dim_IsAvailable(4)=.true. 
-
-        Met_dim_fac(1) = 1.0_sp/60.0_sp
-
-        ! Momentum / State variables
-        ! Available in MERRA2_400.inst3_3d_asm_Np.YYYYMMDD.nc4
-        !  from https://goldsmr5.gesdisc.eosdis.nasa.gov/data/MERRA2/M2I3NPASM.5.12.4
-        Met_var_names(1) = "H"            ! float m^2/s^2
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "U"            ! float m/s
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "V"            ! float m/s
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "OMEGA"        ! float Pa/s
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "T"            ! float K
-          Met_var_IsAvailable(5)=.true.
-
-        ! Surface
-        !Met_var_names(10) = "PBLH"        ! float Planetary boundary layer height (m)
-        !  Met_var_IsAvailable(10)=.true.
-        !Met_var_names(11) = "U10M"
-        !  Met_var_IsAvailable(11)=.true.
-        !Met_var_names(12) = "V10M"
-        !  Met_var_IsAvailable(12)=.true.
-        !Met_var_names(14) = "DISPH"
-        !  Met_var_IsAvailable(14)=.true.
-        !Met_var_names(16) = "GWETTOP"
-        !  Met_var_IsAvailable(16)=.true.
-        !Met_var_names(19) = "TS"
-        !  Met_var_IsAvailable(19)=.true.
-        !! Atmospheric Structure
-        !Met_var_names(21) = "CLDPRS"
-        !  Met_var_IsAvailable(21)=.true.
-        !Met_var_names(22) = "CLDTMP"
-        !  Met_var_IsAvailable(22)=.true.
-        !Met_var_names(23) = "CLDTOT"
-        !  Met_var_IsAvailable(23)=.true.
-        !Met_var_names(24) = "CLDLOW"
-        !  Met_var_IsAvailable(24)=.true.
-
-        ! Moisture
-        ! Available in MERRA2_400.inst3_3d_asm_Np.YYYYMMDD.nc4
-        !  from https://goldsmr5.gesdisc.eosdis.nasa.gov/data/MERRA2/M2I3NPASM.5.12.4
-        Met_var_names(30) = "RH"          ! float percent
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "QV"          ! float cloud liquid water mixing ratio kg/kg
-          Met_var_IsAvailable(31)=.true.
-        Met_var_names(32) = "QL"          ! float cloud liquid water mixing ratio kg/kg
-          Met_var_IsAvailable(32)=.true.
-        Met_var_names(33) = "QI"          ! float cloud ice mixing ratio kg/kg
-          Met_var_IsAvailable(33)=.true.
-
-        ! Precipitation: Note:This is on a different time grid 90 minutes offset
-        ! Available in MERRA2_400.tavg3_3d_mst_Np.YYYYMMDD.nc4
-        !  from https://goldsmr5.gesdisc.eosdis.nasa.gov/data/MERRA2/M2T3NPMST.5.12.4/
-        !Met_var_names(44) = "PFLLSAN"     ! float liquid large-scale + anvil precip kg/m2/s
-        !  Met_var_IsAvailable(44)=.true.
-        !Met_var_names(45) = "PFLCU"       ! float liquid convective precip kg/m2/s
-        !  Met_var_IsAvailable(45)=.true.
-        !Met_var_names(46) = "PFILSAN"     ! float ice large-scale + anvil precip kg/m2/s
-        !  Met_var_IsAvailable(46)=.true.
-        !Met_var_names(47) = "PFICU"       ! float ice convective precip kg/m2/s
-        !  Met_var_IsAvailable(47)=.true.
-
-        fill_value_sp(MR_iwindformat) = 1.0e15_sp
-
-        !Met_var_conversion_factor(44) = 1.0_sp/1.0e3_sp
-
-       elseif (MR_iwindformat.eq.25) then
+      if (MR_iwindformat.eq.25) then
          ! NCEP/NCAR reanalysis 2.5 degree files 
          ! https://rda.ucar.edu/datasets/ds090.0
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "level"      ! pressure (17 levels 1000 -> 10)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "lat"        ! y        (90.0 -> -90.0)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "lon"        ! x        (0.0 -> 357.5)
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Momentum / State variables
-        Met_var_names(1) = "hgt"        ! short m^2/s^2 (32066.f,1.f)
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "uwnd"       ! short m/s (202.66f,0.01f)
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "vwnd"       ! short m/s (202.66f,0.01f)
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "omega"      ! short Pa/s (29.765f,0.001f)
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "air"        ! short K (477.66f,0.01f)
-          Met_var_IsAvailable(5)=.true.
-        ! Atmospheric Structure
-        Met_var_names(20) = "pres"      ! short pres at low cloud bottom Pa(327650.f,10.f)
-          Met_var_IsAvailable(20)=.true.
-        Met_var_names(21) = "pres"      ! short pres at low cloud top Pa(327650.f,10.f)
-          Met_var_IsAvailable(21)=.true.
-        ! Moisture
-        Met_var_names(30) = "rhum"       ! short  (302.66f,0.01f)
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "shum"      ! short SpecHum ~ mixing ratio kg/kg(0.032666f,1.e-06f)
-          Met_var_IsAvailable(31)=.true.
-        Met_var_names(32) = "shum"      ! short should really be QL (liquid)
-          Met_var_IsAvailable(32)=.true.
-        ! Precipitation
-        Met_var_names(44) = "prate"      ! short surface precipitation rate (kg/m2/s) (0.0032765f,1.e-07f)
-          Met_var_IsAvailable(44)=.true.
-        Met_var_names(45) = "cprat"     ! short surface convective precip kg/m2/s (0.0031765f,1.e-07f)
-          Met_var_IsAvailable(45)=.true.
 
         iwf25_scale_facs = 0.0_sp
         iwf25_offsets    = 0.0_sp
@@ -1115,486 +79,6 @@
         iwf25_scale_facs(44) = 1.0e-7_sp ; iwf25_offsets(44) = 0.0032765_sp ! prate
         iwf25_scale_facs(45) = 1.0e-7_sp ; iwf25_offsets(45) = 0.0031765_sp ! cprat
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-       elseif (MR_iwindformat.eq.26) then
-         ! JRA-55 reanalysis 1.25 degree files 
-         ! https://rda.ucar.edu/datasets/ds628.0/
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "initial_time0_hours"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "lv_ISBL1"      ! pressure (17 levels 1000 -> 10)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "g0_lat_2"        ! y        (90.0 -> -90.0)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "g0_lat_2"        ! x        (0.0 -> 357.5)
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Momentum / State variables
-        Met_var_names(1) = "HGT_GDS0_ISBL"        ! short m^2/s^2 (32066.f,1.f)
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "UGRD_GDS0_ISBL"       ! short m/s (202.66f,0.01f)
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "VGRD_GDS0_ISBL"       ! short m/s (202.66f,0.01f)
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "VVEL_GDS0_ISBL"      ! short Pa/s (29.765f,0.001f)
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "TMP_GDS0_ISBL"        ! short K (477.66f,0.01f)
-          Met_var_IsAvailable(5)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-       elseif (MR_iwindformat.eq.27) then
-         ! NOAA-CIRES reanalysis 2.5 degree files 
-         ! https://rda.ucar.edu/datasets/ds131.2/
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "initial_time0_hours"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "lv_ISBL1"      ! pressure (24 levels 10 -> 1000)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "g0_lat_2"      ! y        (90.0 -> -90.0)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "g0_lon_3"      ! x        (0.0 -> 378.0)
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Momentum / State variables
-        Met_var_names(1) = "HGT_GDS0_ISBL_10"        ! float m^2/s^2
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "U_GRD_GDS0_ISBL_10"      ! float m/s
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "V_GRD_GDS0_ISBL_10"      ! float m/s
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "V_VEL_GDS0_ISBL_10"      ! float Pa/s 
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "TMP_GDS0_ISBL_10"        ! float K
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(10) = "HPBL"
-          Met_var_IsAvailable(10)=.true.
-        ! Atmospheric Structure
-        Met_var_names(22) = "TMP"
-          Met_var_IsAvailable(22)=.true.
-        Met_var_names(23) = "TCDC"
-          Met_var_IsAvailable(23)=.true.
-        ! Moisture
-        Met_var_names(30) = "R_H_GDS0_ISBL_10"     ! float
-          Met_var_IsAvailable(30)=.true.
-        ! Precipitation
-        Met_var_names(40) = "CRAIN"
-          Met_var_IsAvailable(40)=.true.
-        Met_var_names(44) = "PRATE"
-          Met_var_IsAvailable(44)=.true.
-        Met_var_names(45) = "CPRAT"
-          Met_var_IsAvailable(45)=.true.
-
-        fill_value_sp(MR_iwindformat) = 1.e+20_sp
-
-       elseif (MR_iwindformat.eq.28) then
-         ! ECMWF Interim Reanalysis (ERA-Interim)
-         ! https://rda.ucar.edu/datasets/ds627.0
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric"      ! pressure (37 levels 1000 -> 1)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "lat"        ! y        (90.0 -> -90.0)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "lon"        ! x        (0.0 -> 357.5)
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Momentum / State variables
-        Met_var_names(1) = "Geopotential_isobaric"        ! m^2/s^2
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "U_component_of_wind_isobaric"       ! m/s
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "V_component_of_wind_isobaric"       ! m/s
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_isobaric"      ! Pa/s
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"        ! K 
-          Met_var_IsAvailable(5)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"       ! 
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "Specific_humidity_isobaric"      ! 
-          Met_var_IsAvailable(31)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
-        Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
-
-       elseif (MR_iwindformat.eq.29) then
-         ! ECMWF ERA5
-         ! https://rda.ucar.edu/datasets/ds630.0
-         ! Note: files are provided as one variable per file
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"       ! time (provided in hours since 1990-1-1 00Z)
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "level"      ! pressure (37 levels 1000 -> 1)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "latitude"        ! y        (90.0 -> -90.0)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "longitude"        ! x        (0.0 -> 357.5)
-          Met_dim_IsAvailable(4)=.true.
- 
-        !  Potential vorticity  e5.oper.an.pl.128_060_pv.regn320sc.2018062000_2018062023.nc
-        !  Specific rain water content  e5.oper.an.pl.128_075_crwc.regn320sc.2018062000_2018062023.nc
-        !  Secific snow water content  e5.oper.an.pl.128_076_cswc.regn320sc.2018062000_2018062023.nc
-        !  Geopotential  e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
-        !  Temperature  e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
-        !  U component of wind  e5.oper.an.pl.128_131_u.regn320uv.2018062000_2018062023.nc
-        !  V component of wind  e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
-        !  Specific humidity  e5.oper.an.pl.128_133_q.regn320sc.2018062000_2018062023.nc
-        !  Vertical velocity  e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
-        !  Vorticity  e5.oper.an.pl.128_138_vo.regn320sc.2018062000_2018062023.nc
-        !  Divergence  e5.oper.an.pl.128_155_d.regn320sc.2018062000_2018062023.nc
-        !  Relative humidity  e5.oper.an.pl.128_157_r.regn320sc.2018062000_2018062023.nc
-        !  Ozone nass mixing ratio e5.oper.an.pl.128_203_o3.regn320sc.2018062000_2018062023.nc
-        !  Specific cloud liquid water content e5.oper.an.pl.128_246_clwc.regn320sc.2018062000_2018062023.nc
-        !  Specific cloud ice water content e5.oper.an.pl.128_247_ciwc.regn320sc.2018062000_2018062023.nc
-        !  Cloud cover  e5.oper.an.pl.128_248_cc.regn320sc.2018062000_2018062023.nc
-
-
-       elseif (MR_iwindformat.eq.31) then
-         ! Catania forecast
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "frtime"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "level"      ! pressure (17 levels 1000 -> 100)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "lat"      ! y        (34.5 -> -40.32)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "lon"      ! x        (12.5 -> 18.0)
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Momentum / State variables
-        Met_var_names(1) = "H"      ! float m
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u"      ! float m/s
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v"      ! float m/s
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(5) = "T"        ! float K
-          Met_var_IsAvailable(5)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-       elseif (MR_iwindformat.eq.32) then
-         ! Air Force Weather Agency subcenter = 0
-         ! GALWEM
-
-!        Met_dim_IsAvailable=.false.
-!        Met_var_IsAvailable=.false.
-!
-!        Met_dim_names(1) = "time"       ! time
-!          Met_dim_IsAvailable(1)=.true. 
-!        Met_dim_names(2) = "isobaric"       ! pressure (39 levels 1013 -> 0.05)
-!          Met_dim_IsAvailable(2)=.true. 
-!        Met_dim_names(3) = "lat"      ! y        (34.5 -> -40.32)
-!          Met_dim_IsAvailable(3)=.true. 
-!        Met_dim_names(4) = "lon"      ! x        (12.5 -> 18.0)
-!          Met_dim_IsAvailable(4)=.true. 
-!
-!        ! Momentum / State variables
-!        Met_var_names(1) = "Geopotential_height_isobaric"      ! float m
-!          Met_var_IsAvailable(1)=.true.
-!        Met_var_names(2) = "u-component_of_wind_isobaric"      ! float m/s
-!          Met_var_IsAvailable(2)=.true.
-!        Met_var_names(3) = "v-component_of_wind_isobaric"      ! float m/s
-!          Met_var_IsAvailable(3)=.true.
-!        Met_var_names(4) = "Vertical_velocity_pressure_isobaric"       ! float Pa/s
-!          Met_var_IsAvailable(4)=.true.
-!        Met_var_names(5) = "Temperature_isobaric"        ! float K
-!          Met_var_IsAvailable(5)=.true.
-!        ! Surface
-!        Met_var_names(11) = "u-component_of_wind_height_above_ground"
-!          Met_var_IsAvailable(11)=.true.
-!        Met_var_names(12) = "v-component_of_wind_height_above_ground"
-!          Met_var_IsAvailable(12)=.true.
-!        Met_var_names(15) = "Water_equivalent_of_accumulated_snow_depth_surface"
-!          Met_var_IsAvailable(15)=.false. ! Need to convert from kg/m2 to m
-!        Met_var_names(16) = "Column-integrated_soil_moisture_depth_below_surface"
-!          Met_var_IsAvailable(16)=.false. ! Need to convert from kg/m2 to vol%
-!        ! Moisture
-!        Met_var_names(30) = "Relative_humidity_isobaric"      !        float 
-!          Met_var_IsAvailable(30)=.true.
-!        ! Precipitation
-!        Met_var_names(44) = "Large_scale_precipitation_rate_surface" !kg/m2/s
-!          Met_var_IsAvailable(44)=.true.
-!        Met_var_names(45) = "Convective_precipitation_rate_surface" !kg/m2 or
-!          Met_var_IsAvailable(45)=.true.
-!
-!        fill_value_sp(MR_iwindformat) = -9999._sp ! actually NaNf
-
-
-
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric"       ! pressure (39 levels 1013 -> 0.05)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "lat"      ! y        (34.5 -> -40.32)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "lon"      ! x        (12.5 -> 18.0)
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Momentum / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric"      ! float m
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric"      ! float m/s
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric"      ! float m/s
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric"       ! float Pa/s
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"        ! float K
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(11) = "u-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "v-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        Met_var_names(15) = "Water_equivalent_of_accumulated_snow_depth_surface"
-          Met_var_IsAvailable(15)=.false. ! Need to convert from kg/m2 to m
-        Met_var_names(16) = "Column-integrated_soil_moisture_depth_below_surface"
-          Met_var_IsAvailable(16)=.false. ! Need to convert from kg/m2 to vol%
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"      !        float 
-          Met_var_IsAvailable(30)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999._sp ! actually NaNf
-
-
-       elseif (MR_iwindformat.eq.33) then
-         ! CCSM3.0 Community Atmosphere Model (CAM)
-         ! http://www.cesm.ucar.edu/models/atm-cam/
-         ! peleoclimate monthly averages
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "lev"      ! pressure (26 levels ~1000 -> ~3.5)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "lat"      ! y        (34.5 -> -40.32)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "lon"      ! x        (12.5 -> 18.0)
-          Met_dim_IsAvailable(4)=.true.
-
-        Met_dim_fac(1) = 24.0
-
-        ! Momentum / State variables
-        Met_var_names(1) = "Z3"      ! float m
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "U"      ! float m/s
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "V"      ! float m/s
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "OMEGA"    ! float Pa/s
-          Met_var_IsAvailable(4)=.true. 
-        Met_var_names(5) = "T"        ! float K
-          Met_var_IsAvailable(5)=.true.
-
-        Met_var_names(30) = "RELHUM"     ! float
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "Q"     ! float
-          Met_var_IsAvailable(31)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
-       elseif (MR_iwindformat.eq.40) then
-         ! NASA-GEOS Cp
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "lev"   ! pressure (1000 -> 1 hPa in 37 levels)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "lat"        ! y        (-90.0 -> 90.0) 361
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "lon"        ! x        (-180.0 -> 179.375) 576
-          Met_dim_IsAvailable(4)=.true.
-
-        Met_dim_fac(1) = 1.0_sp/60.0_sp
-
-        ! Momentum / State variables
-        Met_var_names(1) = "H"           ! float m^2/s^2
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "U"           ! float m/s
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "V"           ! float m/s
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "OMEGA"       ! float Pa/s
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "T"           ! float K
-          Met_var_IsAvailable(5)=.true.
-
-        fill_value_sp(MR_iwindformat) = 1.0e15_sp
-
-       elseif (MR_iwindformat.eq.41) then
-         ! NASA-GEOS Np
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "lev"   ! pressure (1000 -> 0.1 hPa in 42 levels)
-          Met_dim_IsAvailable(2)=.true.      
-        Met_dim_names(3) = "lat"        ! y        (-90.0 -> 90.0) 721 (0.25)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "lon"        ! x        (-180.0 -> 179.6875) 1152 (0.31250)
-          Met_dim_IsAvailable(4)=.true.     
-
-        Met_dim_fac(1) = 1.0_sp/60.0_sp
-
-        ! Momentum / State variables
-        Met_var_names(1) = "H"           ! float m^2/s^2
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "U"           ! float m/s
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "V"           ! float m/s
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "OMEGA"       ! float Pa/s
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "T"           ! float K
-          Met_var_IsAvailable(5)=.true.
-
-        fill_value_sp(MR_iwindformat) = 1.0e15_sp
-
-       elseif (MR_iwindformat.eq.50) then
-         ! WRF - output
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "Time"       ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "bottom_top"      ! pressure (24 levels 10 -> 1000)
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "south_north"      ! y        (90.0 -> -90.0)
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "west_east"      ! x        (0.0 -> 378.0)
-          Met_dim_IsAvailable(4)=.true.
-
-        ! for pressure, read "P"  :: perturbation pressure
-        !               and  "PB" :: base pressure
-
-        ! for geopotential, read "PH"  :: perturbation geopotential
-        !                   and  "PHB" :: base-state geopotential
-
-        ! Momentum / State variables
-        Met_var_names(1) = "PHB"        ! float m^2/s^2
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "U"      ! float m/s
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "V"      ! float m/s
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "W"      ! float m/s
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "T"      ! float K perturbation potential temperature (theta-t0)
-          Met_var_IsAvailable(5)=.true.
-        Met_var_names(6) = "PB"
-          Met_var_IsAvailable(6)=.true.
-
-        ! Surface
-        Met_var_names(10) = "PBLH"
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11) = "U10"
-          Met_var_IsAvailable(11)=.true.
-          Met_var_ndim(11)=3
-        Met_var_names(12) = "V10"
-          Met_var_IsAvailable(12)=.true.
-          Met_var_ndim(12)=3
-
-        Met_var_names(13) = "UST"
-          Met_var_IsAvailable(13)=.true.
-        Met_var_names(15) = "SNOWH"
-          Met_var_IsAvailable(15)=.true.
-
-        Met_var_names(16) = "SMOIS" !Soil moisture m3 m-3
-          Met_var_IsAvailable(16)=.true.
-        ! Moisture
-        Met_var_names(31) = "QVAPOR" !QV (specific humidity)
-          Met_var_IsAvailable(31)=.true.
-        ! Precipitation
-        Met_var_names(44) = "RAINC"   ! ACCUMULATED TOTAL CUMULUS PRECIPITATION in mm
-          Met_var_IsAvailable(44)=.true.
-        Met_var_names(45) = "RAINNC"  ! ACCUMULATED TOTAL GRID SCALE PRECIPITATION in mm
-          Met_var_IsAvailable(45)=.true.
-
-        fill_value_sp(MR_iwindformat) = 1.e+20_sp
-
-        Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
-
-      elseif(MR_iwindformat.eq.51)then
-          ! NAM 198 5.953 km AK
-
-        Met_dim_IsAvailable=.false.
-        Met_var_IsAvailable=.false.
-
-        Met_dim_names(1) = "time1"      ! time
-          Met_dim_IsAvailable(1)=.true.
-        Met_dim_names(2) = "isobaric"  ! pressure
-          Met_dim_IsAvailable(2)=.true.
-        Met_dim_names(3) = "y"         ! y
-          Met_dim_IsAvailable(3)=.true.
-        Met_dim_names(4) = "x"         ! x
-          Met_dim_IsAvailable(4)=.true.
-
-        ! Mechanical / State variables
-        Met_var_names(1) = "Geopotential_height_isobaric"    !        float 
-          Met_var_IsAvailable(1)=.true.
-        Met_var_names(2) = "u-component_of_wind_isobaric"    !        float 
-          Met_var_IsAvailable(2)=.true.
-        Met_var_names(3) = "v-component_of_wind_isobaric"    !        float 
-          Met_var_IsAvailable(3)=.true.
-        Met_var_names(4) = "Vertical_velocity_pressure_isobaric"  ! float
-          Met_var_IsAvailable(4)=.true.
-        Met_var_names(5) = "Temperature_isobaric"            !        float 
-          Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_names(10) = "Planetary_boundary_layer_height_surface"
-          Met_var_IsAvailable(10)=.true.
-        Met_var_names(11) = "u-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(11)=.true.
-        Met_var_names(12) = "v-component_of_wind_height_above_ground"
-          Met_var_IsAvailable(12)=.true.
-        Met_var_names(15) = "Snow_depth_surface"
-          Met_var_IsAvailable(15)=.true.
-        Met_var_names(23) = "Total_cloud_cover_entire_atmosphere"
-          Met_var_IsAvailable(23)=.true.
-        ! Moisture
-        Met_var_names(30) = "Relative_humidity_isobaric"      !        float 
-          Met_var_IsAvailable(30)=.true.
-        Met_var_names(31) = "Specific_humidity_isobaric"
-          Met_var_IsAvailable(31)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999._sp ! actually NaNf
-
-      else
-        ! Not a recognized MR_iwindformat
-        ! call reading of template windfile variable names
-        write(MR_global_info,*)"windfile format not recognized."
-        stop 1
       endif
 
       if(Met_var_IsAvailable(4)) Have_Vz = .true.
@@ -1614,7 +98,7 @@
         do ivar = 1,MR_MAXVARS
           if (.not.Met_var_IsAvailable(ivar)) cycle  ! Only look at variables that are available
           if (Met_var_ndim(ivar).ne.4) cycle         !  and only ones with a 'level' dimension
-          invar = Met_var_names(ivar)
+          invar = Met_var_NC_names(ivar)
           nSTAT = nf90_inq_varid(ncid,invar,in_var_id)  ! get the var_id for this named variable
           if(nSTAT.ne.NF90_NOERR)then
             write(MR_global_error,*)'MR WARNING: inq_varid: ',invar,nf90_strerror(nSTAT)
@@ -1635,7 +119,7 @@
           if (var_ndims.ne.Met_var_ndim(ivar))then
             write(MR_global_error,*)'MR ERROR: The actual number of dimensions differs from'
             write(MR_global_error,*)'          what is expected'
-            write(MR_global_error,*)'      Variable : ',ivar,Met_var_names(ivar)
+            write(MR_global_error,*)'      Variable : ',ivar,Met_var_NC_names(ivar)
             write(MR_global_error,*)'      Expected : ',Met_var_ndim(ivar)
             write(MR_global_error,*)'      Found    : ',var_ndims
             stop 1
@@ -1665,80 +149,88 @@
               nx_fullmet = dimlen
               xdim_id    = var_dimIDs(i_dim)
             endif
-            !nSTAT = nf90_inq_varid(ncid,dimname,var_id) ! get the variable associated with this dim
-            !if(nSTAT.ne.NF90_NOERR)then
-            !  write(MR_global_error,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-            !  write(MR_global_log  ,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-            !  stop 1
-            !endif
-            !! Check if we need to read into a float or a double
-            !nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = var_xtype)
-            !if(nSTAT.ne.NF90_NOERR)then
-            !  write(MR_global_error,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-            !  write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-            !  stop 1
-            !endif
-            !allocate(x_fullmet_sp(0:nx_fullmet+1))
-            !if(var_xtype.eq.NF90_FLOAT)then
-            !  allocate(dum1d_sp(dimlen))
-            !  nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
-            !         start = (/1/),count = (/dimlen/))
-            !  if(nSTAT.ne.NF90_NOERR)then
-            !    write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-            !    write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-            !    stop 1
-            !  endif
-            !  ! copy to local variable
-            !  x_fullmet_sp(1:nx_fullmet) = dum1d_sp(1:nx_fullmet)
-            !  deallocate(dum1d_sp)
-            !elseif(var_xtype.eq.NF90_DOUBLE)then
-            !  allocate(dum1d_dp(dimlen))
-            !  nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
-            !         start = (/1/),count = (/dimlen/))
-            !  if(nSTAT.ne.NF90_NOERR)then
-            !    write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-            !    write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-            !    stop 1
-            !  endif
-            !  ! copy to local variable
-            !  x_fullmet_sp(1:nx_fullmet) = real(dum1d_dp(1:nx_fullmet),kind=sp)
-            !  deallocate(dum1d_dp)
-            !else
-            !  write(MR_global_error,*)'MR ERROR: Cannot recognize variable type for x'
-            !  stop 5
-            !endif
-            !! Check the units
-            !nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
-            !                               "units",xtype, length, attnum)
-            !if(nSTAT.ne.NF90_NOERR)then
-            !  write(MR_global_error,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
-            !  write(MR_global_log  ,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
-            !else
-            !  nSTAT = nf90_get_att(ncid, var_id,"units",ustring)
-            !  if(nSTAT.ne.NF90_NOERR) then
-            !    write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-            !    write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-            !    stop 1
-            !  endif
-            !  if(index(ustring,'km').gt.0.or.&
-            !     index(ustring,'kilo').gt.0)then
-            !    ! This is a projected grid
-            !    IsLatLon_MetGrid  = .false.
-            !  elseif(index(ustring,'deg').gt.0)then
-            !    ! This is a lon/lat grid
-            !    IsLatLon_MetGrid  = .true.
-            !  else
-            !    write(MR_global_error,*)"MR ERROR: Cannot determine if the grid is lon/lat or projected"
-            !    stop 5
-            !  endif
-            !endif
-            !! Finally, check for orientation
-            !if(x_fullmet_sp(1).lt.x_fullmet_sp(2))then
-            !  x_inverted = .true.
-            !else
-            !  x_inverted = .false.
-            !endif
-  
+            nSTAT = nf90_inq_varid(ncid,dimname,var_id) ! get the variable associated with this dim
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
+              stop 1
+            endif
+            ! Check if we need to read into a float or a double
+            nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = var_xtype)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
+              stop 1
+            endif
+            allocate(x_fullmet_sp(0:nx_fullmet+1))
+            if(var_xtype.eq.NF90_FLOAT)then
+              allocate(dum1d_sp(dimlen))
+              nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
+                     start = (/1/),count = (/dimlen/))
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                stop 1
+              endif
+              ! copy to local variable
+              x_fullmet_sp(1:nx_fullmet) = dum1d_sp(1:nx_fullmet)
+              deallocate(dum1d_sp)
+            elseif(var_xtype.eq.NF90_DOUBLE)then
+              allocate(dum1d_dp(dimlen))
+              nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
+                     start = (/1/),count = (/dimlen/))
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                stop 1
+              endif
+              ! copy to local variable
+              x_fullmet_sp(1:nx_fullmet) = real(dum1d_dp(1:nx_fullmet),kind=sp)
+              deallocate(dum1d_dp)
+            else
+              write(MR_global_error,*)'MR ERROR: Cannot recognize variable type for x'
+              stop 5
+            endif
+            ! Check the units
+            nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
+                                           "units",xtype, length, attnum)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
+            else
+              nSTAT = nf90_get_att(ncid, var_id,"units",ustring)
+              if(nSTAT.ne.NF90_NOERR) then
+                write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                stop 1
+              endif
+              if(index(ustring,'km').gt.0.or.&
+                 index(ustring,'kilo').gt.0)then
+                ! This is a projected grid
+                IsLatLon_MetGrid  = .false.
+              elseif(index(ustring,'deg').gt.0)then
+                ! This is a lon/lat grid
+                IsLatLon_MetGrid  = .true.
+              else
+                write(MR_global_error,*)"MR ERROR: Cannot determine if the grid is lon/lat or projected"
+                stop 5
+              endif
+            endif
+            ! Finally, check for orientation
+            if(x_fullmet_sp(1).lt.x_fullmet_sp(2))then
+              x_inverted = .true.
+            else
+              x_inverted = .false.
+            endif
+            allocate(MR_dx_met(nx_fullmet))
+            x_start = x_fullmet_sp(1)
+            dx_met_const = x_fullmet_sp(2)-x_fullmet_sp(1)
+            x_fullmet_sp(0)            = x_fullmet_sp(1)          - dx_met_const
+            x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(nx_fullmet) + dx_met_const
+            do i = 1,nx_fullmet
+              MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+            enddo 
+ 
             i_dim = 2  ! get y info
             nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
                          name =  dimname, &
@@ -1752,7 +244,102 @@
               ny_fullmet = dimlen
               ydim_id    = var_dimIDs(i_dim)
             endif
-  
+
+            nSTAT = nf90_inq_varid(ncid,dimname,var_id) ! get the variable associated with this dim
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
+              stop 1
+            endif
+            ! Check if we need to read into a float or a double
+            nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = var_xtype)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
+              stop 1
+            endif
+            allocate(y_fullmet_sp(0:ny_fullmet+1))
+            if(var_xtype.eq.NF90_FLOAT)then
+              allocate(dum1d_sp(dimlen))
+              nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
+                     start = (/1/),count = (/dimlen/))
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                stop 1
+              endif
+              ! copy to local variable
+              y_fullmet_sp(1:ny_fullmet) = dum1d_sp(1:ny_fullmet)
+              deallocate(dum1d_sp)
+            elseif(var_xtype.eq.NF90_DOUBLE)then
+              allocate(dum1d_dp(dimlen))
+              nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
+                     start = (/1/),count = (/dimlen/))
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                stop 1
+              endif
+              ! copy to local variable
+              y_fullmet_sp(1:ny_fullmet) = real(dum1d_dp(1:ny_fullmet),kind=sp)
+              deallocate(dum1d_dp)
+            else
+              write(MR_global_error,*)'MR ERROR: Cannot recognize variable type for x'
+              stop 5
+            endif
+            ! Check the units
+            nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
+                                           "units",xtype, length, attnum)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
+            else
+              nSTAT = nf90_get_att(ncid, var_id,"units",ustring)
+              if(nSTAT.ne.NF90_NOERR) then
+                write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                stop 1
+              endif
+              if(index(ustring,'km').gt.0.or.&
+                 index(ustring,'kilo').gt.0)then
+                ! This is a projected grid
+                IsLatLon_MetGrid  = .false.
+              elseif(index(ustring,'deg').gt.0)then
+                ! This is a lon/lat grid
+                IsLatLon_MetGrid  = .true.
+              else
+                write(MR_global_error,*)"MR ERROR: Cannot determine if the grid is lon/lat or projected"
+                stop 5
+              endif
+            endif
+            ! check for orientation
+            if(y_fullmet_sp(1).lt.y_fullmet_sp(2))then
+              y_inverted = .true.
+            else
+              y_inverted = .false.
+            endif
+            allocate(MR_dy_met(ny_fullmet))
+            y_start = y_fullmet_sp(1)
+            dy_met_const = y_fullmet_sp(2)-y_fullmet_sp(1)
+            y_fullmet_sp(0)            = y_fullmet_sp(1)          - dy_met_const
+            y_fullmet_sp(ny_fullmet+1) = y_fullmet_sp(ny_fullmet) + dy_met_const
+            do i = 1,ny_fullmet-1
+              MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+            enddo
+
+            ! We need to check if this is a regular grid
+            IsRegular_MetGrid = .true.
+            do i = 1,nx_fullmet-1
+              if(abs(MR_dx_met(i+1)-MR_dx_met(i)).gt.tol*MR_dx_met(i))then
+                IsRegular_MetGrid = .false.
+              endif
+            enddo
+            do i = 1,ny_fullmet-1
+              if(abs(MR_dy_met(i+1)-MR_dy_met(i)).gt.tol*MR_dy_met(i))then
+                IsRegular_MetGrid = .false.
+              endif
+            enddo
+
             i_dim = 4  ! get t info
             nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
                          name =  dimname, &
@@ -1977,7 +564,6 @@
           enddo
         endif
   
-  
         ! Now assign these levels to the working arrays
         np_fullmet    = nlevs_fullmet(Met_var_zdim_idx(1))  ! Assign fullmet the length of H,U,V
   
@@ -2003,197 +589,170 @@
       elseif(MR_iwindformat.eq.3)then
           ! 3 = NARR3D NAM221 32 km North America files
         call MR_Set_Met_NCEPGeoGrid(1221) ! This is almost NAM221, but uses a diff Re
-        isGridRelative = .false.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.4)then
           ! 4 = NAM Regional North America 221 (32 km)
         call MR_Set_Met_NCEPGeoGrid(221) 
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.5)then
         ! NAM 45-km Polar Sterographic
         call MR_Set_Met_NCEPGeoGrid(216)
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.6)then
           ! 104 converted automatically from grib2
           ! NAM 90-km Polar Sterographic
         call MR_Set_Met_NCEPGeoGrid(104)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.7)then
           ! 212 converted automatically from grib2
           ! CONUS 40-km Lambert Conformal
         call MR_Set_Met_NCEPGeoGrid(212)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.8)then
           !  12 KM CONUS
         call MR_Set_Met_NCEPGeoGrid(218)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.9)then
           !  5.08 KM CONUS
         call MR_Set_Met_NCEPGeoGrid(227)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.10)then
           ! NAM AK 242
         call MR_Set_Met_NCEPGeoGrid(242)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.11)then
           ! NAM196 converted automatically from grib2
         call MR_Set_Met_NCEPGeoGrid(196)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.12)then
           ! NAM198 converted automatically from grib2
         call MR_Set_Met_NCEPGeoGrid(198)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.13)then
           ! NAM91 converted automatically from grib2
         call MR_Set_Met_NCEPGeoGrid(91)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.14)then
           !  3 KM CONUS)
         call MR_Set_Met_NCEPGeoGrid(1227)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.20)then
         ! GFS 0.5
         call MR_Set_Met_NCEPGeoGrid(4)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
+      !  x_inverted = .false.
+      !  y_inverted = .true.
       elseif(MR_iwindformat.eq.21)then
         ! GFS 1.0
         call MR_Set_Met_NCEPGeoGrid(3)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
+      !  x_inverted = .false.
+      !  y_inverted = .true.
       elseif(MR_iwindformat.eq.22)then
         ! GFS 0.25
         call MR_Set_Met_NCEPGeoGrid(193)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
+      !  x_inverted = .false.
+      !  y_inverted = .true.
       elseif(MR_iwindformat.eq.23)then
         ! NCEP DOE reanalysis
         call MR_Set_Met_NCEPGeoGrid(2)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
+      !  x_inverted = .false.
+      !  y_inverted = .true.
       elseif(MR_iwindformat.eq.24)then
         ! NASA MERRA2 reanalysis
         call MR_Set_Met_NCEPGeoGrid(1024)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.25)then
         ! NCEP-1 1948 reanalysis
         call MR_Set_Met_NCEPGeoGrid(2)
-        isGridRelative = .true.
 
-        ! These additional grids are needed since surface variables are on a
-        ! different spatial grid.
-        do i = 1,192
-          x_in_iwf25_sp(i)=(i-1)*1.875_sp
-        enddo
-        y_in_iwf25_sp(1:94) = (/ &
-         88.542_sp,  86.6531_sp,  84.7532_sp,  82.8508_sp,  80.9473_sp,   79.0435_sp,  77.1394_sp, 75.2351_sp, &
-        73.3307_sp,  71.4262_sp,  69.5217_sp,  67.6171_sp,  65.7125_sp,   63.8079_sp,  61.9033_sp, 59.9986_sp, &
-        58.0939_sp,  56.1893_sp,  54.2846_sp,  52.3799_sp,  50.4752_sp,   48.5705_sp,  46.6658_sp, 44.7611_sp, &
-        42.8564_sp,  40.9517_sp,   39.047_sp,  37.1422_sp,  35.2375_sp,   33.3328_sp,  31.4281_sp, 29.5234_sp, &
-        27.6186_sp,  25.7139_sp,  23.8092_sp,  21.9044_sp,  19.9997_sp,    18.095_sp,  16.1902_sp, 14.2855_sp, &
-        12.3808_sp, 10.47604_sp,  8.57131_sp,  6.66657_sp,  4.76184_sp,    2.8571_sp, 0.952368_sp, &
-      -0.952368_sp,  -2.8571_sp, -4.76184_sp, -6.66657_sp, -8.57131_sp, -10.47604_sp, -12.3808_sp, &
-       -14.2855_sp, -16.1902_sp,  -18.095_sp, -19.9997_sp, -21.9044_sp,  -23.8092_sp, -25.7139_sp, &
-       -27.6186_sp, -29.5234_sp, -31.4281_sp, -33.3328_sp, -35.2375_sp,  -37.1422_sp,  -39.047_sp, &
-       -40.9517_sp, -42.8564_sp, -44.7611_sp, -46.6658_sp, -48.5705_sp,  -50.4752_sp, -52.3799_sp, &
-       -54.2846_sp, -56.1893_sp, -58.0939_sp, -59.9986_sp, -61.9033_sp,  -63.8079_sp, -65.7125_sp, &
-       -67.6171_sp, -69.5217_sp, -71.4262_sp, -73.3307_sp, -75.2351_sp,  -77.1394_sp, -79.0435_sp, &
-       -80.9473_sp, -82.8508_sp, -84.7532_sp, -86.6531_sp,  -88.542_sp /)
-        x_inverted = .false.
-        y_inverted = .true.
+      !  ! These additional grids are needed since surface variables are on a
+      !  ! different spatial grid.
+      !  do i = 1,192
+      !    x_in_iwf25_sp(i)=(i-1)*1.875_sp
+      !  enddo
+      !  y_in_iwf25_sp(1:94) = (/ &
+      !   88.542_sp,  86.6531_sp,  84.7532_sp,  82.8508_sp,  80.9473_sp,   79.0435_sp,  77.1394_sp, 75.2351_sp, &
+      !  73.3307_sp,  71.4262_sp,  69.5217_sp,  67.6171_sp,  65.7125_sp,   63.8079_sp,  61.9033_sp, 59.9986_sp, &
+      !  58.0939_sp,  56.1893_sp,  54.2846_sp,  52.3799_sp,  50.4752_sp,   48.5705_sp,  46.6658_sp, 44.7611_sp, &
+      !  42.8564_sp,  40.9517_sp,   39.047_sp,  37.1422_sp,  35.2375_sp,   33.3328_sp,  31.4281_sp, 29.5234_sp, &
+      !  27.6186_sp,  25.7139_sp,  23.8092_sp,  21.9044_sp,  19.9997_sp,    18.095_sp,  16.1902_sp, 14.2855_sp, &
+      !  12.3808_sp, 10.47604_sp,  8.57131_sp,  6.66657_sp,  4.76184_sp,    2.8571_sp, 0.952368_sp, &
+      !-0.952368_sp,  -2.8571_sp, -4.76184_sp, -6.66657_sp, -8.57131_sp, -10.47604_sp, -12.3808_sp, &
+      ! -14.2855_sp, -16.1902_sp,  -18.095_sp, -19.9997_sp, -21.9044_sp,  -23.8092_sp, -25.7139_sp, &
+      ! -27.6186_sp, -29.5234_sp, -31.4281_sp, -33.3328_sp, -35.2375_sp,  -37.1422_sp,  -39.047_sp, &
+      ! -40.9517_sp, -42.8564_sp, -44.7611_sp, -46.6658_sp, -48.5705_sp,  -50.4752_sp, -52.3799_sp, &
+      ! -54.2846_sp, -56.1893_sp, -58.0939_sp, -59.9986_sp, -61.9033_sp,  -63.8079_sp, -65.7125_sp, &
+      ! -67.6171_sp, -69.5217_sp, -71.4262_sp, -73.3307_sp, -75.2351_sp,  -77.1394_sp, -79.0435_sp, &
+      ! -80.9473_sp, -82.8508_sp, -84.7532_sp, -86.6531_sp,  -88.542_sp /)
+      !  x_inverted = .false.
+      !  y_inverted = .true.
       elseif(MR_iwindformat.eq.26)then
         ! JRA-55 1.25
         call MR_Set_Met_NCEPGeoGrid(45)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
+      !  x_inverted = .false.
+      !  y_inverted = .true.
       elseif(MR_iwindformat.eq.27)then
         ! NOAA reanalysis
         call MR_Set_Met_NCEPGeoGrid(1027)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
+      !  x_inverted = .false.
+      !  y_inverted = .true.
       elseif(MR_iwindformat.eq.28)then
         ! ECMWF Global Gaussian Lat/Lon grid 170
           ! Note: grid is not regular
           !       pressure values are from low to high
         call MR_Set_Met_NCEPGeoGrid(170)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
+      !  x_inverted = .false.
+      !  y_inverted = .true.
       elseif(MR_iwindformat.eq.29)then
         ! ECMWF Global Gaussian Lat/Lon 
         call MR_Set_Met_NCEPGeoGrid(1029)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .true.
+      !  x_inverted = .false.
+      !  y_inverted = .true.
       elseif(MR_iwindformat.eq.31)then
           ! Catania forecasts
         call MR_Set_Met_NCEPGeoGrid(1031)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.32)then
           ! Air Force Weather Agency
         call MR_Set_Met_NCEPGeoGrid(1032)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.33)then
           ! CAM paleoclimate
         call MR_Set_Met_NCEPGeoGrid(1033)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.40)then
         ! NASA GEOS Cp
         call MR_Set_Met_NCEPGeoGrid(1040)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.41)then
         ! NASA GEOS Np
         call MR_Set_Met_NCEPGeoGrid(1041)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       elseif(MR_iwindformat.eq.50)then
          ! WRF - output
-        call MR_Get_WRF_grid
+       call MR_Get_WRF_grid
       elseif(MR_iwindformat.eq.51)then
-          ! SENAMHI WRF 22 km
+      !    ! SENAMHI WRF 22 km
         call MR_Set_Met_NCEPGeoGrid(1051)
-        isGridRelative = .true.
-        x_inverted = .false.
-        y_inverted = .false.
+      !  x_inverted = .false.
+      !  y_inverted = .false.
       else
         ! Not a recognized MR_iwindformat
         ! call reading of template windfile pressure,grid values
@@ -2256,7 +815,7 @@
 !
 !     After this subroutine completes, the following variables will be set:
 !       All the projection parameters of NWP grid
-!       Met_dim_names, Met_var_names, Met_var_conversion_factor, Met_var_IsAvailable
+!       Met_dim_names, Met_var_NC_names, Met_var_conversion_factor, Met_var_IsAvailable
 !       The lengths of all the dimensions of the file
 !       p_fullmet_sp (converted to Pa)
 !       x_fullmet_sp, y_fullmet_sp
@@ -3355,160 +1914,160 @@
       endif
 
       ! X (or lon)
-      i = 4
-      if(.not.Met_dim_IsAvailable(i))then
-        write(MR_global_error,*)"MR ERROR: X/LON dimension is required and not listed"
-        write(MR_global_error,*)"          in template windfile specification file."
-        stop 1
-      endif
-      nSTAT = nf90_inq_dimid(ncid,Met_dim_names(i),x_dim_id)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-        stop 1
-      endif
-      nSTAT = nf90_Inquire_Dimension(ncid,x_dim_id,name=name_dum,len=nx_fullmet)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-        stop 1
-      endif
-      nSTAT = nf90_inq_varid(ncid,Met_dim_names(i),var_id)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-        stop 1
-      endif
-      ! Check if we need to read into a float or a double
-      nSTAT = nf90_inquire_variable(ncid, var_id, invar, xtype = var_xtype)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-        stop 1
-      endif
-      allocate(x_fullmet_sp(nx_fullmet))
-      allocate(MR_dx_met(nx_fullmet))
-      if(var_xtype.eq.NF90_FLOAT)then
-        allocate(dum1d_sp(nx_fullmet))
-        nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
-               start = (/1/),count = (/nx_fullmet/))
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-          stop 1
-        endif
-        ! copy to local variable
-        x_fullmet_sp(:) = dum1d_sp(:)
-        deallocate(dum1d_sp)
-      elseif(var_xtype.eq.NF90_DOUBLE)then
-        allocate(dum1d_dp(nx_fullmet))
-        nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
-               start = (/1/),count = (/nx_fullmet/))
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-          stop 1
-        endif
-        ! copy to local variable
-        x_fullmet_sp(:) = real(dum1d_dp(:),kind=4)
-        deallocate(dum1d_dp)
-      else
-        write(MR_global_error,*)"MR ERROR: Unexpected dim variable type ",Met_dim_names(i)
-        stop 1
-      endif
-
-      ! km or degrees is expected; apply the conversion factor
-      x_fullmet_sp(:) = x_fullmet_sp(:)*Met_dim_fac(i)
-
-      ! If the coordinate is decreasing, leave as is, but make a note
-      dx_met_const = x_fullmet_sp(2) - x_fullmet_sp(1)
-      if(dx_met_const.lt.0.0_sp)then
-        x_inverted = .true.
-        dx_met_const = abs(dx_met_const)
-      else
-        x_inverted = .false.
-      endif
-      do i = 1,nx_fullmet-1
-        MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-      enddo
-      MR_dx_met(nx_fullmet) = MR_dx_met(nx_fullmet-1)
-
-      ! Y (or lat)
-      i = 3
-      if(.not.Met_dim_IsAvailable(i))then
-        write(MR_global_error,*)"MR ERROR: Y/LAT dimension is required and not listed"
-        write(MR_global_error,*)"       in template windfile specification file."
-        stop 1
-      endif
-      nSTAT = nf90_inq_dimid(ncid,Met_dim_names(i),y_dim_id)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-        stop 1
-      endif
-      nSTAT = nf90_Inquire_Dimension(ncid,y_dim_id,name=name_dum,len=ny_fullmet)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-        stop 1
-      endif
-      nSTAT = nf90_inq_varid(ncid,Met_dim_names(i),var_id)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-        stop 1
-      endif
-      ! Check if we need to read into a float or a double
-      nSTAT = nf90_inquire_variable(ncid, var_id, invar, xtype = var_xtype)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-        stop 1
-      endif
-      allocate(y_fullmet_sp(ny_fullmet))
-      allocate(MR_dy_met(ny_fullmet))
-      if(var_xtype.eq.NF90_FLOAT)then
-        allocate(dum1d_sp(ny_fullmet))
-        nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
-               start = (/1/),count = (/ny_fullmet/))
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-          stop 1
-        endif
-        ! copy to local variable
-        y_fullmet_sp(:) = dum1d_sp(:)
-        deallocate(dum1d_sp)
-      elseif(var_xtype.eq.NF90_DOUBLE)then
-        allocate(dum1d_dp(ny_fullmet))
-        nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
-               start = (/1/),count = (/ny_fullmet/))
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-          stop 1
-        endif
-        ! copy to local variable
-        y_fullmet_sp(:) = real(dum1d_dp(:),kind=4)
-        deallocate(dum1d_dp)
-      else
-        write(MR_global_error,*)"MR ERROR: Unexpected dim variable type ",Met_dim_names(i)
-        stop 1
-      endif
-      ! km or degrees is expected; apply the conversion factor
-      y_fullmet_sp(:) = y_fullmet_sp(:)*Met_dim_fac(i)
-      ! If the coordinate is decreasing, leave as is, but make a note
-      dy_met_const = y_fullmet_sp(2) - y_fullmet_sp(1)
-      if(dy_met_const.lt.0.0_sp)then
-        y_inverted = .true.
-        dy_met_const = abs(dy_met_const)
-      else
-        y_inverted = .false.
-      endif
-      do i = 1,ny_fullmet-1
-        MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-      enddo
-      MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+!      i = 4
+!      if(.not.Met_dim_IsAvailable(i))then
+!        write(MR_global_error,*)"MR ERROR: X/LON dimension is required and not listed"
+!        write(MR_global_error,*)"          in template windfile specification file."
+!        stop 1
+!      endif
+!      nSTAT = nf90_inq_dimid(ncid,Met_dim_names(i),x_dim_id)
+!      if(nSTAT.ne.NF90_NOERR)then
+!        write(MR_global_error,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
+!        write(MR_global_log  ,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
+!        stop 1
+!      endif
+!      nSTAT = nf90_Inquire_Dimension(ncid,x_dim_id,name=name_dum,len=nx_fullmet)
+!      if(nSTAT.ne.NF90_NOERR)then
+!        write(MR_global_error,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
+!        write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
+!        stop 1
+!      endif
+!      nSTAT = nf90_inq_varid(ncid,Met_dim_names(i),var_id)
+!      if(nSTAT.ne.NF90_NOERR)then
+!        write(MR_global_error,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
+!        write(MR_global_log  ,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
+!        stop 1
+!      endif
+!      ! Check if we need to read into a float or a double
+!      nSTAT = nf90_inquire_variable(ncid, var_id, invar, xtype = var_xtype)
+!      if(nSTAT.ne.NF90_NOERR)then
+!        write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+!        write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+!        stop 1
+!      endif
+!      allocate(x_fullmet_sp(nx_fullmet))
+!      allocate(MR_dx_met(nx_fullmet))
+!      if(var_xtype.eq.NF90_FLOAT)then
+!        allocate(dum1d_sp(nx_fullmet))
+!        nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
+!               start = (/1/),count = (/nx_fullmet/))
+!        if(nSTAT.ne.NF90_NOERR)then
+!          write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
+!          write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
+!          stop 1
+!        endif
+!        ! copy to local variable
+!        x_fullmet_sp(:) = dum1d_sp(:)
+!        deallocate(dum1d_sp)
+!      elseif(var_xtype.eq.NF90_DOUBLE)then
+!        allocate(dum1d_dp(nx_fullmet))
+!        nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
+!               start = (/1/),count = (/nx_fullmet/))
+!        if(nSTAT.ne.NF90_NOERR)then
+!          write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
+!          write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
+!          stop 1
+!        endif
+!        ! copy to local variable
+!        x_fullmet_sp(:) = real(dum1d_dp(:),kind=4)
+!        deallocate(dum1d_dp)
+!      else
+!        write(MR_global_error,*)"MR ERROR: Unexpected dim variable type ",Met_dim_names(i)
+!        stop 1
+!      endif
+!
+!      ! km or degrees is expected; apply the conversion factor
+!      x_fullmet_sp(:) = x_fullmet_sp(:)*Met_dim_fac(i)
+!
+!      ! If the coordinate is decreasing, leave as is, but make a note
+!      dx_met_const = x_fullmet_sp(2) - x_fullmet_sp(1)
+!      if(dx_met_const.lt.0.0_sp)then
+!        x_inverted = .true.
+!        dx_met_const = abs(dx_met_const)
+!      else
+!        x_inverted = .false.
+!      endif
+!      do i = 1,nx_fullmet-1
+!        MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+!      enddo
+!      MR_dx_met(nx_fullmet) = MR_dx_met(nx_fullmet-1)
+!
+!      ! Y (or lat)
+!      i = 3
+!      if(.not.Met_dim_IsAvailable(i))then
+!        write(MR_global_error,*)"MR ERROR: Y/LAT dimension is required and not listed"
+!        write(MR_global_error,*)"       in template windfile specification file."
+!        stop 1
+!      endif
+!      nSTAT = nf90_inq_dimid(ncid,Met_dim_names(i),y_dim_id)
+!      if(nSTAT.ne.NF90_NOERR)then
+!        write(MR_global_error,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
+!        write(MR_global_log  ,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
+!        stop 1
+!      endif
+!      nSTAT = nf90_Inquire_Dimension(ncid,y_dim_id,name=name_dum,len=ny_fullmet)
+!      if(nSTAT.ne.NF90_NOERR)then
+!        write(MR_global_error,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
+!        write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
+!        stop 1
+!      endif
+!      nSTAT = nf90_inq_varid(ncid,Met_dim_names(i),var_id)
+!      if(nSTAT.ne.NF90_NOERR)then
+!        write(MR_global_error,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
+!        write(MR_global_log  ,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
+!        stop 1
+!      endif
+!      ! Check if we need to read into a float or a double
+!      nSTAT = nf90_inquire_variable(ncid, var_id, invar, xtype = var_xtype)
+!      if(nSTAT.ne.NF90_NOERR)then
+!        write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+!        write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+!        stop 1
+!      endif
+!      allocate(y_fullmet_sp(ny_fullmet))
+!      allocate(MR_dy_met(ny_fullmet))
+!      if(var_xtype.eq.NF90_FLOAT)then
+!        allocate(dum1d_sp(ny_fullmet))
+!        nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
+!               start = (/1/),count = (/ny_fullmet/))
+!        if(nSTAT.ne.NF90_NOERR)then
+!          write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
+!          write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
+!          stop 1
+!        endif
+!        ! copy to local variable
+!        y_fullmet_sp(:) = dum1d_sp(:)
+!        deallocate(dum1d_sp)
+!      elseif(var_xtype.eq.NF90_DOUBLE)then
+!        allocate(dum1d_dp(ny_fullmet))
+!        nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
+!               start = (/1/),count = (/ny_fullmet/))
+!        if(nSTAT.ne.NF90_NOERR)then
+!          write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
+!          write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
+!          stop 1
+!        endif
+!        ! copy to local variable
+!        y_fullmet_sp(:) = real(dum1d_dp(:),kind=4)
+!        deallocate(dum1d_dp)
+!      else
+!        write(MR_global_error,*)"MR ERROR: Unexpected dim variable type ",Met_dim_names(i)
+!        stop 1
+!      endif
+!      ! km or degrees is expected; apply the conversion factor
+!      y_fullmet_sp(:) = y_fullmet_sp(:)*Met_dim_fac(i)
+!      ! If the coordinate is decreasing, leave as is, but make a note
+!      dy_met_const = y_fullmet_sp(2) - y_fullmet_sp(1)
+!      if(dy_met_const.lt.0.0_sp)then
+!        y_inverted = .true.
+!        dy_met_const = abs(dy_met_const)
+!      else
+!        y_inverted = .false.
+!      endif
+!      do i = 1,ny_fullmet-1
+!        MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+!      enddo
+!      MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
       ! We need to check if this is a regular grid
       IsRegular_MetGrid = .true.
@@ -3751,7 +2310,7 @@
 
       ! Need to get fill_value
       ! Try to get it from geopotential height variable
-      nSTAT = nf90_inq_varid(ncid,Met_var_names(1),var_id)
+      nSTAT = nf90_inq_varid(ncid,Met_var_NC_names(1),var_id)
       if(nSTAT.ne.NF90_NOERR)then
         write(MR_global_error,*)'MR ERROR: inq_varid: ',invar,nf90_strerror(nSTAT)
         write(MR_global_log  ,*)'MR ERROR: inq_varid: ',invar,nf90_strerror(nSTAT)
@@ -3841,7 +2400,7 @@
       if(.not.Met_var_IsAvailable(ivar))then
         write(MR_global_error,*)"MR ERROR:  Variable not available for this windfile"
         write(MR_global_error,*)"             ivar = ",ivar
-        write(MR_global_error,*)"            vname = ",Met_var_names(ivar)
+        write(MR_global_error,*)"            vname = ",Met_var_NC_names(ivar)
         write(MR_global_error,*)"             iwf  = ",MR_iwindformat
         stop 1
       endif
@@ -3849,7 +2408,7 @@
       iw     = MR_MetStep_findex(istep)
       iwstep = MR_MetStep_tindex(istep)
 
-      if(Met_var_names(ivar).eq."")then
+      if(Met_var_NC_names(ivar).eq."")then
         write(MR_global_info,*)"Variable ",ivar," not available for MR_iwindformat = ",&
                   MR_iwindformat
         stop 1
@@ -4055,7 +2614,7 @@
           ! Files are listed directly, not through directories (as in MR_iwindformat=25,27)
         infile = trim(adjustl(MR_MetStep_File(istep)))
       endif
-      invar = Met_var_names(ivar)
+      invar = Met_var_NC_names(ivar)
 
       write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
                 trim(adjustl(infile))!,nx_submet,ny_submet,np_met_loc
