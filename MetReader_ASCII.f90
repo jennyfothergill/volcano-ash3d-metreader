@@ -293,7 +293,6 @@
                                     ! have one step and so no offset.
         MR_windfiles_nt_fullmet(:) = nt_fullmet
 
-        Have_Vz = .false.
         do itime = 1,MR_Snd_nt_fullmet
           do iloc = 1,MR_nSnd_Locs
             iw_idx = (itime-1)*MR_nSnd_Locs + iloc
@@ -678,7 +677,6 @@
                                        ! have one step and so no offset.
         MR_windfiles_nt_fullmet(:) = nt_fullmet
 
-        Have_Vz = .false.
         do itime = 1,MR_Snd_nt_fullmet
           do iloc = 1,MR_nSnd_Locs
             iw_idx = (itime-1)*MR_nSnd_Locs + iloc

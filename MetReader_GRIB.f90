@@ -88,8 +88,6 @@
       write(MR_global_production,*)"----------                MR_Read_Met_DimVars_GRIB                    ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
-      if(Met_var_IsAvailable(4)) Have_Vz = .true.
-
         !---------------------------------------------------------------------------------
         ! Checking for dimension length and values for x,y,t,p
         !   Assume all files have the same format

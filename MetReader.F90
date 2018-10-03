@@ -48,7 +48,7 @@
                                        ! 22 GFS 0.25
                                        ! 23 NCEP / DOE reanalysis 2.5 degree files  :: ds091.0
                                        ! 24 NASA-MERRA-2 reanalysis 0.625/0.5 degree files
-                                       ! 25 NCEP/NCAR reanalysis 2.5 degree files   :: ds090.0
+                                       ! 25 NCEP/NCAR reanalysis 2.5 degree files   :: ds090.0  iwind=4 or 5
                                        ! 26 JRA-55                                  :: ds628.0  iwind=5
                                        ! 27 NOAA-CIRES reanalysis 2.5 degree files  :: ds131.2  iwind=5
                                        ! 28 ECMWF Interim Reanalysis (ERA-Interim)  :: ds627.0  requires catted grib files
@@ -99,8 +99,6 @@
       integer           , allocatable,dimension(:),public :: MR_MetStep_DOY
       real(kind=dp)     , allocatable,dimension(:),public :: MR_MetStep_Hour_Of_Day
 
-      !logical                                             :: MR_runAsForecast = .false.
-      !real(kind=dp)                                       :: MR_FC_Offset     = 0.0_dp
       logical                                             :: MR_Reannalysis   = .false.
       integer           ,dimension(:), allocatable,public :: MR_iwind5_year
 
@@ -151,7 +149,7 @@
       integer :: MR_nSnd_Locs      = 1  ! Number of Sonde locations
       integer :: MR_Snd_nt_fullmet = 1  ! Number of times at the Sonde locations
       integer :: MR_Snd_nvars      = 5  ! Number of Sonde variables (P,H,U,V,T,+user-specified)
-      logical :: Snd_Have_PT = .false.
+      logical :: Snd_Have_PT    = .false.
       logical :: Snd_Have_Coord = .false.  ! If the 1-d data have the optional projection params
                                            ! then it will be used, otherwise vel will be relative
                                            ! to comp grid.
@@ -191,22 +189,14 @@
       integer       :: nx_fullmet    ! length of x or lon of full met grid
       integer       :: ny_fullmet    ! length of y or lat of full met grid
       integer       :: np_fullmet    ! length of pressure of full met grid for H,U,V
-      !integer       :: np_fullmet_Vz ! length of pressure of full met grid for Vz
-      !integer       :: np_fullmet_T  ! length of pressure of full met grid
-      !integer       :: np_fullmet_RH ! length of pressure of full met grid for RH
-      !integer       :: np_fullmet_P0 ! length of pressure of full met grid for Precip 
-                                     !   (=1 for all cases except iwindformat=24)
       integer       :: np_fullmet_pad = 1 ! We might need to pad the top of the pressure grid.
       integer       :: neta_fullmet  ! Only used by WRF
       real(kind=sp) :: Pressure_Conv_Fac = 100.0_sp  ! factor for converting from Met file units to Pa
 
 #ifdef USEPOINTERS
-      real(kind=sp),dimension(:), pointer :: x_fullmet_sp    => null() ! x-coordinates of full met grid
-      real(kind=sp),dimension(:), pointer :: y_fullmet_sp    => null() ! y-coordinates of full met grid
-      real(kind=sp),dimension(:), pointer :: p_fullmet_sp    => null() ! z-coordinates of full met grid for H
-      !real(kind=sp),dimension(:), pointer :: p_fullmet_Vz_sp => null() ! z-coordinates of full met grid for Vz
-      !real(kind=sp),dimension(:), pointer :: p_fullmet_T_sp  => null() ! z-coordinates of full met grid for T
-      !real(kind=sp),dimension(:), pointer :: p_fullmet_RH_sp => null() ! z-coordinates of full met grid for RH
+      real(kind=sp),dimension(:),   pointer :: x_fullmet_sp    => null() ! x-coordinates of full met grid
+      real(kind=sp),dimension(:),   pointer :: y_fullmet_sp    => null() ! y-coordinates of full met grid
+      real(kind=sp),dimension(:),   pointer :: p_fullmet_sp    => null() ! z-coordinates of full met grid for H
       real(kind=sp),dimension(:,:), pointer :: levs_fullmet_sp => null() ! This hold each of the numbered level coordinates:
                                                                          !    i.e. isobaric, isobaric1, isobaric2, but also
                                                                          !    height_above_ground, depth_below_surface_layer, etc.
@@ -220,12 +210,9 @@
                                                                          !   3 = interpolation (missing mid-levels)
                                                                          !   4 = more levels than GPH grid
 #else
-      real(kind=sp),dimension(:), allocatable :: x_fullmet_sp     ! x-coordinates of full met grid
-      real(kind=sp),dimension(:), allocatable :: y_fullmet_sp     ! y-coordinates of full met grid
-      real(kind=sp),dimension(:), allocatable :: p_fullmet_sp     ! z-coordinates of full met grid for H
-      !real(kind=sp),dimension(:), allocatable :: p_fullmet_Vz_sp  ! z-coordinates of full met grid for Vz
-      !real(kind=sp),dimension(:), allocatable :: p_fullmet_T_sp   ! z-coordinates of full met grid for T
-      !real(kind=sp),dimension(:), allocatable :: p_fullmet_RH_sp  ! z-coordinates of full met grid for RH
+      real(kind=sp),dimension(:),  allocatable :: x_fullmet_sp    ! x-coordinates of full met grid
+      real(kind=sp),dimension(:),  allocatable :: y_fullmet_sp    ! y-coordinates of full met grid
+      real(kind=sp),dimension(:),  allocatable :: p_fullmet_sp    ! z-coordinates of full met grid for H
       real(kind=sp),dimension(:,:),allocatable :: levs_fullmet_sp ! This hold each of the numbered level coordinates:
                                                                   !    i.e. isobaric, isobaric1, isobaric2, but also
                                                                   !    height_above_ground, depth_below_surface_layer, etc.
@@ -350,7 +337,6 @@
       real(kind=sp),dimension(:,:),  allocatable :: MR_jacob  ! Jacobian of trans. = MR_ztop-MR_zsurf
 #endif
 
-      logical :: Have_Vz = .false.
       real(kind=sp),dimension(0:100) :: fill_value_sp = -9999.0_sp
       character(len=30),dimension(9) :: Met_dim_names      ! name of dimension
       logical          ,dimension(9) :: Met_dim_IsAvailable
@@ -513,8 +499,6 @@
        if(associated(x_fullmet_sp                  ))deallocate(x_fullmet_sp)
        if(associated(y_fullmet_sp                  ))deallocate(y_fullmet_sp)
        if(associated(p_fullmet_sp                  ))deallocate(p_fullmet_sp)
-       !if(associated(p_fullmet_Vz_sp               ))deallocate(p_fullmet_Vz_sp)
-       !if(associated(p_fullmet_RH_sp               ))deallocate(p_fullmet_RH_sp)
        if(associated(x_submet_sp                   ))deallocate(x_submet_sp)
        if(associated(y_submet_sp                   ))deallocate(y_submet_sp)
        if(associated(z_approx                      ))deallocate(z_approx)
@@ -556,8 +540,6 @@
        if(allocated(x_fullmet_sp                  ))deallocate(x_fullmet_sp)
        if(allocated(y_fullmet_sp                  ))deallocate(y_fullmet_sp)
        if(allocated(p_fullmet_sp                  ))deallocate(p_fullmet_sp)
-       !if(allocated(p_fullmet_Vz_sp               ))deallocate(p_fullmet_Vz_sp)
-       !if(allocated(p_fullmet_RH_sp               ))deallocate(p_fullmet_RH_sp)
        if(allocated(x_submet_sp                   ))deallocate(x_submet_sp)
        if(allocated(y_submet_sp                   ))deallocate(y_submet_sp)
        if(allocated(z_approx                      ))deallocate(z_approx)
@@ -1697,15 +1679,15 @@
           Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="omega"      ! short Pa/s (29.765f,0.001f)
           Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="air"        ! short K (477.66f,0.01f)
           ! Atmospheric Structure
-          Met_var_IsAvailable(20)=.true.
-          Met_var_IsAvailable(21)=.true.
+          !Met_var_IsAvailable(20)=.true.
+          !Met_var_IsAvailable(21)=.true.
           ! Moisture
-          Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="rhum"      ! short  (302.66f,0.01f)
-          Met_var_IsAvailable(31)=.true.; Met_var_NC_names(31)="shum"      ! short SpecHum ~ mixing ratio kg/kg(0.032666f,1.e-06f)
-          Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="shum"      ! short should really be QL (liquid)
+          !Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="rhum"      ! short  (302.66f,0.01f)
+          !Met_var_IsAvailable(31)=.true.; Met_var_NC_names(31)="shum"      ! short SpecHum ~ mixing ratio kg/kg(0.032666f,1.e-06f)
+          !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="shum"      ! short should really be QL (liquid)
           ! Precipitation
-          Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="prate"     ! short surface precipitation rate (kg/m2/s) (0.0032765f,1.e-07f)
-          Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="cprat"     ! short surface convective precip kg/m2/s (0.0031765f,1.e-07f)
+          !Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="prate"     ! short surface precipitation rate (kg/m2/s) (0.0032765f,1.e-07f)
+          !Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="cprat"     ! short surface convective precip kg/m2/s (0.0031765f,1.e-07f)
   
           fill_value_sp(MR_iwindformat) = -9999.0_sp
 
@@ -1769,16 +1751,16 @@
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="V_VEL_GDS0_ISBL_10"
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="TMP_GDS0_ISBL_10"
         ! Surface
-        Met_var_IsAvailable(10)=.true.; Met_var_NC_names(10)="HPBL"
+        !Met_var_IsAvailable(10)=.true.; Met_var_NC_names(10)="HPBL"
         ! Atmospheric Structure
-        Met_var_IsAvailable(22)=.true.; Met_var_NC_names(22)="TMP"
-        Met_var_IsAvailable(23)=.true.; Met_var_NC_names(23)="TCDC"
+        !Met_var_IsAvailable(22)=.true.; Met_var_NC_names(22)="TMP"
+        !Met_var_IsAvailable(23)=.true.; Met_var_NC_names(23)="TCDC"
         ! Moisture
-        Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="R_H_GDS0_ISBL_10"
+        !Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="R_H_GDS0_ISBL_10"
         ! Precipitation
-        Met_var_IsAvailable(40)=.true.; Met_var_NC_names(40)="CRAIN"
-        Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="PRATE"
-        Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="CPRAT"
+        !Met_var_IsAvailable(40)=.true.; Met_var_NC_names(40)="CRAIN"
+        !Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="PRATE"
+        !Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="CPRAT"
 
         fill_value_sp(MR_iwindformat) = 1.e+20_sp
 
@@ -1822,27 +1804,55 @@
         call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
 
+        grib_table = ".128"
+
         Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
         Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "level"
         Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "latitude"
         Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "longitude"
 
-        !  Potential vorticity  e5.oper.an.pl.128_060_pv.regn320sc.2018062000_2018062023.nc
-        !  Specific rain water content  e5.oper.an.pl.128_075_crwc.regn320sc.2018062000_2018062023.nc
-        !  Secific snow water content  e5.oper.an.pl.128_076_cswc.regn320sc.2018062000_2018062023.nc
-        !  Geopotential  e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
-        !  Temperature  e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
-        !  U component of wind  e5.oper.an.pl.128_131_u.regn320uv.2018062000_2018062023.nc
-        !  V component of wind  e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
-        !  Specific humidity  e5.oper.an.pl.128_133_q.regn320sc.2018062000_2018062023.nc
-        !  Vertical velocity  e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
-        !  Vorticity  e5.oper.an.pl.128_138_vo.regn320sc.2018062000_2018062023.nc
-        !  Divergence  e5.oper.an.pl.128_155_d.regn320sc.2018062000_2018062023.nc
-        !  Relative humidity  e5.oper.an.pl.128_157_r.regn320sc.2018062000_2018062023.nc
-        !  Ozone nass mixing ratio e5.oper.an.pl.128_203_o3.regn320sc.2018062000_2018062023.nc
-        !  Specific cloud liquid water content e5.oper.an.pl.128_246_clwc.regn320sc.2018062000_2018062023.nc
-        !  Specific cloud ice water content e5.oper.an.pl.128_247_ciwc.regn320sc.2018062000_2018062023.nc
-        !  Cloud cover  e5.oper.an.pl.128_248_cc.regn320sc.2018062000_2018062023.nc
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="Z" ! e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U" ! e5.oper.an.pl.128_131_u.regn320uv.2018062000_2018062023.nc
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V" ! e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W" ! e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T" ! e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
+        ! Atmospheric Structure
+        !Met_var_IsAvailable(23)=.true.; Met_var_NC_names(23)="CC" ! e5.oper.an.pl.128_248_cc.regn320sc.2018062000_2018062023.nc
+        ! Moisture
+        !Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="R"   ! e5.oper.an.pl.128_157_r.regn320sc.2018062000_2018062023.nc
+        !Met_var_IsAvailable(31)=.true.; Met_var_NC_names(31)="Q"   ! e5.oper.an.pl.128_133_q.regn320sc.2018062000_2018062023.nc
+        !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="CLWC"! e5.oper.an.pl.128_246_clwc.regn320sc.2018062000_2018062023.nc
+        !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="CIWC"! e5.oper.an.pl.128_247_ciwc.regn320sc.2018062000_2018062023.nc
+        ! Precipitation
+        !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="CRWC"! e5.oper.an.pl.128_075_crwc.regn320sc.2018062000_2018062023.nc
+        !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="CSWC"! e5.oper.an.pl.128_076_cswc.regn320sc.2018062000_2018062023.nc
+
+      elseif (MR_iwindformat.eq.30)then
+         ! ECMWF ERA 20C
+         ! https://rda.ucar.edu/datasets/ds626.0
+         ! Note: files are provided as one variable per file
+
+        write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
+                  "ECMWF ERA20C reanalysis"
+
+        MR_iGridCode = 1029
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
+        MR_Reannalysis = .true.
+
+        grib_table = ".128"
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "level"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "latitude"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "longitude"
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="Z" ! e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U" ! e5.oper.an.pl.128_131_u.regn320uv.2018062000_2018062023.nc
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V" ! e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W" ! e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T" ! e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
 
       elseif (MR_iwindformat.eq.31)then
          ! Catania forecast
@@ -2113,8 +2123,10 @@
 
       write(MR_global_info,*)"     Allocating space for ",MR_iwindfiles,"files."
 
-      if (MR_iwindformat.eq.25.or.MR_iwindformat.eq.27)then
-        write(MR_global_info,*)"For NCEP1 or NOAA, only the directory should be listed."
+      if (MR_iwind.eq.5)then
+        write(MR_global_info,*)"For NWP files with one variable per file,"
+        write(MR_global_info,*)"only the directory should be listed. The remaining"
+        write(MR_global_info,*)"path is hardcoded."
         ! Reset MR_iwindfiles to 2: only one "file" will be read,
         ! but we need this to be 2 to accommodate runs that might span two years
         MR_iwindfiles = 2
@@ -2238,8 +2250,8 @@
       endif
 #endif
 
-      if(MR_iwindformat.eq.25.or.MR_iwindformat.eq.27)then
-        ! For NCEP 2.5 degree reanalysis and the NOAA product, only the directory
+      if(MR_iwind.eq.5)then
+        ! For iwind=5 files (NCEP 2.5 degree reanalysis and the NOAA product), only the directory
         ! was read into slot 1 of MR_windfiles(:).  We need to copy to slot 2
         ! to make sure we don't throw an error
         MR_windfiles(2)   = MR_windfiles(1)
@@ -2300,13 +2312,13 @@
          ! MR_iwindformat; also do a bit of error checking by reading netcdf files
         if(MR_idataFormat.eq.2)then
 #ifdef USENETCDF
-          call MR_Read_Met_DimVars_netcdf
           call MR_Read_Met_Times_netcdf
+          call MR_Read_Met_DimVars_netcdf
 #endif
         elseif(MR_idataFormat.eq.3)then
 #ifdef USEGRIB
-          call MR_Read_Met_DimVars_GRIB
           call MR_Read_Met_Times_GRIB
+          call MR_Read_Met_DimVars_GRIB
 #endif
         else
           write(MR_global_error,*)"MR ERROR: Unknown MR_idataFormat:",MR_idataFormat
@@ -2919,7 +2931,6 @@
             MR_iwind5_year(istep)             = MR_MetStep_year(istep)
           endif
 
-
           ! Check if the current step hour is exclusively after the end of the simulation
           if(stephour.gt.MR_Comp_StartHour+MR_Comp_Time_in_hours)then
             if(.not.Found_Last_Step)nMetSteps_Comp=istep
@@ -3261,7 +3272,7 @@
             endif
           enddo
           if(np_fullmet_pad.gt.0)then
-            ! Assign top node (Should these indicies be +1?)
+            ! Assign top node
             if(MR_iHeightHandler.eq.1)then
               z_col_metP(np_fullmet+2) = z_col_metP(np_fullmet+1) + 10.0_sp
               write(MR_global_info,*)z_col_metP(np_fullmet+1:np_fullmet+2)

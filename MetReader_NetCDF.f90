@@ -54,6 +54,7 @@
       real(kind=sp),dimension(:), allocatable :: dum1d_sp
       character(len=31)  :: ustring
       logical :: IsTruncatedDim
+      character(len=130)   :: infile
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                MR_Read_Met_DimVars_netcdf                  ----------"
@@ -81,14 +82,20 @@
 
       endif
 
-      if(Met_var_IsAvailable(4)) Have_Vz = .true.
-
       if(.not.MR_iwindformat.eq.50)then
         !---------------------------------------------------------------------------------
         ! Checking for dimension length and values for x,y,t,p
         !   Assume all files have the same format
         maxdimlen = 0
-        nSTAT=nf90_open(adjustl(trim(MR_windfiles(1))),NF90_NOWRITE, ncid)
+        if(MR_iwind.eq.5)then
+ 111      format(a50,a4,i4,a3)
+          write(infile,111)trim(adjustl(MR_windfiles(1))), &
+                           "hgt.",MR_Comp_StartYear,".nc"
+          nSTAT = nf90_open(trim(ADJUSTL(infile)),NF90_NOWRITE,ncid)
+        else
+          infile = adjustl(trim(MR_windfiles(1)))
+        endif
+        nSTAT=nf90_open(adjustl(trim(infile)),NF90_NOWRITE, ncid)
         if(nSTAT.ne.NF90_NOERR) then
           write(MR_global_error,*)'MR ERROR: open NC file: ',nf90_strerror(nSTAT)
           write(MR_global_log  ,*)'MR ERROR: open NC file: ',nf90_strerror(nSTAT)
@@ -133,7 +140,7 @@
             stop 1
           endif
     
-          ! 3-d trasient variables should be in the COORDS convention (time, level, y, x)
+          ! 3-d transient variables should be in the COORDS convention (time, level, y, x)
           ! if ivar = 1 (Geopotential Height), then get the info on x,y and t too
           if(ivar.eq.1)then
             i_dim = 1  ! get x info
@@ -1189,14 +1196,10 @@
       endif
 
       allocate(MR_windfile_starthour(MR_iwindfiles))
-      if(MR_iwindformat.eq.25.or.MR_iwindformat.eq.27)then
+      if(MR_iwind.eq.5)then
+      !if(MR_iwindformat.eq.25.or.MR_iwindformat.eq.27)then
         ! Here the branch for when MR_iwindformat = 25 or 27
         ! First copy path read in to slot 2
-        !if(MR_runAsForecast)then
-        !  write(MR_global_error,*)"MR ERROR: iwf=25 and 27 cannot be used for forecast runs."
-        !  write(MR_global_error,*)"          These are reanalysis files."
-        !  stop 1
-        !endif
         dumstr = MR_windfiles(1)
  110    format(a50,a1,i4,a1)
         write(MR_windfiles(1),110)trim(ADJUSTL(dumstr)),'/', &
@@ -1733,400 +1736,18 @@
         stop 1
       endif
 
-      ! X (or lon)
-!      i = 4
-!      if(.not.Met_dim_IsAvailable(i))then
-!        write(MR_global_error,*)"MR ERROR: X/LON dimension is required and not listed"
-!        write(MR_global_error,*)"          in template windfile specification file."
-!        stop 1
-!      endif
-!      nSTAT = nf90_inq_dimid(ncid,Met_dim_names(i),x_dim_id)
-!      if(nSTAT.ne.NF90_NOERR)then
-!        write(MR_global_error,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-!        write(MR_global_log  ,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-!        stop 1
-!      endif
-!      nSTAT = nf90_Inquire_Dimension(ncid,x_dim_id,name=name_dum,len=nx_fullmet)
-!      if(nSTAT.ne.NF90_NOERR)then
-!        write(MR_global_error,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-!        write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-!        stop 1
-!      endif
-!      nSTAT = nf90_inq_varid(ncid,Met_dim_names(i),var_id)
-!      if(nSTAT.ne.NF90_NOERR)then
-!        write(MR_global_error,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-!        write(MR_global_log  ,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-!        stop 1
-!      endif
-!      ! Check if we need to read into a float or a double
-!      nSTAT = nf90_inquire_variable(ncid, var_id, invar, xtype = var_xtype)
-!      if(nSTAT.ne.NF90_NOERR)then
-!        write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-!        write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-!        stop 1
-!      endif
-!      allocate(x_fullmet_sp(nx_fullmet))
-!      allocate(MR_dx_met(nx_fullmet))
-!      if(var_xtype.eq.NF90_FLOAT)then
-!        allocate(dum1d_sp(nx_fullmet))
-!        nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
-!               start = (/1/),count = (/nx_fullmet/))
-!        if(nSTAT.ne.NF90_NOERR)then
-!          write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-!          write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-!          stop 1
-!        endif
-!        ! copy to local variable
-!        x_fullmet_sp(:) = dum1d_sp(:)
-!        deallocate(dum1d_sp)
-!      elseif(var_xtype.eq.NF90_DOUBLE)then
-!        allocate(dum1d_dp(nx_fullmet))
-!        nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
-!               start = (/1/),count = (/nx_fullmet/))
-!        if(nSTAT.ne.NF90_NOERR)then
-!          write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-!          write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-!          stop 1
-!        endif
-!        ! copy to local variable
-!        x_fullmet_sp(:) = real(dum1d_dp(:),kind=4)
-!        deallocate(dum1d_dp)
-!      else
-!        write(MR_global_error,*)"MR ERROR: Unexpected dim variable type ",Met_dim_names(i)
-!        stop 1
-!      endif
-!
-!      ! km or degrees is expected; apply the conversion factor
-!      x_fullmet_sp(:) = x_fullmet_sp(:)*Met_dim_fac(i)
-!
-!      ! If the coordinate is decreasing, leave as is, but make a note
-!      dx_met_const = x_fullmet_sp(2) - x_fullmet_sp(1)
-!      if(dx_met_const.lt.0.0_sp)then
-!        x_inverted = .true.
-!        dx_met_const = abs(dx_met_const)
-!      else
-!        x_inverted = .false.
-!      endif
-!      do i = 1,nx_fullmet-1
-!        MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!      enddo
-!      MR_dx_met(nx_fullmet) = MR_dx_met(nx_fullmet-1)
-!
-!      ! Y (or lat)
-!      i = 3
-!      if(.not.Met_dim_IsAvailable(i))then
-!        write(MR_global_error,*)"MR ERROR: Y/LAT dimension is required and not listed"
-!        write(MR_global_error,*)"       in template windfile specification file."
-!        stop 1
-!      endif
-!      nSTAT = nf90_inq_dimid(ncid,Met_dim_names(i),y_dim_id)
-!      if(nSTAT.ne.NF90_NOERR)then
-!        write(MR_global_error,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-!        write(MR_global_log  ,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-!        stop 1
-!      endif
-!      nSTAT = nf90_Inquire_Dimension(ncid,y_dim_id,name=name_dum,len=ny_fullmet)
-!      if(nSTAT.ne.NF90_NOERR)then
-!        write(MR_global_error,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-!        write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-!        stop 1
-!      endif
-!      nSTAT = nf90_inq_varid(ncid,Met_dim_names(i),var_id)
-!      if(nSTAT.ne.NF90_NOERR)then
-!        write(MR_global_error,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-!        write(MR_global_log  ,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-!        stop 1
-!      endif
-!      ! Check if we need to read into a float or a double
-!      nSTAT = nf90_inquire_variable(ncid, var_id, invar, xtype = var_xtype)
-!      if(nSTAT.ne.NF90_NOERR)then
-!        write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-!        write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-!        stop 1
-!      endif
-!      allocate(y_fullmet_sp(ny_fullmet))
-!      allocate(MR_dy_met(ny_fullmet))
-!      if(var_xtype.eq.NF90_FLOAT)then
-!        allocate(dum1d_sp(ny_fullmet))
-!        nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
-!               start = (/1/),count = (/ny_fullmet/))
-!        if(nSTAT.ne.NF90_NOERR)then
-!          write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-!          write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-!          stop 1
-!        endif
-!        ! copy to local variable
-!        y_fullmet_sp(:) = dum1d_sp(:)
-!        deallocate(dum1d_sp)
-!      elseif(var_xtype.eq.NF90_DOUBLE)then
-!        allocate(dum1d_dp(ny_fullmet))
-!        nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
-!               start = (/1/),count = (/ny_fullmet/))
-!        if(nSTAT.ne.NF90_NOERR)then
-!          write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-!          write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-!          stop 1
-!        endif
-!        ! copy to local variable
-!        y_fullmet_sp(:) = real(dum1d_dp(:),kind=4)
-!        deallocate(dum1d_dp)
-!      else
-!        write(MR_global_error,*)"MR ERROR: Unexpected dim variable type ",Met_dim_names(i)
-!        stop 1
-!      endif
-!      ! km or degrees is expected; apply the conversion factor
-!      y_fullmet_sp(:) = y_fullmet_sp(:)*Met_dim_fac(i)
-!      ! If the coordinate is decreasing, leave as is, but make a note
-!      dy_met_const = y_fullmet_sp(2) - y_fullmet_sp(1)
-!      if(dy_met_const.lt.0.0_sp)then
-!        y_inverted = .true.
-!        dy_met_const = abs(dy_met_const)
-!      else
-!        y_inverted = .false.
-!      endif
-!      do i = 1,ny_fullmet-1
-!        MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!      enddo
-!      MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-
       ! We need to check if this is a regular grid
-      IsRegular_MetGrid = .true.
-      do i = 1,nx_fullmet-1
-        if(abs(MR_dx_met(i+1)-MR_dx_met(i)).gt.tol*MR_dx_met(i))then
-          IsRegular_MetGrid = .false.
-        endif
-      enddo
-      do i = 1,ny_fullmet-1
-        if(abs(MR_dy_met(i+1)-MR_dy_met(i)).gt.tol*MR_dy_met(i))then
-          IsRegular_MetGrid = .false.
-        endif
-      enddo
-
-      ! P 
-      !i = 2
-      !if(.not.Met_dim_IsAvailable(i))then
-      !  write(MR_global_error,*)"MR ERROR: Pressure dimension is required and not listed"
-      !  write(MR_global_error,*)"       in template windfile specification file."
-      !  stop 1
-      !endif
-      !nSTAT = nf90_inq_dimid(ncid,Met_dim_names(i),z_dim_id)
-      !if(nSTAT.ne.NF90_NOERR)then
-      !  write(MR_global_error,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  write(MR_global_log  ,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  stop 1
-      !endif
-      !nSTAT = nf90_Inquire_Dimension(ncid,z_dim_id,name=name_dum,len=np_fullmet)
-      !if(nSTAT.ne.NF90_NOERR)then
-      !  write(MR_global_error,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  stop 1
-      !endif
-      !nSTAT = nf90_inq_varid(ncid,Met_dim_names(i),var_id)
-      !if(nSTAT.ne.NF90_NOERR)then
-      !  write(MR_global_error,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  write(MR_global_log  ,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  stop 1
-      !endif
-      !! Check if we need to read into a float or a double
-      !nSTAT = nf90_inquire_variable(ncid, var_id, invar, xtype = var_xtype)
-      !if(nSTAT.ne.NF90_NOERR)then
-      !  write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-      !  write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-      !  stop 1
-      !endif
-      !allocate(p_fullmet_sp(np_fullmet))
-      !if(var_xtype.eq.NF90_FLOAT)then
-      !  allocate(dum1d_sp(np_fullmet))
-      !  nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
-      !         start = (/1/),count = (/np_fullmet/))
-      !  if(nSTAT.ne.NF90_NOERR)then
-      !    write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !    write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !    stop 1
+      !IsRegular_MetGrid = .true.
+      !do i = 1,nx_fullmet-1
+      !  if(abs(MR_dx_met(i+1)-MR_dx_met(i)).gt.tol*MR_dx_met(i))then
+      !    IsRegular_MetGrid = .false.
       !  endif
-      !  ! copy to local variable
-      !  p_fullmet_sp(:) = dum1d_sp(:)
-      !  deallocate(dum1d_sp)
-      !elseif(var_xtype.eq.NF90_DOUBLE)then
-      !  allocate(dum1d_dp(np_fullmet))
-      !  nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
-      !         start = (/1/),count = (/np_fullmet/))
-      !  if(nSTAT.ne.NF90_NOERR)then
-      !    write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !    write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !    stop 1
+      !enddo
+      !do i = 1,ny_fullmet-1
+      !  if(abs(MR_dy_met(i+1)-MR_dy_met(i)).gt.tol*MR_dy_met(i))then
+      !    IsRegular_MetGrid = .false.
       !  endif
-      !  ! copy to local variable
-      !  p_fullmet_sp(:) = real(dum1d_dp(:),kind=4)
-      !  deallocate(dum1d_dp)
-      !else
-      !  write(MR_global_error,*)"MR ERROR: Unexpected dim variable type ",Met_dim_names(i)
-      !  stop 1
-      !endif
-      !! If the p-coordinate is top-down (low-pressure to high), then flip the
-      !! coordinate and make a note
-      !if(p_fullmet_sp(1).lt.p_fullmet_sp(2))then
-      !  z_inverted = .true.
-      !  allocate(dum1d_sp(np_fullmet))
-      !  do pi = 1,np_fullmet
-      !    dum1d_sp(pi) = p_fullmet_sp(np_fullmet+1-pi)
-      !  enddo
-      !  p_fullmet_sp(:) = dum1d_sp(:)
-      !  deallocate(dum1d_sp)
-      !else
-      !  z_inverted = .false.
-      !endif
-      !! Pa is expected; apply the conversion factor
-      !p_fullmet_sp(:) = p_fullmet_sp(:)*Met_dim_fac(i)
-      !MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)) 
-
-      !! P for Vz
-      !i = 5
-      !if(.not.Met_dim_IsAvailable(i))then
-      !  write(MR_global_error,*)"MR ERROR: Pressure dimension is required and not listed"
-      !  write(MR_global_error,*)"       in template windfile specification file."
-      !  stop 1
-      !endif
-      !nSTAT = nf90_inq_dimid(ncid,Met_dim_names(i),z_dim_id)
-      !if(nSTAT.ne.NF90_NOERR)then
-      !  write(MR_global_error,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  write(MR_global_log  ,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  stop 1
-      !endif
-      !nSTAT = nf90_Inquire_Dimension(ncid,z_dim_id,name=name_dum,len=np_fullmet_Vz)
-      !if(nSTAT.ne.NF90_NOERR)then
-      !  write(MR_global_error,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  stop 1
-      !endif
-      !nSTAT = nf90_inq_varid(ncid,Met_dim_names(i),var_id)
-      !if(nSTAT.ne.NF90_NOERR)then
-      !  write(MR_global_error,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  write(MR_global_log  ,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  stop 1
-      !endif
-      !! Check if we need to read into a float or a double
-      !nSTAT = nf90_inquire_variable(ncid, var_id, invar, xtype = var_xtype)
-      !if(nSTAT.ne.NF90_NOERR)then
-      !  write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-      !  write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-      !  stop 1
-      !endif
-      !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-      !if(var_xtype.eq.NF90_FLOAT)then
-      !  allocate(dum1d_sp(np_fullmet_Vz))
-      !  nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
-      !         start = (/1/),count = (/np_fullmet_Vz/))
-      !  if(nSTAT.ne.NF90_NOERR)then
-      !    write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !    write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !    stop 1
-      !  endif
-      !  ! copy to local variable
-      !  p_fullmet_Vz_sp(:) = dum1d_sp(:)
-      !  deallocate(dum1d_sp)
-      !elseif(var_xtype.eq.NF90_DOUBLE)then
-      !  allocate(dum1d_dp(np_fullmet_Vz))
-      !  nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
-      !         start = (/1/),count = (/np_fullmet_Vz/))
-      !  if(nSTAT.ne.NF90_NOERR)then
-      !    write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !    write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !    stop 1
-      !  endif
-      !  ! copy to local variable
-      !  p_fullmet_Vz_sp(:) = real(dum1d_dp(:),kind=4)
-      !  deallocate(dum1d_dp)
-      !else
-      !  write(MR_global_error,*)"MR ERROR: Unexpected dim variable type ",Met_dim_names(i)
-      !  stop 1
-      !endif
-      !! If the p-coordinate is top-down (low-pressure to high), then flip the
-      !! coordinate and make a note
-      !if(p_fullmet_Vz_sp(1).lt.p_fullmet_Vz_sp(2))then
-      !  allocate(dum1d_sp(np_fullmet_Vz))
-      !  do pi = 1,np_fullmet_Vz
-      !    dum1d_sp(pi) = p_fullmet_Vz_sp(np_fullmet_Vz+1-pi)
-      !  enddo
-      !  p_fullmet_Vz_sp(:) = dum1d_sp(:)
-      !  deallocate(dum1d_sp)
-      !endif
-      !! Pa is expected; apply the conversion factor
-      !p_fullmet_Vz_sp(:) = p_fullmet_Vz_sp(:)*Met_dim_fac(i)
-
-      !! P for RH
-      !i = 6
-      !if(.not.Met_dim_IsAvailable(i))then
-      !  write(MR_global_error,*)"MR ERROR: Pressure dimension is required and not listed"
-      !  write(MR_global_error,*)"          in template windfile specification file."
-      !  stop 1
-      !endif
-      !nSTAT = nf90_inq_dimid(ncid,Met_dim_names(i),z_dim_id)
-      !if(nSTAT.ne.NF90_NOERR)then
-      !  write(MR_global_error,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  write(MR_global_log  ,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  stop 1
-      !endif
-      !nSTAT = nf90_Inquire_Dimension(ncid,z_dim_id,name=name_dum,len=np_fullmet_RH)
-      !if(nSTAT.ne.NF90_NOERR)then
-      !  write(MR_global_error,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  stop 1
-      !endif
-      !nSTAT = nf90_inq_varid(ncid,Met_dim_names(i),var_id)
-      !if(nSTAT.ne.NF90_NOERR)then
-      !  write(MR_global_error,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  write(MR_global_log  ,*)'MR ERROR: inq_varid ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !  stop 1
-      !endif
-      !! Check if we need to read into a float or a double
-      !nSTAT = nf90_inquire_variable(ncid, var_id, invar, xtype = var_xtype)
-      !if(nSTAT.ne.NF90_NOERR)then
-      !  write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-      !  write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-      !  stop 1
-      !endif
-      !allocate(p_fullmet_RH_sp(np_fullmet_RH))
-      !if(var_xtype.eq.NF90_FLOAT)then
-      !  allocate(dum1d_sp(np_fullmet_RH))
-      !  nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
-      !         start = (/1/),count = (/np_fullmet_RH/))
-      !  if(nSTAT.ne.NF90_NOERR)then
-      !    write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !    write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !    stop 1
-      !  endif
-      !  ! copy to local variable
-      !  p_fullmet_RH_sp(:) = dum1d_sp(:)
-      !  deallocate(dum1d_sp)
-      !elseif(var_xtype.eq.NF90_DOUBLE)then
-      !  allocate(dum1d_dp(np_fullmet_RH))
-      !  nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
-      !         start = (/1/),count = (/np_fullmet_RH/))
-      !  if(nSTAT.ne.NF90_NOERR)then
-      !    write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !    write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(i),nf90_strerror(nSTAT)
-      !    stop 1
-      !  endif
-      !  ! copy to local variable
-      !  p_fullmet_RH_sp(:) = real(dum1d_dp(:),kind=4)
-      !  deallocate(dum1d_dp)
-      !else
-      !  write(MR_global_error,*)"MR ERROR: Unexpected dim variable type ",Met_dim_names(i)
-      !  stop 1
-      !endif
-      !! If the p-coordinate is top-down (low-pressure to high), then flip the
-      !! coordinate and make a note
-      !if(p_fullmet_RH_sp(1).lt.p_fullmet_RH_sp(2))then
-      !  allocate(dum1d_sp(np_fullmet_RH))
-      !  do pi = 1,np_fullmet_RH
-      !    dum1d_sp(pi) = p_fullmet_RH_sp(np_fullmet_RH+1-pi)
-      !  enddo
-      !  p_fullmet_RH_sp(:) = dum1d_sp(:)
-      !  deallocate(dum1d_sp)
-      !endif
-      !! Pa is expected; apply the conversion factor
-      !p_fullmet_RH_sp(:) = p_fullmet_RH_sp(:)*Met_dim_fac(i)
+      !enddo
 
       ! Need to get fill_value
       ! Try to get it from geopotential height variable
