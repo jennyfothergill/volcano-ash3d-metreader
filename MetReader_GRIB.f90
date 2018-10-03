@@ -33,7 +33,7 @@
       integer, parameter :: sp        = 4 ! single precision
       integer, parameter :: dp        = 8 ! double precision
 
-      integer :: i, k
+      integer :: i, j, k
       real(kind=sp) :: xLL_fullmet
       real(kind=sp) :: yLL_fullmet
       real(kind=sp) :: xUR_fullmet
@@ -61,9 +61,11 @@
       integer(kind=4)  :: Nj,Ny
       integer(kind=4)  :: dum_int
       real(kind=8)     :: dum_dp
-      character(len=10) :: dum_str
+      character(len=19) :: dum_str
       real(kind=dp) :: x_start,y_start
       real(kind=dp) :: Lon_start,Lat_start
+      real(kind=dp),dimension(:),allocatable     :: lats,lons,values
+
       integer(kind=4)  :: typeOfFirstFixedSurface
       integer            :: count1=0
         ! Stores values of keys read from grib file
@@ -80,6 +82,7 @@
       logical :: Check
       logical :: FoundOldDim
       logical :: IsTruncatedDim
+      logical :: ReadGrid
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                MR_Read_Met_DimVars_GRIB                    ----------"
@@ -127,16 +130,75 @@
           count1=count1+1
           if(count1.eq.1)then
             ! For the first record, get the x,y grid info
+            ReadGrid = .false.
+            call grib_get(igrib,'Nx',nx_fullmet)
+            call grib_get(igrib,'Ny',ny_fullmet)
+            allocate(x_fullmet_sp(0:nx_fullmet+1))
+            allocate(y_fullmet_sp(ny_fullmet))
+            allocate(MR_dx_met(nx_fullmet))
+            allocate(MR_dy_met(ny_fullmet))
+
             call grib_get(igrib,'gridType',dum_str)
             call grib_get(igrib,'latitudeOfFirstGridPointInDegrees',dum_dp)
             Lat_start = dum_dp
             call grib_get(igrib,'longitudeOfFirstGridPointInDegrees',dum_dp)
             Lon_start = dum_dp
 
+            dum_int = 0
+            Met_Re =  6371.229_8
+            call grib_get(igrib,'shapeOfTheEarth',dum_int)
+            if (dum_int.eq.0)then
+                ! 0  Earth assumed spherical with radius = 6,367,470.0 m
+              Met_Re =  6367.470_8
+            elseif(dum_int.eq.1)then
+                ! 1  Earth assumed spherical with radius specified by data producer
+                !  Try to read the radius of earth
+                !  For now, just assign the default
+              Met_Re =  6371.229_8
+            elseif(dum_int.eq.2)then
+                ! 2  Earth assumed oblate spheroid with size as determined by IAU in 1965
+                !    (major axis = 6,378,160.0 m, minor axis = 6,356,775.0 m, f = 1/297.0)
+              Met_Re =  6371.229_8
+            elseif(dum_int.eq.3)then
+                ! 3  Earth assumed oblate spheroid with major and minor axes specified by data producer
+              Met_Re =  6371.229_8
+            elseif(dum_int.eq.4)then
+                ! 4  Earth assumed oblate spheroid as defined in IAG-GRS80 model 
+                !    (major axis = 6,378,137.0 m, minor axis = 6,356,752.314 m, f = 1/298.257222101)
+              Met_Re =  6371.229_8
+            elseif(dum_int.eq.5)then
+                ! 5  Earth assumed represented by WGS84 (as used by ICAO since 1998)
+              Met_Re =  6371.229_8
+            elseif(dum_int.eq.6)then
+                ! 6  Earth assumed spherical with radius of 6,371,229.0 m
+              Met_Re =  6371.229_8
+            else
+                ! 7-191 Reserved
+                ! 192- 254  Reserved for local use
+              Met_Re =  6371.229_8
+            endif
+
             if(index(dum_str,'regular_ll').ne.0)then
               IsLatLon_MetGrid = .true.
               Lat_start = y_start
               Lon_start = x_start
+
+              call grib_get(igrib,'numberOfPoints',numberOfPoints)
+              allocate(lats(numberOfPoints))
+              allocate(lons(numberOfPoints))
+              allocate(values(numberOfPoints))
+              call grib_get_data(igrib,lats,lons,values)
+              do j=1,ny_fullmet
+                do i=1,nx_fullmet
+                  idx = (j-1)*nx_fullmet + i
+                  x_fullmet_sp(i) = lons(idx)
+                  y_fullmet_sp(j) = lats(idx)
+                enddo
+              enddo
+              ReadGrid = .true.
+              deallocate(lats)
+              deallocate(lons)
+              deallocate(values)
               call grib_get(igrib,'latitudeOfLastGridPointInDegrees',dum_dp)
               if(Lat_start.gt.dum_dp)then
                 y_inverted = .true.
@@ -153,20 +215,90 @@
               dx_met_const = real(dum_dp,kind=4)
               call grib_get(igrib,'jDirectionIncrementInDegrees',dum_dp)
               dy_met_const = real(dum_dp,kind=4)
+              x_fullmet_sp(0) = x_fullmet_sp(1)-dx_met_const
+              x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(nx_fullmet)+dx_met_const
+            elseif(index(dum_str,'regular_gg').ne.0)then
+              IsLatLon_MetGrid = .true.
+              Lat_start = y_start
+              Lon_start = x_start
 
+              call grib_get(igrib,'numberOfPoints',numberOfPoints)
+              allocate(lats(numberOfPoints))
+              allocate(lons(numberOfPoints))
+              allocate(values(numberOfPoints))
+              call grib_get_data(igrib,lats,lons,values)
+              do j=1,ny_fullmet
+                do i=1,nx_fullmet
+                  idx = (j-1)*nx_fullmet + i
+                  x_fullmet_sp(i) = lons(idx)
+                  y_fullmet_sp(j) = lats(idx)
+                enddo
+              enddo
+              ReadGrid = .true.
+              deallocate(lats)
+              deallocate(lons)
+              deallocate(values)
+              call grib_get(igrib,'latitudeOfLastGridPointInDegrees',dum_dp)
+              if(Lat_start.gt.dum_dp)then
+                y_inverted = .true.
+              else
+                y_inverted = .false.
+              endif
+              call grib_get(igrib,'longitudeOfLastGridPointInDegrees',dum_dp)
+              if(Lon_start.gt.dum_dp)then
+                x_inverted = .true.
+              else
+                x_inverted = .false.
+              endif
+              call grib_get(igrib,'iDirectionIncrementInDegrees',dum_dp)
+              dx_met_const = real(dum_dp,kind=4)
+              call grib_get(igrib,'jDirectionIncrementInDegrees',dum_dp)
+              dy_met_const = real(dum_dp,kind=4)
+              x_fullmet_sp(0) = x_fullmet_sp(1)-dx_met_const
+              x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(nx_fullmet)+dx_met_const
+
+            elseif(index(dum_str,'polar_stereographic').ne.0)then
+              IsLatLon_MetGrid = .false.
+              Met_iprojflag     = 1
+              write(*,*)"polar_stereographic not implemented"
+              stop 1
+
+            elseif(index(dum_str,'albers').ne.0)then
+              IsLatLon_MetGrid = .false.
+              Met_iprojflag     = 2
+              write(*,*)"Alber Equal Area not implemented"
+              stop 1
+
+            elseif(index(dum_str,'UTM').ne.0)then
+              IsLatLon_MetGrid = .false.
+              Met_iprojflag     = 3
+              write(*,*)"UTM not implemented"
+              stop 1
             elseif(index(dum_str,'lambert').ne.0)then
               IsLatLon_MetGrid = .false.
               Met_iprojflag     = 4
-              call grib_get(igrib,'LoVInDegrees',dum_int)
-              Met_lam0 = real(dum_int,kind=8)
-              call grib_get(igrib,'LaDInDegrees',dum_int)
-              Met_phi0 = real(dum_int,kind=8)
-              call grib_get(igrib,'Latin1InDegrees',dum_int)
-              Met_phi1 = real(dum_int,kind=8)
-              call grib_get(igrib,'Latin2InDegrees',dum_int)
-              Met_phi2 = real(dum_int,kind=8)
-              Met_k0            =  0.933_8
-              Met_Re            =  6371.229_8
+              call grib_get(igrib,'LoVInDegrees',dum_dp)
+              Met_lam0 = dum_dp
+              call grib_get(igrib,'LaDInDegrees',dum_dp)
+              Met_phi0 = dum_dp
+              call grib_get(igrib,'Latin1InDegrees',dum_dp)
+              Met_phi1 = dum_dp
+              call grib_get(igrib,'Latin2InDegrees',dum_dp)
+              Met_phi2 = dum_dp
+              Met_k0   =  0.933_8
+              Met_Re   =  6371.229_8
+            elseif(index(dum_str,'mercator').ne.0)then
+              IsLatLon_MetGrid = .false.
+              Met_iprojflag     = 5
+              Met_lam0 = Lon_start
+              call grib_get(igrib,'LaDInDegrees',dum_dp)
+              Met_phi0 = dum_dp
+              Met_k0   =  0.933_8
+              Met_Re   =  6371.229_8
+
+            else
+              write(MR_global_error,*)'MR ERROR: Cannot determine the projection from the GRIB file.'
+              stop 1
             endif
 
             if(.not.IsLatLon_MetGrid)then
@@ -180,23 +312,20 @@
                        x_start,y_start)
             endif
 
-            call grib_get(igrib,'Nx',nx_fullmet)
-            call grib_get(igrib,'Ny',ny_fullmet)
-            allocate(x_fullmet_sp(0:nx_fullmet+1))
-            allocate(y_fullmet_sp(ny_fullmet))
-            allocate(MR_dx_met(nx_fullmet))
-            allocate(MR_dy_met(ny_fullmet))
-            do i = 0,nx_fullmet+1
-              x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-            enddo
-            if(y_inverted)then
-              do i = 1,ny_fullmet
-                y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
+            if(.not.ReadGrid)then
+              do i = 0,nx_fullmet+1
+                x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
               enddo
-            else
-            do i = 1,ny_fullmet
-              y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-            enddo
+              if(y_inverted)then
+                do i = 1,ny_fullmet
+                  y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
+                enddo
+              else
+                do i = 1,ny_fullmet
+                  y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
+                enddo
+              endif
+              ReadGrid = .true.
             endif
             do i = 1,nx_fullmet
               MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
@@ -205,9 +334,7 @@
               MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
             enddo
             MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-            !write(*,*)x_fullmet_sp
-            !write(*,*)y_fullmet_sp
-            !stop 5
+              
           endif
 
           call grib_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
@@ -342,199 +469,19 @@
               write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar)
         enddo
 
-
         ! Now assign these levels to the working arrays
-        ! Geopotential
+        ! Geopotential is the first variable checked, use this for np_fullmet
         nt_fullmet = 1
-        np_fullmet    = nlevs_fullmet(Met_var_zdim_idx(1))  ! Assign fullmet the length of H,U,V
+        np_fullmet = nlevs_fullmet(Met_var_zdim_idx(1))  ! Assign fullmet the length of H,U,V
         allocate(p_fullmet_sp(np_fullmet))
         idx = Met_var_zdim_idx(1)
         p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
-
-        x_inverted = .false. ! This is pretty much never true
-        y_inverted = .false. ! This will be changed as needed below
-
       else
         write(MR_global_error,*)"MR ERROR : MR_GRIB_Version must be 1 or 2, not  ",&
                                 MR_GRIB_Version
         stop 1
       endif
-
-!      if(MR_iwindformat.eq.0)then
-!        ! Custom windfile (example for nam198)
-!        !  Need to populate
-!        !call MR_Set_Met_Dims_Custom_GRIB
-!        write(MR_global_error,*)"MR ERROR : Currently, grib reader only works for known grib files."
-!        write(MR_global_error,*)"           Custom reader forthcoming"
-!        stop 1
-!      elseif(MR_iwindformat.eq.2)then
-!        write(MR_global_error,*)"MR ERROR : MR_iwindformat = 2: should not be here."
-!        stop 1
-!      elseif(MR_iwindformat.eq.3)then
-!          ! 3 = NARR3D NAM221 32 km North America files
-!          ! We really should not be here since NARR is provided as GRIB1 not GRIB2
-!        call MR_Set_Met_NCEPGeoGrid(1221)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.4)then
-!          ! 4 = NAM Regional North America 221 (32 km)
-!        call MR_Set_Met_NCEPGeoGrid(221)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.5)then
-!        ! NAM 45-km Polar Sterographic
-!        call MR_Set_Met_NCEPGeoGrid(216)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.6)then
-!          ! 104 converted automatically from grib2
-!          ! NAM 90-km Polar Sterographic
-!        call MR_Set_Met_NCEPGeoGrid(104)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.7)then
-!          ! 212 converted automatically from grib2
-!          ! CONUS 40-km Lambert Conformal
-!        call MR_Set_Met_NCEPGeoGrid(212)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.8)then
-!          !  12 KM CONUS)
-!        call MR_Set_Met_NCEPGeoGrid(218)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.9)then
-!          !  5.08 KM CONUS
-!        call MR_Set_Met_NCEPGeoGrid(227)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.10)then
-!          ! NAM AK 242
-!        call MR_Set_Met_NCEPGeoGrid(242)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.11)then
-!          ! NAM196 converted automatically from grib2
-!        call MR_Set_Met_NCEPGeoGrid(196)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.12)then
-!          ! NAM198 converted automatically from grib2
-!        call MR_Set_Met_NCEPGeoGrid(198)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.13)then
-!          ! NAM91 converted automatically from grib2
-!        call MR_Set_Met_NCEPGeoGrid(91)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.14)then
-!          !  3 KM CONUS)
-!        call MR_Set_Met_NCEPGeoGrid(1227)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.20)then
-!        ! GFS 0.5
-!        call MR_Set_Met_NCEPGeoGrid(4)
-!        x_inverted = .false.
-!        y_inverted = .true.
-!      elseif(MR_iwindformat.eq.21)then
-!        ! GFS 1.0
-!        call MR_Set_Met_NCEPGeoGrid(3)
-!        x_inverted = .false.
-!        y_inverted = .true.
-!      elseif(MR_iwindformat.eq.22)then
-!        ! GFS 0.25
-!        call MR_Set_Met_NCEPGeoGrid(193)
-!        x_inverted = .false.
-!        y_inverted = .true.
-!      elseif(MR_iwindformat.eq.23)then
-!        ! NCEP DOE reanalysis
-!        call MR_Set_Met_NCEPGeoGrid(2)
-!        x_inverted = .false.
-!        y_inverted = .true.
-!      elseif(MR_iwindformat.eq.24)then
-!        ! NASA MERRA reanalysis
-!        call MR_Set_Met_NCEPGeoGrid(1024)
-!        x_inverted = .false.
-!        y_inverted = .true.
-!      elseif(MR_iwindformat.eq.25)then
-!        ! NCEP-1 1948 reanalysis
-!        call MR_Set_Met_NCEPGeoGrid(2)
-!
-!        !nt_fullmet = 1460 ! might need to add 4 for a leap year
-!        ! These additional grids are needed since surface variables are on a
-!        ! different spatial grid.
-!        do i = 1,192
-!          x_in_iwf25_sp(i)=(i-1)*1.875_sp
-!        enddo
-!        y_in_iwf25_sp(1:94) = (/ &
-!         88.542_sp,  86.6531_sp,  84.7532_sp,  82.8508_sp,  80.9473_sp,   79.0435_sp,  77.1394_sp, 75.2351_sp, &
-!        73.3307_sp,  71.4262_sp,  69.5217_sp,  67.6171_sp,  65.7125_sp,   63.8079_sp,  61.9033_sp, 59.9986_sp, &
-!        58.0939_sp,  56.1893_sp,  54.2846_sp,  52.3799_sp,  50.4752_sp,   48.5705_sp,  46.6658_sp, 44.7611_sp, &
-!        42.8564_sp,  40.9517_sp,   39.047_sp,  37.1422_sp,  35.2375_sp,   33.3328_sp,  31.4281_sp, 29.5234_sp, &
-!        27.6186_sp,  25.7139_sp,  23.8092_sp,  21.9044_sp,  19.9997_sp,    18.095_sp,  16.1902_sp, 14.2855_sp, &
-!        12.3808_sp, 10.47604_sp,  8.57131_sp,  6.66657_sp,  4.76184_sp,    2.8571_sp, 0.952368_sp, &
-!      -0.952368_sp,  -2.8571_sp, -4.76184_sp, -6.66657_sp, -8.57131_sp, -10.47604_sp, -12.3808_sp, &
-!       -14.2855_sp, -16.1902_sp,  -18.095_sp, -19.9997_sp, -21.9044_sp,  -23.8092_sp, -25.7139_sp, &
-!       -27.6186_sp, -29.5234_sp, -31.4281_sp, -33.3328_sp, -35.2375_sp,  -37.1422_sp,  -39.047_sp, &
-!       -40.9517_sp, -42.8564_sp, -44.7611_sp, -46.6658_sp, -48.5705_sp,  -50.4752_sp, -52.3799_sp, &
-!       -54.2846_sp, -56.1893_sp, -58.0939_sp, -59.9986_sp, -61.9033_sp,  -63.8079_sp, -65.7125_sp, &
-!       -67.6171_sp, -69.5217_sp, -71.4262_sp, -73.3307_sp, -75.2351_sp,  -77.1394_sp, -79.0435_sp, &
-!       -80.9473_sp, -82.8508_sp, -84.7532_sp, -86.6531_sp,  -88.542_sp /)
-!        x_inverted = .false.
-!        y_inverted = .true.
-!      elseif(MR_iwindformat.eq.26)then
-!        ! JRA-55 1.25
-!        call MR_Set_Met_NCEPGeoGrid(45)
-!        x_inverted = .false.
-!        y_inverted = .true.
-!      elseif(MR_iwindformat.eq.27)then
-!        ! NOAA reanalysis
-!        call MR_Set_Met_NCEPGeoGrid(1027)
-!
-!        !nt_fullmet = 1460 ! might need to add 4 for a leap year
-!        x_inverted = .false.
-!        y_inverted = .true.
-!      elseif(MR_iwindformat.eq.28)then
-!        ! ECMWF Global Gaussian Lat/Lon grid 170
-!          ! Note: grid is not regular
-!          !       pressure values are from low to high
-!        call MR_Set_Met_NCEPGeoGrid(170)
-!        x_inverted = .false.
-!        y_inverted = .true.
-!      elseif(MR_iwindformat.eq.29)then
-!        ! Japanese 25-year reanalysis
-!        call MR_Set_Met_NCEPGeoGrid(2)
-!        x_inverted = .false.
-!        y_inverted = .true.
-!      elseif(MR_iwindformat.eq.31)then
-!          ! Catania forecasts
-!        call MR_Set_Met_NCEPGeoGrid(1031)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.32)then
-!          ! Air Force Weather Agency
-!        call MR_Set_Met_NCEPGeoGrid(1032)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.40)then
-!        ! NASA GEOS Cp
-!        call MR_Set_Met_NCEPGeoGrid(1040)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      elseif(MR_iwindformat.eq.41)then
-!        ! NASA GEOS Np
-!        call MR_Set_Met_NCEPGeoGrid(1041)
-!        x_inverted = .false.
-!        y_inverted = .false.
-!      else
-!        ! Not a recognized MR_iwindformat
-!        ! call reading of custom windfile pressure,grid values
-!        write(MR_global_error,*)"MR ERROR : windfile format not recognized."
-!        stop 1
-!      endif
 
       allocate(z_approx(np_fullmet))
       do k=1,np_fullmet

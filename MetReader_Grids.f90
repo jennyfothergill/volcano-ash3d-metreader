@@ -58,9 +58,9 @@
         !  phi2        =  25.0     : latitude of cone intersection 2
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 4 262.5 38.5 38.5 38.5 6371.229    #Proj flags and params  
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
         Met_iprojflag     = 4
         Met_lam0          =  262.5_8
         Met_phi0          =  38.5_8
@@ -68,32 +68,7 @@
         Met_phi2          =  38.5_8
         Met_k0            =  0.933_8
         Met_Re            =  6371.229_8
-!
-!        nx_fullmet = 1799
-!        ny_fullmet = 1059
-!        dx_met_const = 3.000_sp
-!        dy_met_const = 3.000_sp
-!        x_start =  -2697.5733_dp
-!        y_start =  -1587.306_dp
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
       elseif(igrid.eq.1221)then
         ! NAM 32-km Lambert Conformal used by NARR (used Met_Re=6367.470, not 6371.229)
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID221
@@ -116,9 +91,9 @@
         !  radius      =  6367.47 : earth radius for spherical earth
         ! 0 4 -107.0 50.0 50.0 50.0 6367.47    #Proj flags and params  
 
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
+        isGridRelative = .false.
+        MR_Reannalysis = .true.
+
         Met_iprojflag     = 4
         Met_lam0          =  -107.0_8
         Met_phi0          =  50.0_8
@@ -127,30 +102,6 @@
         Met_k0            =  0.933_8
         Met_Re            =  6367.470_8
 
-!        nx_fullmet = 349
-!        ny_fullmet = 277
-!        dx_met_const = 32.463_sp
-!        dy_met_const = 32.463_sp
-!        x_start = -5629.344_sp
-!        y_start = -4609.846_sp
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
       elseif(igrid.eq.1051)then
         ! Not an NCEP grid
         !  This grid is for the SENAMHI 22 km files
@@ -164,110 +115,55 @@
 !        IsLatLon_MetGrid  = .false.
 !        IsGlobal_MetGrid  = .false.
 !        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
         Met_iprojflag     = 5
         Met_lam0          = 274.784027099609_8
         Met_phi0          =  56.7920036315918_8
         Met_k0            =  0.933_8
         Met_Re            =  6367.470_8
-!
-!        nx_fullmet = 93
-!        ny_fullmet = 112
-!        dx_met_const = 22.0_sp
-!        dy_met_const = 22.0_sp
-!        !dx_met_const = 11.0_sp
-!        !dy_met_const = 11.0_sp
-!        x_start = 0.0_sp
-!        y_start = -1232.906_sp
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
+      elseif(igrid.eq.1050)then
+         ! Not an NCEP grid
+         !  This grid is for the WRF runs (must be read from file)
+
+!        IsLatLon_MetGrid  = .true.
+!        IsGlobal_MetGrid  = .true.
+!        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
       elseif(igrid.eq.1041)then
          ! Not an NCEP grid
          !  This grid is for the NASA Np
+
 !        IsLatLon_MetGrid  = .true.
 !        IsGlobal_MetGrid  = .true.
 !        IsRegular_MetGrid = .true.
-!        nx_fullmet = 1152
-!        ny_fullmet = 721
-!        dx_met_const = 0.3125_sp
-!        dy_met_const = 0.25_sp
-!        x_start = -180.0_dp    ! These are double-precision for GEOS_Np
-!        y_start = -90.0_dp
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
+        isGridRelative = .true.
+
       elseif(igrid.eq.1040.or.igrid.eq.1024)then
          ! Not an NCEP grid
          !  This grid is for the NASA GEOS-5 Cp or MERRA-2
-!
-!        !Met_dim_names(3) = "lat"        ! y        (-90.0 -> 90.0) 361
-!        !  Met_dim_IsAvailable(3)=.true.
-!        !Met_dim_names(4) = "lon"        ! x        (-180.0 -> 179.375) 576
-!
+
 !        IsLatLon_MetGrid  = .true.
 !        IsGlobal_MetGrid  = .true.
 !        IsRegular_MetGrid = .true.
-!        nx_fullmet = 576
-!        ny_fullmet = 361
-!        dx_met_const = 0.625_sp
-!        dy_met_const = 0.5_sp
-!        x_start = -180.0_dp
-!        y_start = -90.0_dp
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
+        isGridRelative = .true.
+
       elseif(igrid.eq.1033)then
          ! Not an NCEP grid
          !  This grid is for the CAM files
+
 !        IsLatLon_MetGrid  = .true.
 !        IsGlobal_MetGrid  = .true.
 !        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
 !        nx_fullmet = 96
 !        ny_fullmet = 48
 !        dx_met_const = 3.75_sp
@@ -295,81 +191,33 @@
       elseif(igrid.eq.1032)then
          ! Not an NCEP grid
          !  This grid is for the AFWA files
+
 !        IsLatLon_MetGrid  = .true.
 !        IsGlobal_MetGrid  = .true.
 !        IsRegular_MetGrid = .true.
-!        nx_fullmet = 1440
-!        ny_fullmet = 721
-!        dx_met_const = 0.25_sp
-!        dy_met_const = 0.25_sp
-!        x_start = 0.0_dp
-!        y_start = -90.0_dp
-!        !dx_met_const = 0.234374_sp
-!        !dy_met_const = 0.15625_sp
-!        !x_start = 0.117187_dp
-!        !y_start = -89.921875_dp
-!
-!        nx_fullmet = 720
-!        ny_fullmet = 361
-!        dx_met_const = 0.5_sp
-!        dy_met_const = 0.5_sp
-!
-!
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
+        isGridRelative = .true.
+
       elseif(igrid.eq.1031)then
          ! Not an NCEP grid
          !  This grid is for the Catania files
+
 !        IsLatLon_MetGrid  = .true.
 !        IsGlobal_MetGrid  = .false.
 !        IsRegular_MetGrid = .true.
-!        nx_fullmet = 94
-!        ny_fullmet = 98
-!        dx_met_const = 0.06_sp
-!        dy_met_const = 0.06_sp
-!        x_start = 12.5_dp
-!        y_start = 34.5_dp
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
+        isGridRelative = .true.
+
       elseif(igrid.eq.1029)then
          ! Not an NCEP grid
          !  This grid is for the ECMWF ERA5
+
 !        IsLatLon_MetGrid  = .true.
 !        IsGlobal_MetGrid  = .true.
 !        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
 !        nx_fullmet = 1280
 !        ny_fullmet = 640
 !        dx_met_const = 0.281_sp
@@ -398,120 +246,51 @@
       elseif(igrid.eq.1027)then
          ! Not an NCEP grid
          !  This grid is for the NOAA Reanalysis
+
 !        IsLatLon_MetGrid  = .true.
 !        IsGlobal_MetGrid  = .true.
 !        IsRegular_MetGrid = .true.
-!        nx_fullmet = 180
-!        ny_fullmet = 91
-!        dx_met_const = 2.0_sp
-!        dy_met_const = 2.0_sp
-!        x_start =  0.0_dp
-!        y_start = 90.0_dp
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
+        isGridRelative = .true.
+
       elseif(igrid.eq.2)then
-         ! Used by NCEP DOE reanalysis, NCEP-1
+       ! Used by NCEP DOE reanalysis, NCEP-1
+       !  http://www.nco.ncep.noaa.gov/pmb/docs/on388/grids/grid002.gif
+
 !        IsLatLon_MetGrid  = .true.
 !        IsGlobal_MetGrid  = .true.
 !        IsRegular_MetGrid = .true.
-!        nx_fullmet = 144
-!        ny_fullmet = 73
-!        dx_met_const = 2.5_sp
-!        dy_met_const = 2.5_sp
-!        x_start =  0.0_dp
-!        y_start = 90.0_dp
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
+        isGridRelative = .true.
+
       elseif(igrid.eq.3)then
-         ! Used by GFS forecast
+        ! Used by GFS forecast
+        ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID3
+        ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/grids/grid003.gif
+
 !        IsLatLon_MetGrid  = .true.
 !        IsGlobal_MetGrid  = .true.
 !        IsRegular_MetGrid = .true.
-!        nx_fullmet = 360
-!        ny_fullmet = 181
-!        dx_met_const = 1.0_sp
-!        dy_met_const = 1.0_sp
-!        x_start =  0.0_dp
-!        y_start = 90.0_dp
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
+        isGridRelative = .true.
+
       elseif(igrid.eq.4)then
-         ! Used by GFS forecast
+        ! Used by GFS forecast
+         !  http://www.nco.ncep.noaa.gov/pmb/docs/on388/grids/grid003.gif
+
 !        IsLatLon_MetGrid  = .true.
 !        IsGlobal_MetGrid  = .true.
 !        IsRegular_MetGrid = .true.
-!        nx_fullmet = 720
-!        ny_fullmet = 361
-!        dx_met_const = 0.5_sp
-!        dy_met_const = 0.5_sp
-!        x_start =  0.0_dp
-!        y_start = 90.0_dp
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
+        isGridRelative = .true.
+
+      elseif(igrid.eq.45)then
+        ! Used by JMA 55
+          !  http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID45
+          !  http://www.nco.ncep.noaa.gov/pmb/docs/on388/grids/grid045.gif
+
+        isGridRelative = .true.
+
       elseif(igrid.eq.91)then
         ! NAM 3-km Polar Sterographic
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID91
@@ -557,41 +336,15 @@
         !  k0          =  0.933    : scale factor at projection point
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 1 -150.0 90.0 0.933 6371.229    #Proj flags and params
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
         Met_iprojflag     = 1
         Met_lam0          = -150.0_8
         Met_phi0          =  90.0_8
         Met_k0            =  0.933_8
         Met_Re            =  6371.229_8
-!
-!        nx_fullmet = 1649
-!        ny_fullmet = 1105
-!        dx_met_const = 2.976000_sp
-!        dy_met_const = 2.976000_sp
-!        x_start = -2619.397217_dp
-!        y_start = -4810.102539_dp
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
-!
+
       elseif(igrid.eq.104)then
         ! NAM 90-km Polar Sterographic
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID104
@@ -616,40 +369,15 @@
         !  k0          =  0.933    : scale factor at projection point
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 1 -105.0 90.0 0.933 6371.229    #Proj flags and params
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
         Met_iprojflag     = 1
         Met_lam0          = -105.0_8
         Met_phi0          =  90.0_8
         Met_k0            =  0.933_8
         Met_Re            =  6371.229_8
-!
-!        nx_fullmet = 147
-!        ny_fullmet = 110
-!        dx_met_const = 90.75500_sp
-!        dy_met_const = 90.75500_sp
-!        x_start = -6761.11795473085_dp
-!        y_start = -9846.6868574523_dp
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
       elseif(igrid.eq.170)then
         ! Global Gaussian Lat/Lon T170
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID170
@@ -658,6 +386,9 @@
 !        IsLatLon_MetGrid  = .true.
 !        IsGlobal_MetGrid  = .true.
 !        IsRegular_MetGrid = .false.
+
+        isGridRelative = .true.
+
 !        nx_fullmet = 512
 !        ny_fullmet = 256
 !        allocate(x_fullmet_sp(0:nx_fullmet+1))
@@ -794,34 +525,15 @@
 !        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 !
       elseif(igrid.eq.193)then
-         ! Used by GFS forecast (0.25)
+       ! Used by GFS forecast (0.25)
+       !  http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID193
+
 !        IsLatLon_MetGrid  = .true.
 !        IsGlobal_MetGrid  = .true.
 !        IsRegular_MetGrid = .true.
-!        nx_fullmet = 1440
-!        ny_fullmet = 721
-!        dx_met_const = 0.25_sp
-!        dy_met_const = 0.25_sp
-!        x_start =  0.0_dp
-!        y_start = 90.0_dp
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
+        isGridRelative = .true.
+
       elseif(igrid.eq.196)then
         ! HI 2.5-km Mercator
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID196
@@ -857,40 +569,15 @@
         ! 206.131 23.088
         !   800.00  2480.60
         ! 0 5 198.475 20.0 0.933 6371.229    #Proj flags and params
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
         Met_iprojflag     = 5
         Met_lam0          = 198.475_8
         Met_phi0          =  20.0_8
         Met_k0            =  0.933_8
         Met_Re            =  6371.229_8
-!
-!        nx_fullmet = 321
-!        ny_fullmet = 225
-!        dx_met_const = 2.5_sp
-!        dy_met_const = 2.5_sp
-!        x_start = 0.0_dp
-!        y_start = 1920.618_dp
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
       elseif(igrid.eq.198)then
         ! NAM 6-km Polar Sterographic
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID198
@@ -936,40 +623,15 @@
         !  k0          =  0.933    : scale factor at projection point
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 1 -150.0 90.0 0.933 6371.229    #Proj flags and params
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
         Met_iprojflag     = 1
         Met_lam0          = -150.0_8
         Met_phi0          =  90.0_8
         Met_k0            =  0.933_8
         Met_Re            =  6371.229_8
-!
-!        nx_fullmet = 825
-!        ny_fullmet = 553
-!        dx_met_const = 5.953000_sp
-!        dy_met_const = 5.953000_sp
-!        x_start = -2619.397217_dp
-!        y_start = -4810.102539_dp
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
       elseif(igrid.eq.212)then
         ! CONUS 40-km Lambert Conformal
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID212
@@ -993,9 +655,8 @@
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 4 265.0 25.0 25.0 25.0 6371.229    #Proj flags and params                               
 
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
+        isGridRelative = .true.
+
         Met_iprojflag     = 4
         Met_lam0          =  265.0_8
         Met_phi0          =  25.0_8
@@ -1003,32 +664,7 @@
         Met_phi2          =  25.0_8
         Met_k0            =  0.933_8
         Met_Re            =  6371.229_8
-!
-!        nx_fullmet = 185
-!        ny_fullmet = 129
-!        dx_met_const = 40.635_sp
-!        dy_met_const = 40.635_sp
-!        x_start =  -4226.10860264919_dp
-!        y_start =  -832.697842685899_dp
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
       elseif(igrid.eq.215)then
         ! CONUS 20-km Lambert Conformal
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID215
@@ -1108,41 +744,15 @@
         !  k0          =  0.933    : scale factor at projection point
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 1 -135.0 90.0 0.933 6371.229    #Proj flags and params
-!
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
         Met_iprojflag     = 1
         Met_lam0          = -135.0_8
         Met_phi0          =  90.0_8
         Met_k0            =  0.933_8
         Met_Re            =  6371.229_8
-!
-!        nx_fullmet = 139
-!        ny_fullmet = 107
-!        dx_met_const = 45.00000_sp
-!        dy_met_const = 45.00000_sp
-!        x_start =  -4225.87071154953_dp
-!        y_start =  -5408.86785597764_dp
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
       elseif(igrid.eq.218)then
         ! CONUS 12-km Lambert Conformal
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID218
@@ -1164,9 +774,9 @@
         !  phi2        =  25.0     : latitude of cone intersection 2
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 4 265.0 25.0 25.0 25.0 6371.229    #Proj flags and params  
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
         Met_iprojflag     = 4
         Met_lam0          =  265.0_8
         Met_phi0          =  25.0_8
@@ -1175,31 +785,6 @@
         Met_k0            =  0.933_8
         Met_Re            =  6371.229_8
 
-!        nx_fullmet = 614
-!        ny_fullmet = 428
-!        dx_met_const = 12.191000_sp
-!        dy_met_const = 12.191000_sp
-!        x_start =  -4226.108_dp
-!        y_start =  -832.6978_dp
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
       elseif(igrid.eq.221)then
         ! NAM 32-km Lambert Conformal
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID221
@@ -1222,10 +807,9 @@
         !  phi2        =  25.0     : latitude of cone intersection 2
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 4 -107.0 50.0 50.0 50.0 6371.229    #Proj flags and params  
-!
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
         Met_iprojflag     = 4
         Met_lam0          =  -107.0_8
         Met_phi0          =  50.0_8
@@ -1233,31 +817,6 @@
         Met_phi2          =  50.0_8
         Met_k0            =  0.933_8
         Met_Re            =  6371.229_8
-!
-!        nx_fullmet = 349
-!        ny_fullmet = 277
-!        dx_met_const = 32.463_sp
-!        dy_met_const = 32.463_sp
-!        x_start =  -5632.66705905226_dp
-!        y_start =  -4612.56764884087_dp
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 !
       elseif(igrid.eq.227)then
         ! CONUS 5.079-km Lambert Conformal
@@ -1280,9 +839,9 @@
         !  phi2        =  25.0     : latitude of cone intersection 2
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 4 265.0 25.0 25.0 25.0 6371.229    #Proj flags and params  
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
         Met_iprojflag     = 4
         Met_lam0          =  265.0_8
         Met_phi0          =  25.0_8
@@ -1290,33 +849,7 @@
         Met_phi2          =  25.0_8
         Met_k0            =  0.933_8
         Met_Re            =  6371.229_8
-!
-!        nx_fullmet = 1473
-!        ny_fullmet = 1025
-!        dx_met_const = 5.079_sp
-!        dy_met_const = 5.079_sp
-!        x_start =  -4226.108_dp
-!        y_start =  -832.6978_dp
-!
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
       elseif(igrid.eq.242)then
         ! NAM 11.25-km Polar Sterographic
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID242
@@ -1338,40 +871,14 @@
         !  k0          =  0.933    : scale factor at projection point
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 1 -135.0 90.0 0.933 6371.229    #Proj flags and params
-!
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
         Met_iprojflag     = 1
         Met_lam0          = -135.0_8
         Met_phi0          =  90.0_8
         Met_k0            =  0.933_8
         Met_Re            =  6371.229_8
-!
-!        nx_fullmet = 553
-!        ny_fullmet = 425
-!        dx_met_const = 11.250000_sp
-!        dy_met_const = 11.250000_sp
-!        x_start =  -4225.87071154953_dp
-!        y_start =  -5408.86785597764_dp
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
       else
         write(MR_global_info,*)"MR ERROR: MR_Set_Met_NCEPGeoGrid called with invalid code."

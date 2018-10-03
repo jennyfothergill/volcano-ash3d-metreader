@@ -218,9 +218,9 @@
             endif
             ! Finally, check for orientation
             if(x_fullmet_sp(1).lt.x_fullmet_sp(2))then
-              x_inverted = .true.
-            else
               x_inverted = .false.
+            else
+              x_inverted = .true.
             endif
             allocate(MR_dx_met(nx_fullmet))
             x_start = x_fullmet_sp(1)
@@ -258,7 +258,7 @@
               write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
               stop 1
             endif
-            allocate(y_fullmet_sp(0:ny_fullmet+1))
+            allocate(y_fullmet_sp(1:ny_fullmet))
             if(var_xtype.eq.NF90_FLOAT)then
               allocate(dum1d_sp(dimlen))
               nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
@@ -285,7 +285,7 @@
               deallocate(dum1d_dp)
             else
               write(MR_global_error,*)'MR ERROR: Cannot recognize variable type for x'
-              stop 5
+              stop 1
             endif
             ! Check the units
             nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
@@ -309,20 +309,18 @@
                 IsLatLon_MetGrid  = .true.
               else
                 write(MR_global_error,*)"MR ERROR: Cannot determine if the grid is lon/lat or projected"
-                stop 5
+                stop 1
               endif
             endif
             ! check for orientation
             if(y_fullmet_sp(1).lt.y_fullmet_sp(2))then
-              y_inverted = .true.
-            else
               y_inverted = .false.
+            else
+              y_inverted = .true.
             endif
             allocate(MR_dy_met(ny_fullmet))
             y_start = y_fullmet_sp(1)
             dy_met_const = y_fullmet_sp(2)-y_fullmet_sp(1)
-            y_fullmet_sp(0)            = y_fullmet_sp(1)          - dy_met_const
-            y_fullmet_sp(ny_fullmet+1) = y_fullmet_sp(ny_fullmet) + dy_met_const
             do i = 1,ny_fullmet-1
               MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
             enddo
@@ -573,8 +571,6 @@
         p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
   
-        x_inverted = .false. ! This is pretty much never true
-        y_inverted = .false. ! This will be changed as needed below
       endif ! MR_iwindformat.eq.50
       !---------------------------------------------------------------------------------
 
@@ -582,182 +578,6 @@
         ! Template windfile (example for nam198)
         !  Need to populate
         call MR_Set_Met_Dims_Template_netcdf
-
-      elseif(MR_iwindformat.eq.2)then
-        write(MR_global_info,*)"MR_iwindformat = 2: should not be here."
-        stop 1
-      elseif(MR_iwindformat.eq.3)then
-          ! 3 = NARR3D NAM221 32 km North America files
-        call MR_Set_Met_NCEPGeoGrid(1221) ! This is almost NAM221, but uses a diff Re
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.4)then
-          ! 4 = NAM Regional North America 221 (32 km)
-        call MR_Set_Met_NCEPGeoGrid(221) 
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.5)then
-        ! NAM 45-km Polar Sterographic
-        call MR_Set_Met_NCEPGeoGrid(216)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.6)then
-          ! 104 converted automatically from grib2
-          ! NAM 90-km Polar Sterographic
-        call MR_Set_Met_NCEPGeoGrid(104)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.7)then
-          ! 212 converted automatically from grib2
-          ! CONUS 40-km Lambert Conformal
-        call MR_Set_Met_NCEPGeoGrid(212)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.8)then
-          !  12 KM CONUS
-        call MR_Set_Met_NCEPGeoGrid(218)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.9)then
-          !  5.08 KM CONUS
-        call MR_Set_Met_NCEPGeoGrid(227)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.10)then
-          ! NAM AK 242
-        call MR_Set_Met_NCEPGeoGrid(242)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.11)then
-          ! NAM196 converted automatically from grib2
-        call MR_Set_Met_NCEPGeoGrid(196)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.12)then
-          ! NAM198 converted automatically from grib2
-        call MR_Set_Met_NCEPGeoGrid(198)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.13)then
-          ! NAM91 converted automatically from grib2
-        call MR_Set_Met_NCEPGeoGrid(91)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.14)then
-          !  3 KM CONUS)
-        call MR_Set_Met_NCEPGeoGrid(1227)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.20)then
-        ! GFS 0.5
-        call MR_Set_Met_NCEPGeoGrid(4)
-      !  x_inverted = .false.
-      !  y_inverted = .true.
-      elseif(MR_iwindformat.eq.21)then
-        ! GFS 1.0
-        call MR_Set_Met_NCEPGeoGrid(3)
-      !  x_inverted = .false.
-      !  y_inverted = .true.
-      elseif(MR_iwindformat.eq.22)then
-        ! GFS 0.25
-        call MR_Set_Met_NCEPGeoGrid(193)
-      !  x_inverted = .false.
-      !  y_inverted = .true.
-      elseif(MR_iwindformat.eq.23)then
-        ! NCEP DOE reanalysis
-        call MR_Set_Met_NCEPGeoGrid(2)
-      !  x_inverted = .false.
-      !  y_inverted = .true.
-      elseif(MR_iwindformat.eq.24)then
-        ! NASA MERRA2 reanalysis
-        call MR_Set_Met_NCEPGeoGrid(1024)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.25)then
-        ! NCEP-1 1948 reanalysis
-        call MR_Set_Met_NCEPGeoGrid(2)
-
-      !  ! These additional grids are needed since surface variables are on a
-      !  ! different spatial grid.
-      !  do i = 1,192
-      !    x_in_iwf25_sp(i)=(i-1)*1.875_sp
-      !  enddo
-      !  y_in_iwf25_sp(1:94) = (/ &
-      !   88.542_sp,  86.6531_sp,  84.7532_sp,  82.8508_sp,  80.9473_sp,   79.0435_sp,  77.1394_sp, 75.2351_sp, &
-      !  73.3307_sp,  71.4262_sp,  69.5217_sp,  67.6171_sp,  65.7125_sp,   63.8079_sp,  61.9033_sp, 59.9986_sp, &
-      !  58.0939_sp,  56.1893_sp,  54.2846_sp,  52.3799_sp,  50.4752_sp,   48.5705_sp,  46.6658_sp, 44.7611_sp, &
-      !  42.8564_sp,  40.9517_sp,   39.047_sp,  37.1422_sp,  35.2375_sp,   33.3328_sp,  31.4281_sp, 29.5234_sp, &
-      !  27.6186_sp,  25.7139_sp,  23.8092_sp,  21.9044_sp,  19.9997_sp,    18.095_sp,  16.1902_sp, 14.2855_sp, &
-      !  12.3808_sp, 10.47604_sp,  8.57131_sp,  6.66657_sp,  4.76184_sp,    2.8571_sp, 0.952368_sp, &
-      !-0.952368_sp,  -2.8571_sp, -4.76184_sp, -6.66657_sp, -8.57131_sp, -10.47604_sp, -12.3808_sp, &
-      ! -14.2855_sp, -16.1902_sp,  -18.095_sp, -19.9997_sp, -21.9044_sp,  -23.8092_sp, -25.7139_sp, &
-      ! -27.6186_sp, -29.5234_sp, -31.4281_sp, -33.3328_sp, -35.2375_sp,  -37.1422_sp,  -39.047_sp, &
-      ! -40.9517_sp, -42.8564_sp, -44.7611_sp, -46.6658_sp, -48.5705_sp,  -50.4752_sp, -52.3799_sp, &
-      ! -54.2846_sp, -56.1893_sp, -58.0939_sp, -59.9986_sp, -61.9033_sp,  -63.8079_sp, -65.7125_sp, &
-      ! -67.6171_sp, -69.5217_sp, -71.4262_sp, -73.3307_sp, -75.2351_sp,  -77.1394_sp, -79.0435_sp, &
-      ! -80.9473_sp, -82.8508_sp, -84.7532_sp, -86.6531_sp,  -88.542_sp /)
-      !  x_inverted = .false.
-      !  y_inverted = .true.
-      elseif(MR_iwindformat.eq.26)then
-        ! JRA-55 1.25
-        call MR_Set_Met_NCEPGeoGrid(45)
-      !  x_inverted = .false.
-      !  y_inverted = .true.
-      elseif(MR_iwindformat.eq.27)then
-        ! NOAA reanalysis
-        call MR_Set_Met_NCEPGeoGrid(1027)
-      !  x_inverted = .false.
-      !  y_inverted = .true.
-      elseif(MR_iwindformat.eq.28)then
-        ! ECMWF Global Gaussian Lat/Lon grid 170
-          ! Note: grid is not regular
-          !       pressure values are from low to high
-        call MR_Set_Met_NCEPGeoGrid(170)
-      !  x_inverted = .false.
-      !  y_inverted = .true.
-      elseif(MR_iwindformat.eq.29)then
-        ! ECMWF Global Gaussian Lat/Lon 
-        call MR_Set_Met_NCEPGeoGrid(1029)
-      !  x_inverted = .false.
-      !  y_inverted = .true.
-      elseif(MR_iwindformat.eq.31)then
-          ! Catania forecasts
-        call MR_Set_Met_NCEPGeoGrid(1031)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.32)then
-          ! Air Force Weather Agency
-        call MR_Set_Met_NCEPGeoGrid(1032)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.33)then
-          ! CAM paleoclimate
-        call MR_Set_Met_NCEPGeoGrid(1033)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.40)then
-        ! NASA GEOS Cp
-        call MR_Set_Met_NCEPGeoGrid(1040)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.41)then
-        ! NASA GEOS Np
-        call MR_Set_Met_NCEPGeoGrid(1041)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      elseif(MR_iwindformat.eq.50)then
-         ! WRF - output
-       call MR_Get_WRF_grid
-      elseif(MR_iwindformat.eq.51)then
-      !    ! SENAMHI WRF 22 km
-        call MR_Set_Met_NCEPGeoGrid(1051)
-      !  x_inverted = .false.
-      !  y_inverted = .false.
-      else
-        ! Not a recognized MR_iwindformat
-        ! call reading of template windfile pressure,grid values
-        write(MR_global_info,*)"windfile format not recognized."
-        stop 1
       endif
 
       allocate(z_approx(np_fullmet))
