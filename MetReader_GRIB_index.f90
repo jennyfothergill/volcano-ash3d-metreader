@@ -16,9 +16,7 @@
       integer            :: i,j,k,l,t
       integer            :: count1=0
         ! Used for keys
-      character(len=7),dimension(:),allocatable :: marsParam_idx
       integer(kind=4) ,dimension(:),allocatable :: level_idx
-      integer(kind=4)  :: marsParamSize
       integer(kind=4)  :: levelSize
 
       integer(kind=4) ,dimension(:),allocatable :: discipline_idx
@@ -53,27 +51,29 @@
       write(MR_global_info,*)"Generating index file: ",index_file
 
       if(gribver.eq.1)then
-        ! For grib1 files, we use the MARS parameter numbers
-        !!!  grib_ls -p marsParam,date,time,level
+        ! For grib1 files, we use the parameter numbers
+        !!!  grib_ls -p indicatorOfParameter,date,time,level
           ! create an index from a grib file using some keys
         call grib_index_create(idx,adjustl(trim(grib_file)),&
-              'marsParam,level')
+              'indicatorOfParameter,level')
+
         call grib_multi_support_on()
           ! get the number of distinct values of all the keys in the index
-        call grib_index_get_size(idx,'marsParam',marsParamSize)
+        call grib_index_get_size(idx,'indicatorOfParameter',parameterNumberSize)
+
         call grib_index_get_size(idx,'level',levelSize)
 
           ! allocate the arry to contain the list of distinct values
-        allocate(marsParam_idx(marsParamSize))
+        allocate(parameterNumber_idx(parameterNumberSize))
         allocate(level_idx(levelSize))
 
           ! get the list of distinct key values from the index
-        call grib_index_get(idx,'marsParam',marsParam_idx)
+        call grib_index_get(idx,'indicatorOfParameter',parameterNumber_idx)
         call grib_index_get(idx,'level',level_idx)
 
         count1=0
-        do l=1,marsParamSize
-          call grib_index_select(idx,'marsParam',marsParam_idx(l))
+        do l=1,parameterNumberSize
+          call grib_index_select(idx,'indicatorOfParameter',parameterNumber_idx(l))
 
           do i=1,levelSize
             call grib_index_select(idx,'level',level_idx(i))
@@ -87,7 +87,7 @@
             call grib_release(igrib)
 
           enddo ! loop on level
-        enddo ! loop on marsParam
+        enddo ! loop on ParamN
 
         call grib_index_write(idx,adjustl(trim(index_file)))
 

@@ -53,27 +53,26 @@
       integer(kind=4)  :: iv_paramC
       integer(kind=4)  :: iv_paramN
       integer(kind=4)  :: iv_typeSf
-      character(len=7) :: iv_marsParam
+      integer(kind=4)  :: iv_Table
       character(len=3) :: iv_typeSfc
 
       integer(kind=4)  :: numberOfPoints
-      integer(kind=4)  :: Ni,Nx
-      integer(kind=4)  :: Nj,Ny
       integer(kind=4)  :: dum_int
       real(kind=8)     :: dum_dp
       character(len=19) :: dum_str
       real(kind=dp) :: x_start,y_start
       real(kind=dp) :: Lon_start,Lat_start
       real(kind=dp),dimension(:),allocatable     :: lats,lons,values
+      real(kind=dp), parameter :: tol = 1.0e-3_dp
 
       integer(kind=4)  :: typeOfFirstFixedSurface
       integer            :: count1=0
         ! Stores values of keys read from grib file
-      character(len=7) :: grb_marsParam
       character(len=4) :: grb_typeSfc
       integer(kind=4)  :: grb_discipline
       integer(kind=4)  :: grb_parameterCategory
       integer(kind=4)  :: grb_parameterNumber
+      integer(kind=4)  :: grb_Table
       integer(kind=4)  :: grb_level
       integer(kind=4)  :: grb_scaledValueOfFirstFixedSurface
 
@@ -83,6 +82,7 @@
       logical :: FoundOldDim
       logical :: IsTruncatedDim
       logical :: ReadGrid
+      integer(kind=4) :: kk,tmp1
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                MR_Read_Met_DimVars_GRIB                    ----------"
@@ -92,8 +92,10 @@
         ! Checking for dimension length and values for x,y,t,p
         !   Assume all files have the same format
 
-      if(MR_iwindformat.eq.27)then
-        stop 5
+      if(MR_iwind.eq.5)then
+        write(MR_global_error,*)"MR ERROR : GRIB reader not implemeted for multi-timestep files."
+        write(MR_global_error,*)"         iwind=5 files are all multi-step"
+        stop 1
       else
         write(*,*)"Opening grib file to find version number"
         iw = 1
@@ -109,232 +111,264 @@
       ! Checking for dimension length and values for x,y,t,p
       !   Assume all files have the same format
       maxdimlen = 0
-      if(MR_GRIB_Version.eq.1)then
 
-      elseif(MR_GRIB_Version.eq.2)then
-        ! Loop through all the grib messages,
-        ! If we find a message that matches a variable criteria, then log the level to 
-        !  a dummy array.
-        ! Finally sort the pressure values and evaluate the distinct pressure coordinates
-        grib_file_path  = adjustl(trim(MR_windfiles(1)))
+      ! Loop through all the grib messages,
+      ! If we find a message that matches a variable criteria, then log the level to 
+      !  a dummy array.
+      ! Finally sort the pressure values and evaluate the distinct pressure coordinates
+      grib_file_path  = adjustl(trim(MR_windfiles(1)))
 
-        call grib_open_file(ifile,grib_file_path,'R')
-        ! Loop on all the messages in a file.
-        call grib_new_from_file(ifile,igrib,iret)
-        count1=0
-        zcount(:)     = 0
-        zlev_dum(:,:) = 0
-        do while (iret/=GRIB_END_OF_FILE)
-          count1=count1+1
-          if(count1.eq.1)then
-            ! For the first record, get the x,y grid info
-            ReadGrid = .false.
-            call grib_get(igrib,'Nx',nx_fullmet)
-            call grib_get(igrib,'Ny',ny_fullmet)
-            allocate(x_fullmet_sp(0:nx_fullmet+1))
-            allocate(y_fullmet_sp(ny_fullmet))
-            allocate(MR_dx_met(nx_fullmet))
-            allocate(MR_dy_met(ny_fullmet))
+      call grib_open_file(ifile,grib_file_path,'R')
+      ! Loop on all the messages in a file.
+      call grib_new_from_file(ifile,igrib,iret)
+      count1=0
+      zcount(:)     = 0
+      zlev_dum(:,:) = 0
+      do while (iret/=GRIB_END_OF_FILE)
+        count1=count1+1
+        if(count1.eq.1)then
+          ! For the first record, get the x,y grid info
+          ReadGrid = .false.
+          call grib_get(igrib,'Ni',nx_fullmet)
+          call grib_get(igrib,'Nj',ny_fullmet)
+          allocate(x_fullmet_sp(0:nx_fullmet+1))
+          allocate(y_fullmet_sp(ny_fullmet))
+          allocate(MR_dx_met(nx_fullmet))
+          allocate(MR_dy_met(ny_fullmet))
 
-            call grib_get(igrib,'gridType',dum_str)
-            call grib_get(igrib,'latitudeOfFirstGridPointInDegrees',dum_dp)
-            Lat_start = dum_dp
-            call grib_get(igrib,'longitudeOfFirstGridPointInDegrees',dum_dp)
-            Lon_start = dum_dp
+          call grib_get(igrib,'gridType',dum_str)
+          call grib_get(igrib,'latitudeOfFirstGridPointInDegrees',dum_dp)
+          Lat_start = dum_dp
+          call grib_get(igrib,'longitudeOfFirstGridPointInDegrees',dum_dp)
+          Lon_start = dum_dp
 
-            dum_int = 0
+          dum_int = 0
+          Met_Re =  6371.229_8
+          call grib_get(igrib,'shapeOfTheEarth',dum_int)
+          if (dum_int.eq.0)then
+              ! 0  Earth assumed spherical with radius = 6,367,470.0 m
+            Met_Re =  6367.470_8
+          elseif(dum_int.eq.1)then
+              ! 1  Earth assumed spherical with radius specified by data producer
+              !  Try to read the radius of earth
+              !  For now, just assign the default
             Met_Re =  6371.229_8
-            call grib_get(igrib,'shapeOfTheEarth',dum_int)
-            if (dum_int.eq.0)then
-                ! 0  Earth assumed spherical with radius = 6,367,470.0 m
-              Met_Re =  6367.470_8
-            elseif(dum_int.eq.1)then
-                ! 1  Earth assumed spherical with radius specified by data producer
-                !  Try to read the radius of earth
-                !  For now, just assign the default
-              Met_Re =  6371.229_8
-            elseif(dum_int.eq.2)then
-                ! 2  Earth assumed oblate spheroid with size as determined by IAU in 1965
-                !    (major axis = 6,378,160.0 m, minor axis = 6,356,775.0 m, f = 1/297.0)
-              Met_Re =  6371.229_8
-            elseif(dum_int.eq.3)then
-                ! 3  Earth assumed oblate spheroid with major and minor axes specified by data producer
-              Met_Re =  6371.229_8
-            elseif(dum_int.eq.4)then
-                ! 4  Earth assumed oblate spheroid as defined in IAG-GRS80 model 
-                !    (major axis = 6,378,137.0 m, minor axis = 6,356,752.314 m, f = 1/298.257222101)
-              Met_Re =  6371.229_8
-            elseif(dum_int.eq.5)then
-                ! 5  Earth assumed represented by WGS84 (as used by ICAO since 1998)
-              Met_Re =  6371.229_8
-            elseif(dum_int.eq.6)then
-                ! 6  Earth assumed spherical with radius of 6,371,229.0 m
-              Met_Re =  6371.229_8
-            else
-                ! 7-191 Reserved
-                ! 192- 254  Reserved for local use
-              Met_Re =  6371.229_8
-            endif
-
-            if(index(dum_str,'regular_ll').ne.0)then
-              IsLatLon_MetGrid = .true.
-              Lat_start = y_start
-              Lon_start = x_start
-
-              call grib_get(igrib,'numberOfPoints',numberOfPoints)
-              allocate(lats(numberOfPoints))
-              allocate(lons(numberOfPoints))
-              allocate(values(numberOfPoints))
-              call grib_get_data(igrib,lats,lons,values)
-              do j=1,ny_fullmet
-                do i=1,nx_fullmet
-                  idx = (j-1)*nx_fullmet + i
-                  x_fullmet_sp(i) = lons(idx)
-                  y_fullmet_sp(j) = lats(idx)
-                enddo
-              enddo
-              ReadGrid = .true.
-              deallocate(lats)
-              deallocate(lons)
-              deallocate(values)
-              call grib_get(igrib,'latitudeOfLastGridPointInDegrees',dum_dp)
-              if(Lat_start.gt.dum_dp)then
-                y_inverted = .true.
-              else
-                y_inverted = .false.
-              endif
-              call grib_get(igrib,'longitudeOfLastGridPointInDegrees',dum_dp)
-              if(Lon_start.gt.dum_dp)then
-                x_inverted = .true.
-              else
-                x_inverted = .false.
-              endif
-              call grib_get(igrib,'iDirectionIncrementInDegrees',dum_dp)
-              dx_met_const = real(dum_dp,kind=4)
-              call grib_get(igrib,'jDirectionIncrementInDegrees',dum_dp)
-              dy_met_const = real(dum_dp,kind=4)
-              x_fullmet_sp(0) = x_fullmet_sp(1)-dx_met_const
-              x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(nx_fullmet)+dx_met_const
-            elseif(index(dum_str,'regular_gg').ne.0)then
-              IsLatLon_MetGrid = .true.
-              Lat_start = y_start
-              Lon_start = x_start
-
-              call grib_get(igrib,'numberOfPoints',numberOfPoints)
-              allocate(lats(numberOfPoints))
-              allocate(lons(numberOfPoints))
-              allocate(values(numberOfPoints))
-              call grib_get_data(igrib,lats,lons,values)
-              do j=1,ny_fullmet
-                do i=1,nx_fullmet
-                  idx = (j-1)*nx_fullmet + i
-                  x_fullmet_sp(i) = lons(idx)
-                  y_fullmet_sp(j) = lats(idx)
-                enddo
-              enddo
-              ReadGrid = .true.
-              deallocate(lats)
-              deallocate(lons)
-              deallocate(values)
-              call grib_get(igrib,'latitudeOfLastGridPointInDegrees',dum_dp)
-              if(Lat_start.gt.dum_dp)then
-                y_inverted = .true.
-              else
-                y_inverted = .false.
-              endif
-              call grib_get(igrib,'longitudeOfLastGridPointInDegrees',dum_dp)
-              if(Lon_start.gt.dum_dp)then
-                x_inverted = .true.
-              else
-                x_inverted = .false.
-              endif
-              call grib_get(igrib,'iDirectionIncrementInDegrees',dum_dp)
-              dx_met_const = real(dum_dp,kind=4)
-              call grib_get(igrib,'jDirectionIncrementInDegrees',dum_dp)
-              dy_met_const = real(dum_dp,kind=4)
-              x_fullmet_sp(0) = x_fullmet_sp(1)-dx_met_const
-              x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(nx_fullmet)+dx_met_const
-
-            elseif(index(dum_str,'polar_stereographic').ne.0)then
-              IsLatLon_MetGrid = .false.
-              Met_iprojflag     = 1
-              write(*,*)"polar_stereographic not implemented"
-              stop 1
-
-            elseif(index(dum_str,'albers').ne.0)then
-              IsLatLon_MetGrid = .false.
-              Met_iprojflag     = 2
-              write(*,*)"Alber Equal Area not implemented"
-              stop 1
-
-            elseif(index(dum_str,'UTM').ne.0)then
-              IsLatLon_MetGrid = .false.
-              Met_iprojflag     = 3
-              write(*,*)"UTM not implemented"
-              stop 1
-            elseif(index(dum_str,'lambert').ne.0)then
-              IsLatLon_MetGrid = .false.
-              Met_iprojflag     = 4
-              call grib_get(igrib,'LoVInDegrees',dum_dp)
-              Met_lam0 = dum_dp
-              call grib_get(igrib,'LaDInDegrees',dum_dp)
-              Met_phi0 = dum_dp
-              call grib_get(igrib,'Latin1InDegrees',dum_dp)
-              Met_phi1 = dum_dp
-              call grib_get(igrib,'Latin2InDegrees',dum_dp)
-              Met_phi2 = dum_dp
-              Met_k0   =  0.933_8
-              Met_Re   =  6371.229_8
-            elseif(index(dum_str,'mercator').ne.0)then
-              IsLatLon_MetGrid = .false.
-              Met_iprojflag     = 5
-              Met_lam0 = Lon_start
-              call grib_get(igrib,'LaDInDegrees',dum_dp)
-              Met_phi0 = dum_dp
-              Met_k0   =  0.933_8
-              Met_Re   =  6371.229_8
-
-            else
-              write(MR_global_error,*)'MR ERROR: Cannot determine the projection from the GRIB file.'
-              stop 1
-            endif
-
-            if(.not.IsLatLon_MetGrid)then
-              call grib_get(igrib,'DxInMetres',dum_int)
-              dx_met_const = real(dum_int,kind=4)/1000.0_sp
-              call grib_get(igrib,'DyInMetres',dum_int)
-              dy_met_const = real(dum_int,kind=4)/1000.0_sp
-
-              call PJ_proj_for(Lon_start,Lat_start, Met_iprojflag, &
-                       Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re, &
-                       x_start,y_start)
-            endif
-
-            if(.not.ReadGrid)then
-              do i = 0,nx_fullmet+1
-                x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-              enddo
-              if(y_inverted)then
-                do i = 1,ny_fullmet
-                  y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-                enddo
-              else
-                do i = 1,ny_fullmet
-                  y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-                enddo
-              endif
-              ReadGrid = .true.
-            endif
-            do i = 1,nx_fullmet
-              MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-            enddo
-            do i = 1,ny_fullmet-1
-              MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-            enddo
-            MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-              
+          elseif(dum_int.eq.2)then
+              ! 2  Earth assumed oblate spheroid with size as determined by IAU in 1965
+              !    (major axis = 6,378,160.0 m, minor axis = 6,356,775.0 m, f = 1/297.0)
+            Met_Re =  6371.229_8
+          elseif(dum_int.eq.3)then
+              ! 3  Earth assumed oblate spheroid with major and minor axes specified by data producer
+            Met_Re =  6371.229_8
+          elseif(dum_int.eq.4)then
+              ! 4  Earth assumed oblate spheroid as defined in IAG-GRS80 model 
+              !    (major axis = 6,378,137.0 m, minor axis = 6,356,752.314 m, f = 1/298.257222101)
+            Met_Re =  6371.229_8
+          elseif(dum_int.eq.5)then
+              ! 5  Earth assumed represented by WGS84 (as used by ICAO since 1998)
+            Met_Re =  6371.229_8
+          elseif(dum_int.eq.6)then
+              ! 6  Earth assumed spherical with radius of 6,371,229.0 m
+            Met_Re =  6371.229_8
+          else
+              ! 7-191 Reserved
+              ! 192- 254  Reserved for local use
+            Met_Re =  6371.229_8
           endif
 
+          if(index(dum_str,'regular_ll').ne.0)then
+            IsLatLon_MetGrid = .true.
+            Lat_start = y_start
+            Lon_start = x_start
+
+            call grib_get(igrib,'numberOfPoints',numberOfPoints)
+            allocate(lats(numberOfPoints))
+            allocate(lons(numberOfPoints))
+            allocate(values(numberOfPoints))
+            call grib_get_data(igrib,lats,lons,values)
+            do j=1,ny_fullmet
+              do i=1,nx_fullmet
+                idx = (j-1)*nx_fullmet + i
+                x_fullmet_sp(i) = lons(idx)
+                y_fullmet_sp(j) = lats(idx)
+              enddo
+            enddo
+            ReadGrid = .true.
+            deallocate(lats)
+            deallocate(lons)
+            deallocate(values)
+            call grib_get(igrib,'latitudeOfLastGridPointInDegrees',dum_dp)
+            if(Lat_start.gt.dum_dp)then
+              y_inverted = .true.
+            else
+              y_inverted = .false.
+            endif
+            call grib_get(igrib,'longitudeOfLastGridPointInDegrees',dum_dp)
+            if(Lon_start.gt.dum_dp)then
+              x_inverted = .true.
+            else
+              x_inverted = .false.
+            endif
+            call grib_get(igrib,'iDirectionIncrementInDegrees',dum_dp)
+            dx_met_const = real(dum_dp,kind=4)
+            call grib_get(igrib,'jDirectionIncrementInDegrees',dum_dp)
+            dy_met_const = real(dum_dp,kind=4)
+            x_fullmet_sp(0) = x_fullmet_sp(1)-dx_met_const
+            x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(nx_fullmet)+dx_met_const
+          elseif(index(dum_str,'regular_gg').ne.0)then
+            IsLatLon_MetGrid = .true.
+            Lat_start = y_start
+            Lon_start = x_start
+
+            call grib_get(igrib,'numberOfPoints',numberOfPoints)
+            allocate(lats(numberOfPoints))
+            allocate(lons(numberOfPoints))
+            allocate(values(numberOfPoints))
+            call grib_get_data(igrib,lats,lons,values)
+            do j=1,ny_fullmet
+              do i=1,nx_fullmet
+                idx = (j-1)*nx_fullmet + i
+                x_fullmet_sp(i) = lons(idx)
+                y_fullmet_sp(j) = lats(idx)
+              enddo
+            enddo
+            ReadGrid = .true.
+            deallocate(lats)
+            deallocate(lons)
+            deallocate(values)
+            call grib_get(igrib,'latitudeOfLastGridPointInDegrees',dum_dp)
+            if(Lat_start.gt.dum_dp)then
+              y_inverted = .true.
+            else
+              y_inverted = .false.
+            endif
+            call grib_get(igrib,'longitudeOfLastGridPointInDegrees',dum_dp)
+            if(Lon_start.gt.dum_dp)then
+              x_inverted = .true.
+            else
+              x_inverted = .false.
+            endif
+            x_fullmet_sp(0) = x_fullmet_sp(nx_fullmet)-360.0_sp
+            x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(1)+360.0_sp
+
+          elseif(index(dum_str,'polar_stereographic').ne.0)then
+            IsLatLon_MetGrid = .false.
+            Met_iprojflag     = 1
+            write(*,*)"polar_stereographic not implemented"
+            stop 1
+
+          elseif(index(dum_str,'albers').ne.0)then
+            IsLatLon_MetGrid = .false.
+            Met_iprojflag     = 2
+            write(*,*)"Alber Equal Area not implemented"
+            stop 1
+
+          elseif(index(dum_str,'UTM').ne.0)then
+            IsLatLon_MetGrid = .false.
+            Met_iprojflag     = 3
+            write(*,*)"UTM not implemented"
+            stop 1
+          elseif(index(dum_str,'lambert').ne.0)then
+            IsLatLon_MetGrid = .false.
+            Met_iprojflag     = 4
+            call grib_get(igrib,'LoVInDegrees',dum_dp)
+            Met_lam0 = dum_dp
+            call grib_get(igrib,'LaDInDegrees',dum_dp)
+            Met_phi0 = dum_dp
+            call grib_get(igrib,'Latin1InDegrees',dum_dp)
+            Met_phi1 = dum_dp
+            call grib_get(igrib,'Latin2InDegrees',dum_dp)
+            Met_phi2 = dum_dp
+            Met_k0   =  0.933_8
+            Met_Re   =  6371.229_8
+          elseif(index(dum_str,'mercator').ne.0)then
+            IsLatLon_MetGrid = .false.
+            Met_iprojflag     = 5
+            Met_lam0 = Lon_start
+            call grib_get(igrib,'LaDInDegrees',dum_dp)
+            Met_phi0 = dum_dp
+            Met_k0   =  0.933_8
+            Met_Re   =  6371.229_8
+          else
+            write(MR_global_error,*)'MR ERROR: Cannot determine the projection from the GRIB file.'
+            stop 1
+          endif
+          ! Override for the case of NARR
+          if (MR_iwindformat.eq.3)Met_Re = 6367.470_8
+
+
+          if(.not.IsLatLon_MetGrid)then
+            call grib_get(igrib,'DxInMetres',dum_int)
+            dx_met_const = real(dum_int,kind=4)/1000.0_sp
+            call grib_get(igrib,'DyInMetres',dum_int)
+            dy_met_const = real(dum_int,kind=4)/1000.0_sp
+
+            call PJ_proj_for(Lon_start,Lat_start, Met_iprojflag, &
+                     Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re, &
+                     x_start,y_start)
+          endif
+
+          if(.not.ReadGrid)then
+            do i = 0,nx_fullmet+1
+              x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
+            enddo
+            if(y_inverted)then
+              do i = 1,ny_fullmet
+                y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
+              enddo
+            else
+              do i = 1,ny_fullmet
+                y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
+              enddo
+            endif
+            ReadGrid = .true.
+          endif
+          do i = 1,nx_fullmet
+            MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+          enddo
+          do i = 1,ny_fullmet-1
+            MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+          enddo
+          MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+
+          ! We need to check if this is a regular grid
+          IsRegular_MetGrid = .true.
+          do i = 1,nx_fullmet-1
+            if(abs(MR_dx_met(i+1)-MR_dx_met(i)).gt.tol*MR_dx_met(i))then
+              IsRegular_MetGrid = .false.
+            endif
+          enddo
+          do i = 1,ny_fullmet-1
+            if(abs(MR_dy_met(i+1)-MR_dy_met(i)).gt.tol*MR_dy_met(i))then
+              IsRegular_MetGrid = .false.
+            endif
+          enddo
+
+        endif ! count1.eq.1
+
+        if(MR_GRIB_Version.eq.1)then
+          call grib_get(igrib,'indicatorOfTypeOfLevel',grb_typeSfc)
+          ! for populating z-levels, we are only concerned with specific level types
+          if(index(grb_typeSfc,'pl').ne.0.or. & ! Isobaric surface  (Pa)
+             index(grb_typeSfc,'105').ne.0)then  ! Specified height level above ground  (m)
+            call grib_get(igrib,'indicatorOfParameter',grb_parameterNumber)
+            call grib_get(igrib,'table2Version',grb_Table)
+            ! Loop through all the variables and see if we have a match with this grib record
+            do ivar = 1,MR_MAXVARS
+              if (.not.Met_var_IsAvailable(ivar)) cycle
+              iv_ParamN = Met_var_GRIB1_Param(ivar)
+              iv_typeSfc   = Met_var_GRIB1_St(ivar)
+              if(iv_ParamN.eq.grb_parameterNumber.and.       &
+                   iv_typeSfc.eq.grb_typeSfc)then
+                ! This is one we are tracking, log the level
+                call grib_get(igrib,'level',grb_level)
+                !call grib_get(igrib,'scaledValueOfFirstFixedSurface',grb_scaledValueOfFirstFixedSurface)
+                zcount(ivar) = zcount(ivar) + 1
+                zlev_dum(ivar,zcount(ivar)) = grb_level * 100
+              endif
+            enddo
+          endif
+        elseif(MR_GRIB_Version.eq.2)then
           call grib_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
           ! for populating z-levels, we are only concerned with specific level types
           if(typeOfFirstFixedSurface.eq.100.or. & ! Isobaric surface  (Pa)
@@ -362,47 +396,52 @@
               endif
             enddo
           endif
-          call grib_release(igrib)
-          call grib_new_from_file(ifile,igrib,iret)
-        enddo
+        endif !MR_GRIB_Version.eq.1
         call grib_release(igrib)
-        call grib_close_file(ifile)
+        call grib_new_from_file(ifile,igrib,iret)
+      enddo
+      call grib_release(igrib)
+      call grib_close_file(ifile)
 
-        maxdimlen = maxval(zcount(:))
-        nlev_coords_detected = 1
-        Met_var_zdim_idx(1) = 1
-        do ivar = 2,MR_MAXVARS
-          FoundOldDim = .false.
-          do iivar = 1,ivar-1
-            if (zcount(iivar).eq.zcount(ivar))then  ! This check for a different coordinate is
-                                                    ! soley on the size of the dimension.
-              FoundOldDim = .true.
-              Met_var_zdim_idx(ivar)  = Met_var_zdim_idx(iivar)
-              exit
-            endif
-          enddo
-          if(.not.FoundOldDim)then
-            nlev_coords_detected = nlev_coords_detected + 1
-            Met_var_zdim_idx(ivar)  = nlev_coords_detected
+      maxdimlen = maxval(zcount(:))
+      nlev_coords_detected = 1
+      Met_var_zdim_idx(:) = 0
+      Met_var_zdim_idx(1) = 1
+      do ivar = 2,MR_MAXVARS
+        if (.not.Met_var_IsAvailable(ivar)) cycle
+        FoundOldDim = .false.
+        do iivar = 1,ivar-1
+          if (zcount(iivar).eq.zcount(ivar))then  ! This check for a different coordinate is
+                                                  ! soley on the size of the dimension.
+            FoundOldDim = .true.
+            Met_var_zdim_idx(ivar)  = Met_var_zdim_idx(iivar)
+            exit
           endif
         enddo
-        ! The V part of velocity is typically the second of a multi-component record and the above code
-        ! does not catch it.  Assume V has the same characteristics as U and copy U
-        ! V @ isobaric
-        zcount(3) = zcount(2)
-        zlev_dum(3,1:zcount(3)) = zlev_dum(2,1:zcount(2))
-        Met_var_zdim_idx(3) = Met_var_zdim_idx(2)
-        ! V @ 10 m
-        zcount(12) = zcount(11)
-        zlev_dum(12,1:zcount(12)) = zlev_dum(11,1:zcount(11))
-        Met_var_zdim_idx(12) = Met_var_zdim_idx(11)
+        if(.not.FoundOldDim)then
+          nlev_coords_detected = nlev_coords_detected + 1
+          Met_var_zdim_idx(ivar)  = nlev_coords_detected
+        endif
+      enddo
+      ! The V part of velocity is typically the second of a multi-component record and the above code
+      ! does not catch it.  Assume V has the same characteristics as U and copy U
+      ! V @ isobaric
+      zcount(3) = zcount(2)
+      zlev_dum(3,1:zcount(3)) = zlev_dum(2,1:zcount(2))
+      Met_var_zdim_idx(3) = Met_var_zdim_idx(2)
+      ! V @ 10 m
+      zcount(12) = zcount(11)
+      zlev_dum(12,1:zcount(12)) = zlev_dum(11,1:zcount(11))
+      Met_var_zdim_idx(12) = Met_var_zdim_idx(11)
 
-        ! We have all the level dimension names and dim_ids; now we need to get the sizes
-        allocate(nlevs_fullmet(nlev_coords_detected))
-        allocate(levs_code(nlev_coords_detected))
-        allocate(levs_fullmet_sp(nlev_coords_detected,maxdimlen))
-        do ivar = 1,MR_MAXVARS
-          if (.not.Met_var_IsAvailable(ivar)) cycle
+      ! We have all the level dimension names and dim_ids; now we need to get the sizes
+      allocate(nlevs_fullmet(nlev_coords_detected))
+      allocate(levs_code(nlev_coords_detected))
+      allocate(levs_fullmet_sp(nlev_coords_detected,maxdimlen))
+      do ivar = 1,MR_MAXVARS
+        if (.not.Met_var_IsAvailable(ivar)) cycle
+        ! Check if this variable has a z-dimension (pressure, height, depth, etc.)
+        if(Met_var_zdim_idx(ivar).gt.0)then
           idx = Met_var_zdim_idx(ivar)
           nlevs_fullmet(idx) = zcount(ivar)
           ! Check that the pressure level is monotonically increasing
@@ -423,63 +462,73 @@
             deallocate(p_fullmet_sp)
           else
             ! Need to first sort pressure variable here
-            stop 6
+            !   Using insertion sort on p321 of Numerical Recipes
+            do k=2,nlevs_fullmet(idx)
+              tmp1 = zlev_dum(ivar,k)
+              do kk=k-1,1,-1
+                if (zlev_dum(ivar,kk).ge.tmp1) goto 101
+                zlev_dum(ivar,kk+1) = zlev_dum(ivar,kk)
+              enddo
+              kk=0
+ 101          zlev_dum(ivar,kk+1) = tmp1
+            enddo
+
+            levs_fullmet_sp(idx,1:nlevs_fullmet(idx)) = &
+              real(zlev_dum(ivar,1:nlevs_fullmet(idx)),kind=sp)
+            z_inverted = .false.
+          endif
+        endif
+      enddo
+
+      ! Now log all pressure coordinates as one-to-one, truncated, or interupted
+      levs_code(1:nlev_coords_detected) = 0
+      levs_code(1) = 1                       ! The first var checked (GPH) should have a one-to-one mapping
+      ! Check how each of the pressure coordinates map onto the GPH grid
+      if (nlev_coords_detected.gt.1)then
+        ! Only bother if there are multiple pressure coordinates
+        do idx = 2,nlev_coords_detected
+          if (nlevs_fullmet(idx).gt.nlevs_fullmet(1))then
+            ! This coordinate has more values than the GPH pressure coordinate
+            levs_code(idx) = 4
+          elseif (nlevs_fullmet(idx).lt.nlevs_fullmet(1))then
+            ! It there are fewer levels, check if this is a truncated coordiante (code = 2)
+            ! or one with missing levels that requires interpolation (code = 3)
+            IsTruncatedDim = .true.
+            do i=1,nlevs_fullmet(idx)
+              if(abs(levs_fullmet_sp(idx,i)-levs_fullmet_sp(1,i)).gt.MR_EPS_SMALL)then
+                IsTruncatedDim = .false.
+                exit
+              endif
+            enddo
+            if(IsTruncatedDim)then
+              levs_code(idx) = 2
+            else
+              levs_code(idx) = 3
+            endif
+          else
+            ! This coordinate has the same dimension as the GPH pressure coordinate.
+            ! They are probably the same
+            levs_code(idx) = 1
           endif
         enddo
-
-        ! Now log all pressure coordinates as one-to-one, truncated, or interupted
-        levs_code(1:nlev_coords_detected) = 0
-        levs_code(1) = 1                       ! The first var checked (GPH) should have a one-to-one mapping
-        ! Check how each of the pressure coordinates map onto the GPH grid
-        if (nlev_coords_detected.gt.1)then
-          ! Only bother if there are multiple pressure coordinates
-          do idx = 2,nlev_coords_detected
-            if (nlevs_fullmet(idx).gt.nlevs_fullmet(1))then
-              ! This coordinate has more values than the GPH pressure coordinate
-              levs_code(idx) = 4
-            elseif (nlevs_fullmet(idx).lt.nlevs_fullmet(1))then
-              ! It there are fewer levels, check if this is a truncated coordiante (code = 2)
-              ! or one with missing levels that requires interpolation (code = 3)
-              IsTruncatedDim = .true.
-              do i=1,nlevs_fullmet(idx)
-                if(abs(levs_fullmet_sp(idx,i)-levs_fullmet_sp(1,i)).gt.MR_EPS_SMALL)then
-                  IsTruncatedDim = .false.
-                  exit
-                endif
-              enddo
-              if(IsTruncatedDim)then
-                levs_code(idx) = 2
-              else
-                levs_code(idx) = 3
-              endif
-            else
-              ! This coordinate has the same dimension as the GPH pressure coordinate.
-              ! They are probably the same
-              levs_code(idx) = 1
-            endif
-          enddo
-        endif
-
-        write(MR_global_production,*)" Found these levels"
-        write(MR_global_production,*)"  VaribleID    LevelIdx       dimID"
-        do ivar = 1,MR_MAXVARS
-          if (Met_var_IsAvailable(ivar)) &
-              write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar)
-        enddo
-
-        ! Now assign these levels to the working arrays
-        ! Geopotential is the first variable checked, use this for np_fullmet
-        nt_fullmet = 1
-        np_fullmet = nlevs_fullmet(Met_var_zdim_idx(1))  ! Assign fullmet the length of H,U,V
-        allocate(p_fullmet_sp(np_fullmet))
-        idx = Met_var_zdim_idx(1)
-        p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
-        MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
-      else
-        write(MR_global_error,*)"MR ERROR : MR_GRIB_Version must be 1 or 2, not  ",&
-                                MR_GRIB_Version
-        stop 1
       endif
+
+      write(MR_global_production,*)" Found these levels"
+      write(MR_global_production,*)"  VaribleID    LevelIdx       dimID      length"
+      do ivar = 1,MR_MAXVARS
+        if (Met_var_IsAvailable(ivar)) &
+            write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),0,&
+                                           nlevs_fullmet(Met_var_zdim_idx(ivar))
+      enddo
+
+      ! Now assign these levels to the working arrays
+      ! Geopotential is the first variable checked, use this for np_fullmet
+      nt_fullmet = 1
+      np_fullmet = nlevs_fullmet(Met_var_zdim_idx(1))  ! Assign fullmet the length of H,U,V
+      allocate(p_fullmet_sp(np_fullmet))
+      idx = Met_var_zdim_idx(1)
+      p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
+      MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
 
       allocate(z_approx(np_fullmet))
       do k=1,np_fullmet
@@ -752,7 +801,7 @@
       integer(kind=4)  :: Nj
       integer(kind=4)  :: typeOfFirstFixedSurface
         ! Stores values of keys read from grib file
-      character(len=7) :: grb_marsParam
+      !character(len=7) :: grb_marsParam
       character(len=4) :: grb_typeSfc
       integer(kind=4)  :: grb_discipline
       integer(kind=4)  :: grb_parameterCategory
@@ -761,14 +810,14 @@
       integer(kind=4)  :: grb_scaledValueOfFirstFixedSurface
       !character(len=9)   :: sName
       !integer(kind=4)  :: forecastTime
-      integer(kind=4),dimension(:),allocatable :: marsParam_idx
+      !integer(kind=4),dimension(:),allocatable :: marsParam_idx
       integer(kind=4),dimension(:),allocatable :: discipline_idx
       integer(kind=4),dimension(:),allocatable :: parameterCategory_idx
       integer(kind=4),dimension(:),allocatable :: parameterNumber_idx
       integer(kind=4),dimension(:),allocatable :: level_idx
       integer(kind=4),dimension(:),allocatable :: forecastTime_idx
 
-      integer(kind=4)  :: marsParamSize
+      !integer(kind=4)  :: marsParamSize
       integer(kind=4)  :: disciplineSize
       integer(kind=4)  :: parameterCategorySize
       integer(kind=4)  :: parameterNumberSize
@@ -779,7 +828,8 @@
       integer(kind=4)  :: iv_paramC
       integer(kind=4)  :: iv_paramN
       integer(kind=4)  :: iv_typeSf
-      character(len=7) :: iv_marsParam
+      integer(kind=4)  :: iv_Table
+      !character(len=7) :: iv_marsParam
       character(len=3) :: iv_typeSfc
 
       real(kind=sp) :: Z_top, T_top
@@ -806,9 +856,10 @@
       endif
 
       if(MR_GRIB_Version.eq.1)then
-        ! grib1 uses an index based on marsParam
-        iv_marsParam = Met_var_GRIB1_MARS(ivar)
-        iv_typeSfc   = Met_var_GRIB1_St(ivar)
+        ! grib1 uses an index based on Param
+        iv_paramN  = Met_var_GRIB1_Param(ivar)
+        iv_Table   = Met_var_GRIB1_Table(ivar)
+        iv_typeSfc = Met_var_GRIB1_St(ivar)
       elseif(MR_GRIB_Version.eq.2)then
         ! Get the variable discipline, Parameter Catagory, Parameter Number, and
         ! level type for this variable
@@ -1059,22 +1110,23 @@
           call grib_multi_support_on()
 
             ! get the number of distinct values of all the keys in the index
-          call grib_index_get_size(idx,'marsParam',marsParamSize)
+          call grib_index_get_size(idx,'indicatorOfParameter',parameterNumberSize)
           call grib_index_get_size(idx,'level',levelSize)
 
             ! allocate the array to contain the list of distinct values
-          allocate(marsParam_idx(marsParamSize))
+          allocate(parameterNumber_idx(parameterNumberSize))
           allocate(level_idx(levelSize))
 
             ! get the list of distinct key values from the index
-          call grib_index_get(idx,'marsParam',marsParam_idx)
+          call grib_index_get(idx,'indicatorOfParameter',parameterNumber_idx)
           call grib_index_get(idx,'level',level_idx)
 
           ! Start marching throught the index file and look for the match with the 
           ! keys
           count1=0
-          do l=1,marsParamSize
-            call grib_index_select(idx,'marsParam',marsParam_idx(l))
+          do l=1,parameterNumberSize
+            call grib_index_select(idx,'indicatorOfParameter',parameterNumber_idx(l))
+
             do i=1,levelSize
               call grib_index_select(idx,'level',level_idx(i))
               call grib_new_from_index(idx,igrib, iret)
@@ -1082,7 +1134,7 @@
                 count1=count1+1
                 call grib_get(igrib,'indicatorOfTypeOfLevel',grb_typeSfc)
 
-                if( grb_marsParam           .eq. iv_marsParam.and. &
+                if( parameterNumber_idx(l)           .eq. iv_paramN .and. &
                     grb_typeSfc(1:3)        .eq. iv_typeSfc) then
                   call grib_get(igrib,'numberOfPoints',numberOfPoints)
                   call grib_get(igrib,'Ni',Ni)
@@ -1130,7 +1182,7 @@
             enddo ! loop on level
           enddo ! loop on marsParam
 
-          call grib_index_release(idx)
+          !call grib_index_release(idx)
 
         else ! Non-index Grib1 case
 
@@ -1151,11 +1203,11 @@
           do while (iret/=GRIB_END_OF_FILE)
             count1=count1+1
 
-            call grib_get(igrib,'marsParam',grb_marsParam)
+            call grib_get(igrib,'indicatorOfParameter',grb_parameterNumber)
             call grib_get(igrib,'indicatorOfTypeOfLevel',grb_typeSfc)
 
-            if ( grb_marsParam           .eq. iv_marsParam.and. &
-                 grb_typeSfc(1:3)        .eq. iv_typeSfc) then
+            if ( grb_parameterNumber  .eq. iv_paramN .and. &
+                 grb_typeSfc(1:3)     .eq. iv_typeSfc) then
               call grib_get(igrib,'numberOfPoints',numberOfPoints)
               call grib_get(igrib,'Ni',Ni)
               call grib_get(igrib,'Nj',Nj)

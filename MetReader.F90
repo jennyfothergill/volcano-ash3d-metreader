@@ -50,7 +50,7 @@
                                        ! 24 NASA-MERRA-2 reanalysis 0.625/0.5 degree files
                                        ! 25 NCEP/NCAR reanalysis 2.5 degree files   :: ds090.0  iwind=4 or 5
                                        ! 26 JRA-55                                  :: ds628.0  iwind=5
-                                       ! 27 NOAA-CIRES reanalysis 2.5 degree files  :: ds131.2  iwind=5
+                                       ! 27 NOAA-CIRES reanalysis 2.0 degree files  :: ds131.2  iwind=5
                                        ! 28 ECMWF Interim Reanalysis (ERA-Interim)  :: ds627.0  requires catted grib files
                                        ! 29 ECMWF ERA5                              :: ds630.0  iwind=5
                                        ! 30 ECMWF 20-Century (ERA-20C)              :: ds626.0  iwind=5
@@ -297,6 +297,7 @@
       integer       :: MR_BaseYear            = 1900    ! This should be reset in calling program
       logical       :: MR_useLeap             = .true.  ! This too
       integer       :: MR_Comp_StartYear
+      integer       :: MR_Comp_StartMonth
       real(kind=dp) :: MR_Comp_StartHour
       real(kind=dp) :: MR_Comp_Time_in_hours
       integer       :: nx_comp
@@ -391,9 +392,8 @@
       integer                                   :: nlev_coords_detected = 0
       integer          ,dimension(MR_MAXVARS,4) :: Met_var_GRIB2_DPcPnSt    ! Grib2 files have variables identified by
                                                                             ! discpln,param_cat,param_num,surf_class
-      character(len=7) ,dimension(MR_MAXVARS)   :: Met_var_GRIB1_MARS       ! Grib1 files have variables identified by
-                                                                            ! the MARS parameter id in the format
-                                                                            ! paramId.table_ver_#  (e.g. 11.131)
+      integer          ,dimension(MR_MAXVARS)   :: Met_var_GRIB1_Param      !   indicatorOfParameter
+      integer          ,dimension(MR_MAXVARS)   :: Met_var_GRIB1_Table      !   table2Version
       character(len=3) ,dimension(MR_MAXVARS)   :: Met_var_GRIB1_St         ! level type (pl, src, 116 etc)
       integer                                   :: MR_GRIB_Version  = 0
 
@@ -611,7 +611,6 @@
       integer,intent(in)      :: iwfiles
 
       integer :: i
-      character(len=4) :: grib_table
 
       MR_iwind              = iw
       MR_iwindformat        = iwf
@@ -645,7 +644,7 @@
       Met_var_zdim_idx(1:MR_MAXVARS)          = 0
       Met_var_zdim_ncid(1:MR_MAXVARS)         = 0
       Met_var_GRIB2_DPcPnSt(1:MR_MAXVARS,1:4) = 0
-      Met_var_GRIB1_MARS(1:MR_MAXVARS)        = ""
+      Met_var_GRIB1_Param(1:MR_MAXVARS)       = 0
       Met_var_GRIB1_St(1:MR_MAXVARS)          = ""
       Met_var_conversion_factor(1:MR_MAXVARS) = 1.0_sp
       Met_var_nlevs(1:MR_MAXVARS)             = 0
@@ -655,12 +654,16 @@
       ! Mechanical / State variables
       !--------------------------------
       !   Note: All default names are that assigned by netcdf-java in the grib-to-nc conversion
+      !         Command used :: java -Xmx2048m -classpath ~/ncj/netcdfAll-4.5.jar ucar.nc2.dataset.NetcdfDataset \
+      !                          -in ${GribFile} -out ${NCFile} -IsLargeFile
+      ! 
+      !         Alternatively, one could use ncl_convert2nc
         !  Geopotential Height  (m^2/s^2)
       Met_var_NC_names(1)          = "Geopotential_height_isobaric"
       Met_var_GRIB_names(1)        = "gh"
       Met_var_WMO_names(1)         = "HGT"
       Met_var_GRIB2_DPcPnSt(1,1:4) = (/0, 3, 5, 100/)
-      Met_var_GRIB1_MARS(1)        = "7"
+      Met_var_GRIB1_Param(1)       = 7
       Met_var_GRIB1_St(1)          = "pl"
       Met_var_ndim(1)              = 4
         ! Velocity component in x (or E) direction  (m/s)
@@ -668,7 +671,7 @@
       Met_var_GRIB_names(2)        = "u"
       Met_var_WMO_names(2)         = "UGRD"
       Met_var_GRIB2_DPcPnSt(2,1:4) = (/0, 2, 2, 100/)
-      Met_var_GRIB1_MARS(2)        = "33"
+      Met_var_GRIB1_Param(2)       = 33
       Met_var_GRIB1_St(2)          = "pl"
       Met_var_ndim(2)              = 4
         ! Velocity component in y (or N) direction (m/s)
@@ -676,7 +679,7 @@
       Met_var_GRIB_names(3)        = "v"
       Met_var_WMO_names(3)         = "VGRD"
       Met_var_GRIB2_DPcPnSt(3,1:4) = (/0, 2, 3, 100/)
-      Met_var_GRIB1_MARS(3)        = "34"
+      Met_var_GRIB1_Param(3)       = 34
       Met_var_GRIB1_St(3)          = "pl"
       Met_var_ndim(3)              = 4
         ! Velocity component in z direction  (Pa/s)
@@ -684,7 +687,7 @@
       Met_var_GRIB_names(4)        = "w"
       Met_var_WMO_names(4)         = "VVEL"
       Met_var_GRIB2_DPcPnSt(4,1:4) = (/0, 2, 8, 100/)
-      Met_var_GRIB1_MARS(4)        = "39"
+      Met_var_GRIB1_Param(4)       = 39
       Met_var_GRIB1_St(4)          = "pl"
       Met_var_ndim(4)              = 4
         ! Temperature  (K)
@@ -692,7 +695,7 @@
       Met_var_GRIB_names(5)        = "t"
       Met_var_WMO_names(5)         = "TMP"
       Met_var_GRIB2_DPcPnSt(5,1:4) = (/0, 0, 0, 100/)
-      Met_var_GRIB1_MARS(5)        = "11"
+      Met_var_GRIB1_Param(5)       = 11
       Met_var_GRIB1_St(5)          = "pl"
       Met_var_ndim(5)              = 4
       !--------------------------------
@@ -703,47 +706,47 @@
       Met_var_GRIB_names(10)        = "hpbl"
       Met_var_WMO_names(10)         = "HPBL"
       Met_var_GRIB2_DPcPnSt(10,1:4) = (/0, 3, 196, 1/)
-      Met_var_GRIB1_MARS(10)        = ""
-      Met_var_GRIB1_St(10)          = ""
+      Met_var_GRIB1_Param(10)       = 221
+      Met_var_GRIB1_St(10)          = "1"
       Met_var_ndim(10)              = 3
         ! Velocity component in x (or E) direction at 10 m above ground surface  (m/s)
       Met_var_NC_names(11)          = "u-component_of_wind_height_above_ground"
       Met_var_GRIB_names(11)        = "u"
       Met_var_WMO_names(11)         = "UGRD"
       Met_var_GRIB2_DPcPnSt(11,1:4) = (/0, 2, 2, 103/)
-      Met_var_GRIB1_MARS(11)        = ""
-      Met_var_GRIB1_St(11)          = ""
+      Met_var_GRIB1_Param(11)       = 33
+      Met_var_GRIB1_St(11)          = "105"
       Met_var_ndim(11)              = 4
         ! Velocity component in y (or N) direction at 10 m above ground surface  (m/s)
       Met_var_NC_names(12)          = "v-component_of_wind_height_above_ground"
       Met_var_GRIB_names(12)        = "v"
       Met_var_WMO_names(12)         = "VGRD"
       Met_var_GRIB2_DPcPnSt(12,1:4) = (/0, 2, 3, 103/)
-      Met_var_GRIB1_MARS(12)        = ""
-      Met_var_GRIB1_St(12)          = ""
+      Met_var_GRIB1_Param(12)       = 34
+      Met_var_GRIB1_St(12)          = "105"
       Met_var_ndim(12)              = 4
         ! Friction velocity  (m/s)
       Met_var_NC_names(13)          = "Frictional_Velocity_surface"
       Met_var_GRIB_names(13)        = "fricv"
       Met_var_WMO_names(13)         = "FRICV"
       Met_var_GRIB2_DPcPnSt(13,1:4) = (/0, 2, 197, 1/)
-      Met_var_GRIB1_MARS(13)        = ""
-      Met_var_GRIB1_St(13)          = ""
+      Met_var_GRIB1_Param(13)       = 253
+      Met_var_GRIB1_St(13)          = "1"
       Met_var_ndim(13)              = 3
         ! Snow depth  (m)
       Met_var_NC_names(15)          = "Snow_depth_surface"
       Met_var_GRIB_names(15)        = "sd"
       Met_var_WMO_names(15)         = "SNOD"
       Met_var_GRIB2_DPcPnSt(15,1:4) = (/0, 1, 11, 1/)
-      Met_var_GRIB1_MARS(15)        = ""
-      Met_var_GRIB1_St(15)          = ""
+      Met_var_GRIB1_Param(15)       = 66
+      Met_var_GRIB1_St(15)          = "1"
       Met_var_ndim(15)              = 3
         ! Soil Moisture  (fraction)
       Met_var_NC_names(16)          = "Volumetric_Soil_Moisture_Content_depth_below_surface_layer"
       Met_var_GRIB_names(16)        = "soilw"
       Met_var_WMO_names(16)         = "SOILW"
       Met_var_GRIB2_DPcPnSt(16,1:4) = (/2, 0, 192, 106/)
-      Met_var_GRIB1_MARS(16)        = ""
+      Met_var_GRIB1_Param(16)       = 0
       Met_var_GRIB1_St(16)          = ""
       Met_var_ndim(16)              = 4
         ! Surface roughness  (m)
@@ -751,7 +754,7 @@
       Met_var_GRIB_names(17)        = "sr"
       Met_var_WMO_names(17)         = "SFCR"
       Met_var_GRIB2_DPcPnSt(17,1:4) = (/2, 0, 1, 1/)
-      Met_var_GRIB1_MARS(17)        = ""
+      Met_var_GRIB1_Param(17)       = 0
       Met_var_GRIB1_St(17)          = ""
       Met_var_ndim(17)              = 3
         ! Wind gust speed  (m/s)
@@ -759,12 +762,15 @@
       Met_var_GRIB_names(18)        = "gust"
       Met_var_WMO_names(18)         = "GUST"
       Met_var_GRIB2_DPcPnSt(18,1:4) = (/0, 2, 22, 1/)
-      Met_var_GRIB1_MARS(18)        = ""
+      Met_var_GRIB1_Param(18)       = 0
       Met_var_GRIB1_St(18)          = ""
       Met_var_ndim(18)              = 3
         ! Surface temperature  (K)
       Met_var_NC_names(19)          = "Temperature_surface"
       Met_var_WMO_names(19)         = ""
+      Met_var_GRIB2_DPcPnSt(19,1:4) = (/0, 0, 0, 0/)
+      Met_var_GRIB1_Param(19)       = 11
+      Met_var_GRIB1_St(19)          = "1"
       Met_var_ndim(19)              = 3
       !--------------------------------
       ! Atmospheric Structure
@@ -774,30 +780,40 @@
       Met_var_GRIB_names(20)        = "pres"
       Met_var_WMO_names(20)         = "PRES"
       Met_var_GRIB2_DPcPnSt(20,1:4) = (/0, 3, 0, 2/)
+      Met_var_GRIB1_Param(20)       = 1
+      Met_var_GRIB1_St(20)          = "2"
       Met_var_ndim(20)              = 3
         ! Pressure at top of lower cloud level  (Pa)
       Met_var_NC_names(21)          = "Pressure_cloud_tops"
       Met_var_GRIB_names(21)        = "pres"
       Met_var_WMO_names(21)         = "PRES"
       Met_var_GRIB2_DPcPnSt(21,1:4) = (/0, 3, 0, 3/)
+      Met_var_GRIB1_Param(21)       = 1
+      Met_var_GRIB1_St(21)          = "3"
       Met_var_ndim(21)              = 3
         ! Temperature at the top of lower cloud level  (K)
       Met_var_NC_names(22)          = "Temperature_cloud_tops"
       Met_var_GRIB_names(22)        = "t"
       Met_var_WMO_names(22)         = "TMP"
       Met_var_GRIB2_DPcPnSt(22,1:4) = (/0, 0, 0, 3/)
+      Met_var_GRIB1_Param(22)       = 11
+      Met_var_GRIB1_St(22)          = "3"
       Met_var_ndim(22)              = 3
         ! Total cloud cover  (%)
       Met_var_NC_names(23)          = "Total_cloud_cover_entire_atmosphere"
       Met_var_GRIB_names(23)        = "tcc"
       Met_var_WMO_names(23)         = "TCDC"
       Met_var_GRIB2_DPcPnSt(23,1:4) = (/0, 6, 1, 200/)
+      Met_var_GRIB1_Param(23)       = 71
+      Met_var_GRIB1_St(23)          = "200"
       Met_var_ndim(23)              = 3
         ! Cloud cover of lower cloud level  (%)
       Met_var_NC_names(24)          = "Low_cloud_cover_low_cloud"
       Met_var_GRIB_names(24)        = "lcc"
       Met_var_WMO_names(24)         = "LCDC"
       Met_var_GRIB2_DPcPnSt(24,1:4) = (/0, 6, 3, 214/)
+      Met_var_GRIB1_Param(24)       = 0
+      Met_var_GRIB1_St(24)          = ""
       Met_var_ndim(24)              = 3
       !--------------------------------
       ! Moisture
@@ -807,7 +823,7 @@
       Met_var_GRIB_names(30)        = "r"
       Met_var_WMO_names(30)         = "RH"
       Met_var_GRIB2_DPcPnSt(30,1:4) = (/0, 1, 1, 100/)
-      Met_var_GRIB1_MARS(30)        = "52"
+      Met_var_GRIB1_Param(30)       = 52
       Met_var_GRIB1_St(30)          = "pl" 
       Met_var_ndim(30)              = 4
         ! Specific humidity  (kg/kg)
@@ -815,7 +831,7 @@
       Met_var_GRIB_names(31)        = "q"
       Met_var_WMO_names(31)         = "SPFH"
       Met_var_GRIB2_DPcPnSt(31,1:4) = (/0, 1, 0, 100/)
-      Met_var_GRIB1_MARS(31)        = "51"
+      Met_var_GRIB1_Param(31)       = 51
       Met_var_GRIB1_St(31)          = "pl"
       Met_var_ndim(31)              = 4
         ! Cloud water mixing ratio  (kg/kg)
@@ -829,6 +845,8 @@
       Met_var_GRIB_names(33)        = "snmr"
       Met_var_WMO_names(33)         = "SNMR"
       Met_var_GRIB2_DPcPnSt(33,1:4) = (/0, 1, 25, 100/)
+      Met_var_GRIB1_Param(33)       = 0
+      Met_var_GRIB1_St(33)          = ""
       Met_var_ndim(33)              = 4
       !--------------------------------
       ! Precipitation
@@ -838,44 +856,58 @@
       Met_var_GRIB_names(40)        = "crain"
       Met_var_WMO_names(40)         = "CRAIN"
       Met_var_GRIB2_DPcPnSt(40,1:4) = (/0, 1, 192, 1/)
+      Met_var_GRIB1_Param(40)       = 140
+      Met_var_GRIB1_St(40)          = "1"
       Met_var_ndim(40)              = 3
         ! Catagorical snow at ground surface  (0/1 no/yes)
       Met_var_NC_names(41)          = "Categorical_Snow_surface"
       Met_var_GRIB_names(41)        = "csnow"
       Met_var_WMO_names(41)         = "CSNOW"
       Met_var_GRIB2_DPcPnSt(41,1:4) = (/0, 1, 195, 1/)
+      Met_var_GRIB1_Param(41)       = 143
+      Met_var_GRIB1_St(41)          = "1"
       Met_var_ndim(41)              = 3
         ! Catagorical freezing rain at ground surface  (0/1 no/yes)
       Met_var_NC_names(42)          = "Categorical_Freezing_Rain_surface"
       Met_var_GRIB_names(42)        = "cfrzr"
       Met_var_WMO_names(42)         = "CFRZR"
       Met_var_GRIB2_DPcPnSt(42,1:4) = (/0, 1, 193, 1/)
+      Met_var_GRIB1_Param(42)       = 141
+      Met_var_GRIB1_St(42)          = "1"
       Met_var_ndim(42)              = 3
         ! Catagorical ice pellets at ground surface  (0/1 no/yes)
       Met_var_NC_names(43)          = "Categorical_Ice_Pellets_surface"
       Met_var_GRIB_names(43)        = "cicep"
       Met_var_WMO_names(43)         = "CICEP"
       Met_var_GRIB2_DPcPnSt(43,1:4) = (/0, 1, 194, 1/)
+      Met_var_GRIB1_Param(43)       = 142
+      Met_var_GRIB1_St(43)          = "1"
       Met_var_ndim(43)              = 3
         ! Precipitation rate at surface  (kg/m2/s)
       Met_var_NC_names(44)          = "Precipitation_rate_surface"
       Met_var_GRIB_names(44)        = "prate"
       Met_var_WMO_names(44)         = "PRATE"
       Met_var_GRIB2_DPcPnSt(44,1:4) = (/0, 1, 7, 1/)
-      Met_var_GRIB1_MARS(44)        = "59"
+      Met_var_GRIB1_Param(44)       = 59
       Met_var_GRIB1_St(44)          = "pl"
       Met_var_ndim(44)              = 3
         ! Convective liquid precipitation rate at surface  (kg/m2/s)
       Met_var_NC_names(45)          = "Precip.rate convective  (liquid)"
       Met_var_WMO_names(45)         = "CPRAT"
+      Met_var_GRIB1_Param(45)       = 0
+      Met_var_GRIB1_St(45)          = ""
       Met_var_ndim(45)              = 3
         ! Large-scale precipitation rate at surface  (kg/m2/s)
       Met_var_NC_names(46)          = "Precip.rate large-scale (ice)"
       Met_var_WMO_names(46)         = ""
+      Met_var_GRIB1_Param(46)       = 0
+      Met_var_GRIB1_St(46)          = ""
       Met_var_ndim(46)              = 3
         ! Convective frozen precipitation rate at surface for (kg/m2/s)
       Met_var_NC_names(47)          = "Precip.rate convective  (ice)"
       Met_var_WMO_names(47)         = ""
+      Met_var_GRIB1_Param(47)       = 0
+      Met_var_GRIB1_St(47)          = ""
       Met_var_ndim(47)              = 3
 
       if (MR_iwindformat.eq.0) then
@@ -923,7 +955,7 @@
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="Pressure_vertical_velocity_isobaric"
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="Temp_isobaric"
         ! Surface
-        Met_var_IsAvailable(10)=.true.; Met_var_NC_names(10)="Planetary_boundary_layer_height"
+        Met_var_IsAvailable(10)=.true.; Met_var_NC_names(10)="Planetary_boundary_layer_height_surface"
         Met_var_IsAvailable(11)=.true.; Met_var_NC_names(11)="u_wind_height_above_ground"
         Met_var_IsAvailable(12)=.true.; Met_var_NC_names(12)="v_wind_height_above_ground"
         Met_var_IsAvailable(13)=.true.; Met_var_NC_names(13)="Surface_friction_velocity_surface"
@@ -1581,7 +1613,7 @@
         call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
 
-        grib_table = ".132"
+        Met_var_GRIB1_Table(1:MR_MAXVARS) = 132
 
         Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
         Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric"
@@ -1661,7 +1693,7 @@
           Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="Pressure_vertical_velocity_isobaric"
           Met_var_IsAvailable(5)=.true.
           ! Moisture
-          Met_var_IsAvailable(30)=.true.
+          !Met_var_IsAvailable(30)=.true.
   
           fill_value_sp(MR_iwindformat) = -9999.0_sp
 
@@ -1702,14 +1734,12 @@
 
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "JRA-55 reanalysis 1.25 degree files"
-        write(MR_global_info,*)"MR ERROR: JRA-55 currently not implemented."
-        stop 1
 
         MR_iGridCode = 45
         call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
 
-        grib_table = ".200"
+        Met_var_GRIB1_Table(1:MR_MAXVARS) = 200
 
         Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "initial_time0_hours"
         Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "lv_ISBL1"
@@ -1717,28 +1747,31 @@
         Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "g0_lon_3"
 
         ! Momentum / State variables
-        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="HGT_GDS0_ISBL"        ! short m^2/s^2 (32066.f,1.f)
-        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="UGRD_GDS0_ISBL"       ! short m/s (202.66f,0.01f)
-        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="VGRD_GDS0_ISBL"       ! short m/s (202.66f,0.01f)
-        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="VVEL_GDS0_ISBL"      ! short Pa/s (29.765f,0.001f)
-        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="TMP_GDS0_ISBL"        ! short K (477.66f,0.01f)
-
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="HGT_GDS0_ISBL"
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="UGRD_GDS0_ISBL"
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="VGRD_GDS0_ISBL"
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="VVEL_GDS0_ISBL"
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="TMP_GDS0_ISBL"
         ! Moisture
-        Met_var_IsAvailable(31)=.true.; Met_var_GRIB_names(31)              = "sh"
+        Met_var_IsAvailable(31)=.true.; Met_var_GRIB_names(31)= "SPFH_GDS0_ISBL"
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
 
       elseif (MR_iwindformat.eq.27)then
-         ! NOAA-CIRES reanalysis 2.5 degree files 
+         ! NOAA-CIRES reanalysis 2.0 degree files 
          ! https://rda.ucar.edu/datasets/ds131.2/
+         ! https://www.esrl.noaa.gov/psd/data/gridded/data.20thC_ReanV2c.pressure.html
 
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "NOAA-CIRES reanalysis 2.5 degree files"
+                  "NOAA-CIRES reanalysis 2.0 degree files"
 
         MR_iGridCode = 1027
         call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
 
+        Met_var_GRIB1_Table(1:MR_MAXVARS) = 2
+
+        ! Version 2c (https://rda.ucar.edu/datasets/ds131.2/)
         Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "initial_time0_hours"
         Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "lv_ISBL1"
         Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "g0_lat_2"
@@ -1750,17 +1783,7 @@
         Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_GRD_GDS0_ISBL_10"
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="V_VEL_GDS0_ISBL_10"
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="TMP_GDS0_ISBL_10"
-        ! Surface
-        !Met_var_IsAvailable(10)=.true.; Met_var_NC_names(10)="HPBL"
-        ! Atmospheric Structure
-        !Met_var_IsAvailable(22)=.true.; Met_var_NC_names(22)="TMP"
-        !Met_var_IsAvailable(23)=.true.; Met_var_NC_names(23)="TCDC"
-        ! Moisture
-        !Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="R_H_GDS0_ISBL_10"
-        ! Precipitation
-        !Met_var_IsAvailable(40)=.true.; Met_var_NC_names(40)="CRAIN"
-        !Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="PRATE"
-        !Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="CPRAT"
+
 
         fill_value_sp(MR_iwindformat) = 1.e+20_sp
 
@@ -1775,19 +1798,28 @@
         call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
 
+        Met_var_GRIB1_Table(1:MR_MAXVARS) = 128
+
         Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
         Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric"
         Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
         Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
 
         ! Momentum / State variables
-        Met_var_IsAvailable(1)=.true.
-        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U_component_of_wind_isobaric"       ! m/s
-        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_component_of_wind_isobaric"       ! m/s
-        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="Vertical_velocity_isobaric"      ! Pa/s
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="Geopotential_isobaric"
+                                       Met_var_GRIB1_Param(1)=129
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U_component_of_wind_isobaric"
+                                       Met_var_GRIB1_Param(2)=131
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_component_of_wind_isobaric"
+                                       Met_var_GRIB1_Param(3)=132
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="Vertical_velocity_isobaric"
+                                       Met_var_GRIB1_Param(4)=135
         Met_var_IsAvailable(5)=.true.
+                                       Met_var_GRIB1_Param(5)=130
         Met_var_IsAvailable(30)=.true.
+                                       Met_var_GRIB1_Param(30)=157
         Met_var_IsAvailable(31)=.true.
+                                       Met_var_GRIB1_Param(31)=133
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
         Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
@@ -1804,7 +1836,7 @@
         call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
 
-        grib_table = ".128"
+        Met_var_GRIB1_Table(1:MR_MAXVARS) = 128
 
         Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
         Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "level"
@@ -1840,7 +1872,8 @@
         call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
 
-        grib_table = ".128"
+        Met_var_GRIB1_Table(1:MR_MAXVARS) = 128
+
 
         Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
         Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "level"
@@ -2293,10 +2326,10 @@
       write(MR_global_info,*)"  Verifying existance of windfiles:"
       do i=1,MR_iwindfiles
         inquire( file=adjustl(trim(MR_windfiles(i))), exist=IsThere )
-        write(MR_global_info,*)"     ",adjustl(trim(MR_windfiles(i))),IsThere
+        write(MR_global_info,*)"     ",i,adjustl(trim(MR_windfiles(i))),IsThere
         if(.not.IsThere)then
           write(MR_global_error,*)"MR ERROR: Could not find windfile ",i
-          write(MR_global_error,*)"          adjustl(trim(MR_windfiles(i)))"
+          write(MR_global_error,*)"          ",adjustl(trim(MR_windfiles(i)))
           stop 1
         endif
       enddo
@@ -2676,6 +2709,7 @@
         MR_Comp_Time_in_hours    = Duration
       endif
       MR_Comp_StartYear        = HS_YearOfEvent(MR_Comp_StartHour,MR_BaseYear,MR_useLeap)
+      MR_Comp_StartMonth       = HS_MonthOfEvent(MR_Comp_StartHour,MR_BaseYear,MR_useLeap)
 
       ! Now we want to loop through all the steps of each windfile and find the
       ! file/step that immediately preceeds the time needed (MR_Comp_StartHour)
@@ -3091,6 +3125,7 @@
         call MR_Read_MetP_Variable_GRIB(ivar,istep+1)
 #endif
       endif
+
       MR_geoH_metP_next(:,:,:) = MR_dum3d_metP(:,:,:)
 
       Max_geoH_metP_next = maxval(MR_geoH_metP_next(:,:,np_fullmet))
@@ -3786,7 +3821,6 @@
           MR_dum3d_compH(:,:,k) = MR_dum3d_metH(1,1,k)
           cycle
         endif
-
         call MR_Regrid_Met2Comp(nx_submet,ny_submet, MR_dum3d_metH(1:nx_submet,1:ny_submet,k),       &
                                 nx_comp,  ny_comp,   tmp_regrid2d_sp(1:nx_comp,1:ny_comp))
 
@@ -3877,6 +3911,7 @@
           ! increase linearly with k
           do k=2,np_fullmet
             if (z_col_metP(k)<z_col_metP(k-1))then
+              write(*,*)"MR_WARNING: Need to fix value in MR_Regrid_MetP_to_MetH"
               knext=k       !find the first value of z_col_metP that's above z_col_metP(k-1)
               do while (z_col_metP(knext)<z_col_metP(k-1))
                  knext=knext+1

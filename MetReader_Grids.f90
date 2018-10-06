@@ -29,9 +29,9 @@
 
       integer,intent(in) :: igrid
 
-      integer :: i
-      real(kind=dp) :: x_start,y_start
-      real(kind=sp),dimension(:)  ,allocatable :: tmp_sp      !
+      !integer :: i
+      !real(kind=dp) :: x_start,y_start
+      !real(kind=sp),dimension(:)  ,allocatable :: tmp_sp      !
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                          MR_Set_Met_NCEPGeoGrid            ----------"

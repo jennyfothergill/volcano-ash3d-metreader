@@ -60,467 +60,663 @@
       write(MR_global_production,*)"----------                MR_Read_Met_DimVars_netcdf                  ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
-      if (MR_iwindformat.eq.25) then
-         ! NCEP/NCAR reanalysis 2.5 degree files 
-         ! https://rda.ucar.edu/datasets/ds090.0
+      if(MR_iwind.eq.5)then
+        ! For the case where variables are in different files, we will just hard-code the
+        ! grid geometry
 
-        iwf25_scale_facs = 0.0_sp
-        iwf25_offsets    = 0.0_sp
-        iwf25_scale_facs(1)  = 1.0_sp    ; iwf25_offsets(1)  = 32066.0_sp   ! hgt
-        iwf25_scale_facs(2)  = 0.01_sp   ; iwf25_offsets(2)  = 202.66_sp    ! uwnd
-        iwf25_scale_facs(3)  = 0.01_sp   ; iwf25_offsets(3)  = 202.66_sp    ! vwnd
-        iwf25_scale_facs(4)  = 0.001_sp  ; iwf25_offsets(4)  = 29.765_sp    ! omega
-        iwf25_scale_facs(5)  = 0.01_sp   ; iwf25_offsets(5)  = 477.66_sp    ! air (temperature)
-        iwf25_scale_facs(6)  = 1.0_sp    ; iwf25_offsets(6)  = 0.0_sp       ! level
-        iwf25_scale_facs(20) = 10.0_sp   ; iwf25_offsets(20) = 327650.0_sp  ! pres (lcb)
-        iwf25_scale_facs(21) = 10.0_sp   ; iwf25_offsets(21) = 327650.0_sp  ! pres (lct)
-        iwf25_scale_facs(30) = 0.01_sp   ; iwf25_offsets(30) = 302.66_sp    ! rhum
-        iwf25_scale_facs(31) = 1.0e-6_sp ; iwf25_offsets(31) = 0.032666_sp  ! shum
-        iwf25_scale_facs(32) = 1.0e-6_sp ; iwf25_offsets(32) = 0.032666_sp  ! shum
-        iwf25_scale_facs(44) = 1.0e-7_sp ; iwf25_offsets(44) = 0.0032765_sp ! prate
-        iwf25_scale_facs(45) = 1.0e-7_sp ; iwf25_offsets(45) = 0.0031765_sp ! cprat
+        if (MR_iwindformat.eq.25) then
+           ! NCEP/NCAR reanalysis 2.5 degree files 
+           ! https://rda.ucar.edu/datasets/ds090.0
+          maxdimlen            = 17
+          nlev_coords_detected = 3
+          allocate(nlevs_fullmet(nlev_coords_detected))
+          nlevs_fullmet(1) = 17
+          nlevs_fullmet(2) = 12
+          nlevs_fullmet(3) = 8
+          allocate(levs_code(nlev_coords_detected))
+          levs_code(1) = 1
+          levs_code(2) = 2
+          levs_code(3) = 2
+          allocate(levs_fullmet_sp(nlev_coords_detected,maxdimlen))
+          np_fullmet = 17
+          allocate(p_fullmet_sp(np_fullmet))
+          levs_fullmet_sp(:,:) = 0.0_sp
+          p_fullmet_sp(1:np_fullmet) = &
+            (/1000.0_sp, 925.0_sp, 850.0_sp, 700.0_sp, 600.0_sp, &
+               500.0_sp, 400.0_sp, 300.0_sp, 250.0_sp, 200.0_sp, &
+               150.0_sp, 100.0_sp,  70.0_sp,  50.0_sp, 30.0_sp, &
+                20.0_sp,  10.0_sp /)
+          z_inverted = .false.
+          levs_fullmet_sp(1,1:17) = p_fullmet_sp(1:17)*Pressure_Conv_Fac
+          levs_fullmet_sp(2,1:12) = p_fullmet_sp(1:12)*Pressure_Conv_Fac
+          levs_fullmet_sp(3,1:8 ) = p_fullmet_sp(1:8 )*Pressure_Conv_Fac
+          Met_var_zdim_idx( 1) = 1
+          Met_var_zdim_idx( 2) = 1
+          Met_var_zdim_idx( 3) = 1
+          Met_var_zdim_idx( 4) = 2
+          Met_var_zdim_idx( 5) = 1
+          Met_var_zdim_idx(30) = 3
 
-      endif
+          IsLatLon_MetGrid  = .true.
+          IsGlobal_MetGrid  = .true.
+          IsRegular_MetGrid = .true.
+          nx_fullmet = 144
+          ny_fullmet = 73
+          allocate(x_fullmet_sp(0:nx_fullmet+1))
+          allocate(y_fullmet_sp(ny_fullmet))
+          allocate(MR_dx_met(nx_fullmet))
+          allocate(MR_dy_met(ny_fullmet))
+          dx_met_const = 2.5_sp
+          dy_met_const = 2.5_sp
+          x_start =   0.0_dp
+          y_start =  90.0_dp
+          DO i = 0,nx_fullmet+1
+            x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
+          ENDDO
+          x_inverted = .false.
+          DO i = 1,ny_fullmet
+            y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
+          ENDDO
+          y_inverted = .true.
+          DO i = 1,nx_fullmet
+            MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+          ENDDO
+          DO i = 1,ny_fullmet-1
+            MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+          ENDDO
+          MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
-      if(.not.MR_iwindformat.eq.50)then
-        !---------------------------------------------------------------------------------
-        ! Checking for dimension length and values for x,y,t,p
-        !   Assume all files have the same format
-        maxdimlen = 0
-        if(MR_iwind.eq.5)then
- 111      format(a50,a4,i4,a3)
-          write(infile,111)trim(adjustl(MR_windfiles(1))), &
-                           "hgt.",MR_Comp_StartYear,".nc"
-          nSTAT = nf90_open(trim(ADJUSTL(infile)),NF90_NOWRITE,ncid)
+          iwf25_scale_facs = 0.0_sp
+          iwf25_offsets    = 0.0_sp
+          iwf25_scale_facs(1)  = 1.0_sp    ; iwf25_offsets(1)  = 32066.0_sp   ! hgt
+          iwf25_scale_facs(2)  = 0.01_sp   ; iwf25_offsets(2)  = 202.66_sp    ! uwnd
+          iwf25_scale_facs(3)  = 0.01_sp   ; iwf25_offsets(3)  = 202.66_sp    ! vwnd
+          iwf25_scale_facs(4)  = 0.001_sp  ; iwf25_offsets(4)  = 29.765_sp    ! omega
+          iwf25_scale_facs(5)  = 0.01_sp   ; iwf25_offsets(5)  = 477.66_sp    ! air (temperature)
+          iwf25_scale_facs(6)  = 1.0_sp    ; iwf25_offsets(6)  = 0.0_sp       ! level
+          iwf25_scale_facs(20) = 10.0_sp   ; iwf25_offsets(20) = 327650.0_sp  ! pres (lcb)
+          iwf25_scale_facs(21) = 10.0_sp   ; iwf25_offsets(21) = 327650.0_sp  ! pres (lct)
+          iwf25_scale_facs(30) = 0.01_sp   ; iwf25_offsets(30) = 302.66_sp    ! rhum
+          iwf25_scale_facs(31) = 1.0e-6_sp ; iwf25_offsets(31) = 0.032666_sp  ! shum
+          iwf25_scale_facs(32) = 1.0e-6_sp ; iwf25_offsets(32) = 0.032666_sp  ! shum
+          iwf25_scale_facs(44) = 1.0e-7_sp ; iwf25_offsets(44) = 0.0032765_sp ! prate
+          iwf25_scale_facs(45) = 1.0e-7_sp ; iwf25_offsets(45) = 0.0031765_sp ! cprat
+
+        elseif(MR_iwindformat.eq.26)then
+         ! JRA-55 reanalysis 1.25 degree files 
+         !  https://rda.ucar.edu/datasets/ds628.0/
+
+          maxdimlen            = 37
+          nlev_coords_detected = 2
+          allocate(nlevs_fullmet(nlev_coords_detected))
+          nlevs_fullmet(1) = 37
+          nlevs_fullmet(2) = 27
+          allocate(levs_code(nlev_coords_detected))
+          levs_code(1) = 1
+          levs_code(2) = 2
+          allocate(levs_fullmet_sp(nlev_coords_detected,maxdimlen))
+          np_fullmet = 37
+          allocate(p_fullmet_sp(np_fullmet))
+          levs_fullmet_sp(:,:) = 0.0_sp
+          p_fullmet_sp(1:np_fullmet) = &
+            (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
+               875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
+               750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
+               500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
+               250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
+               125.0_sp, 100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp, &
+                20.0_sp,  10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp, &
+                 2.0_sp,   1.0_sp /)
+          z_inverted = .true.
+
+          levs_fullmet_sp(1,1:37) = p_fullmet_sp(1:37)*Pressure_Conv_Fac
+          levs_fullmet_sp(2,1:27) = p_fullmet_sp(1:27)*Pressure_Conv_Fac
+          Met_var_zdim_idx( 1) = 1
+          Met_var_zdim_idx( 2) = 1
+          Met_var_zdim_idx( 3) = 1
+          Met_var_zdim_idx( 4) = 1
+          Met_var_zdim_idx( 5) = 1
+          Met_var_zdim_idx(30) = 2
+
+          IsLatLon_MetGrid  = .true.
+          IsGlobal_MetGrid  = .true.
+          IsRegular_MetGrid = .true.
+          nx_fullmet = 288
+          ny_fullmet = 145
+          allocate(x_fullmet_sp(0:nx_fullmet+1))
+          allocate(y_fullmet_sp(ny_fullmet))
+          allocate(MR_dx_met(nx_fullmet))
+          allocate(MR_dy_met(ny_fullmet))
+          dx_met_const = 1.25_sp
+          dy_met_const = 2.0_sp
+          x_start =   0.0_dp
+          y_start =  90.0_dp
+          DO i = 0,nx_fullmet+1
+            x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
+          ENDDO
+          x_inverted = .false.
+          DO i = 1,ny_fullmet
+            y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
+          ENDDO
+          y_inverted = .true.
+          DO i = 1,nx_fullmet
+            MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+          ENDDO
+          DO i = 1,ny_fullmet-1
+            MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+          ENDDO
+          MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+
+        elseif(MR_iwindformat.eq.27)then
+          !  NOAA-CIRES reanalysis 2.0 degree files  :: ds131.2
+
+          maxdimlen            = 24
+          nlev_coords_detected = 2
+          allocate(nlevs_fullmet(nlev_coords_detected))
+          nlevs_fullmet(1) = 24
+          nlevs_fullmet(2) = 19
+          allocate(levs_code(nlev_coords_detected))
+          levs_code(1) = 1
+          levs_code(2) = 2
+          allocate(levs_fullmet_sp(nlev_coords_detected,maxdimlen))
+          np_fullmet = 24
+          allocate(p_fullmet_sp(np_fullmet))
+          levs_fullmet_sp(:,:) = 0.0_sp
+          p_fullmet_sp(1:np_fullmet) = &
+            (/1000.0_sp, 950.0_sp, 900.0_sp, 850.0_sp, 800.0_sp, &
+               750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
+               500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
+               250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp,  70.0_sp, &
+                50.0_sp,  30.0_sp,  20.0_sp,  10.0_sp /)
+          z_inverted = .false.
+          levs_fullmet_sp(1,1:24) = p_fullmet_sp(1:24)*Pressure_Conv_Fac
+          levs_fullmet_sp(2,1:19) = p_fullmet_sp(1:19)*Pressure_Conv_Fac
+          Met_var_zdim_idx( 1) = 1
+          Met_var_zdim_idx( 2) = 1
+          Met_var_zdim_idx( 3) = 1
+          Met_var_zdim_idx( 4) = 2
+          Met_var_zdim_idx( 5) = 1
+
+          IsLatLon_MetGrid  = .true.
+          IsGlobal_MetGrid  = .true.
+          IsRegular_MetGrid = .true.
+          nx_fullmet = 180
+          ny_fullmet = 91
+          allocate(x_fullmet_sp(0:nx_fullmet+1))
+          allocate(y_fullmet_sp(ny_fullmet))
+          allocate(MR_dx_met(nx_fullmet))
+          allocate(MR_dy_met(ny_fullmet))
+          dx_met_const = 2.0_sp
+          dy_met_const = 2.0_sp
+          x_start =   0.0_dp
+          y_start =  90.0_dp
+          DO i = 0,nx_fullmet+1
+            x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
+          ENDDO
+          x_inverted = .false.
+          DO i = 1,ny_fullmet
+            y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
+          ENDDO
+          y_inverted = .true.
+          DO i = 1,nx_fullmet
+            MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+          ENDDO
+          DO i = 1,ny_fullmet-1
+            MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+          ENDDO
+          MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+
+        elseif(MR_iwindformat.eq.29)then
+         write(*,*) MR_iwindformat
+        elseif(MR_iwindformat.eq.30)then
+         write(*,*) MR_iwindformat
         else
-          infile = adjustl(trim(MR_windfiles(1)))
-        endif
-        nSTAT=nf90_open(adjustl(trim(infile)),NF90_NOWRITE, ncid)
-        if(nSTAT.ne.NF90_NOERR) then
-          write(MR_global_error,*)'MR ERROR: open NC file: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: open NC file: ',nf90_strerror(nSTAT)
-          write(MR_global_error,*)'Exiting'
           stop 1
         endif
-        do ivar = 1,MR_MAXVARS
-          if (.not.Met_var_IsAvailable(ivar)) cycle  ! Only look at variables that are available
-          if (Met_var_ndim(ivar).ne.4) cycle         !  and only ones with a 'level' dimension
-          invar = Met_var_NC_names(ivar)
-          nSTAT = nf90_inq_varid(ncid,invar,in_var_id)  ! get the var_id for this named variable
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR WARNING: inq_varid: ',invar,nf90_strerror(nSTAT)
-            write(MR_global_error,*)'  Cannot find variable ',invar
-            write(MR_global_error,*)'  Setting Met_var_IsAvailable to .false.'
-            write(MR_global_log  ,*)'MR WARNING: inq_varid: ',invar,nf90_strerror(nSTAT)
-            Met_var_IsAvailable(ivar) = .false.
-            cycle
+
+      else  ! MR_iwind not equal to 5
+        if(.not.MR_iwindformat.eq.50)then
+          !---------------------------------------------------------------------------------
+          ! Checking for dimension length and values for x,y,t,p
+          !   Assume all files have the same format
+          maxdimlen = 0
+          if(MR_iwind.eq.5)then
+ 111        format(a50,a4,i4,a3)
+            write(infile,111)trim(adjustl(MR_windfiles(1))), &
+                             "hgt.",MR_Comp_StartYear,".nc"
+            nSTAT = nf90_open(trim(ADJUSTL(infile)),NF90_NOWRITE,ncid)
+          else
+            infile = adjustl(trim(MR_windfiles(1)))
           endif
-          nSTAT = nf90_inquire_variable(ncid, in_var_id, invar, &
-                    xtype = var_xtype, &
-                    ndims = var_ndims)   ! get the number of dimensions
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+          nSTAT=nf90_open(adjustl(trim(infile)),NF90_NOWRITE, ncid)
+          if(nSTAT.ne.NF90_NOERR) then
+            write(MR_global_error,*)'MR ERROR: open NC file: ',nf90_strerror(nSTAT)
+            write(MR_global_log  ,*)'MR ERROR: open NC file: ',nf90_strerror(nSTAT)
+            write(MR_global_error,*)'Exiting'
             stop 1
           endif
-          if (var_ndims.ne.Met_var_ndim(ivar))then
-            write(MR_global_error,*)'MR ERROR: The actual number of dimensions differs from'
-            write(MR_global_error,*)'          what is expected'
-            write(MR_global_error,*)'      Variable : ',ivar,Met_var_NC_names(ivar)
-            write(MR_global_error,*)'      Expected : ',Met_var_ndim(ivar)
-            write(MR_global_error,*)'      Found    : ',var_ndims
-            stop 1
-          endif
-          allocate(var_dimIDs(var_ndims))
-          nSTAT = nf90_inquire_variable(ncid, in_var_id, invar, &
-                    dimids = var_dimIDs(:var_ndims))
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-            stop 1
-          endif
+          do ivar = 1,MR_MAXVARS
+            if (.not.Met_var_IsAvailable(ivar)) cycle  ! Only look at variables that are available
+            if (Met_var_ndim(ivar).ne.4) cycle         !  and only ones with a 'level' dimension
+            invar = Met_var_NC_names(ivar)
+            nSTAT = nf90_inq_varid(ncid,invar,in_var_id)  ! get the var_id for this named variable
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR WARNING: inq_varid: ',invar,nf90_strerror(nSTAT)
+              write(MR_global_error,*)'  Cannot find variable ',invar
+              write(MR_global_error,*)'  Setting Met_var_IsAvailable to .false.'
+              write(MR_global_log  ,*)'MR WARNING: inq_varid: ',invar,nf90_strerror(nSTAT)
+              Met_var_IsAvailable(ivar) = .false.
+              cycle
+            endif
+            nSTAT = nf90_inquire_variable(ncid, in_var_id, invar, &
+                      xtype = var_xtype, &
+                      ndims = var_ndims)   ! get the number of dimensions
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+              stop 1
+            endif
+            if (var_ndims.ne.Met_var_ndim(ivar))then
+              write(MR_global_error,*)'MR ERROR: The actual number of dimensions differs from'
+              write(MR_global_error,*)'          what is expected'
+              write(MR_global_error,*)'      Variable : ',ivar,Met_var_NC_names(ivar)
+              write(MR_global_error,*)'      Expected : ',Met_var_ndim(ivar)
+              write(MR_global_error,*)'      Found    : ',var_ndims
+              stop 1
+            endif
+            allocate(var_dimIDs(var_ndims))
+            nSTAT = nf90_inquire_variable(ncid, in_var_id, invar, &
+                      dimids = var_dimIDs(:var_ndims))
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+              stop 1
+            endif
     
-          ! 3-d transient variables should be in the COORDS convention (time, level, y, x)
-          ! if ivar = 1 (Geopotential Height), then get the info on x,y and t too
-          if(ivar.eq.1)then
-            i_dim = 1  ! get x info
-            nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
-                         name =  dimname, &
-                         len = dimlen)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              stop 1
-            endif
-            if(index(dimname,Met_dim_names(4)).ne.0)then
-              nx_fullmet = dimlen
-              xdim_id    = var_dimIDs(i_dim)
-            endif
-            nSTAT = nf90_inq_varid(ncid,dimname,var_id) ! get the variable associated with this dim
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-              stop 1
-            endif
-            ! Check if we need to read into a float or a double
-            nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = var_xtype)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-              stop 1
-            endif
-            allocate(x_fullmet_sp(0:nx_fullmet+1))
-            if(var_xtype.eq.NF90_FLOAT)then
-              allocate(dum1d_sp(dimlen))
-              nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
-                     start = (/1/),count = (/dimlen/))
+            ! 3-d transient variables should be in the COORDS convention (time, level, y, x)
+            ! if ivar = 1 (Geopotential Height), then get the info on x,y and t too
+            if(ivar.eq.1)then
+              i_dim = 1  ! get x info
+              nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
+                           name =  dimname, &
+                           len = dimlen)
               if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
                 stop 1
               endif
-              ! copy to local variable
-              x_fullmet_sp(1:nx_fullmet) = dum1d_sp(1:nx_fullmet)
-              deallocate(dum1d_sp)
-            elseif(var_xtype.eq.NF90_DOUBLE)then
-              allocate(dum1d_dp(dimlen))
-              nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
-                     start = (/1/),count = (/dimlen/))
+              if(index(dimname,Met_dim_names(4)).ne.0)then
+                nx_fullmet = dimlen
+                xdim_id    = var_dimIDs(i_dim)
+              endif
+              nSTAT = nf90_inq_varid(ncid,dimname,var_id) ! get the variable associated with this dim
               if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_error,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
                 stop 1
               endif
-              ! copy to local variable
-              x_fullmet_sp(1:nx_fullmet) = real(dum1d_dp(1:nx_fullmet),kind=sp)
-              deallocate(dum1d_dp)
-            else
-              write(MR_global_error,*)'MR ERROR: Cannot recognize variable type for x'
-              stop 5
-            endif
-            ! Check the units
-            nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
-                                           "units",xtype, length, attnum)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
-            else
-              nSTAT = nf90_get_att(ncid, var_id,"units",ustring)
-              if(nSTAT.ne.NF90_NOERR) then
-                write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+              ! Check if we need to read into a float or a double
+              nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = var_xtype)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
                 stop 1
               endif
-              if(index(ustring,'km').gt.0.or.&
-                 index(ustring,'kilo').gt.0)then
-                ! This is a projected grid
-                IsLatLon_MetGrid  = .false.
-              elseif(index(ustring,'deg').gt.0)then
-                ! This is a lon/lat grid
-                IsLatLon_MetGrid  = .true.
+              allocate(x_fullmet_sp(0:nx_fullmet+1))
+              if(var_xtype.eq.NF90_FLOAT)then
+                allocate(dum1d_sp(dimlen))
+                nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
+                       start = (/1/),count = (/dimlen/))
+                if(nSTAT.ne.NF90_NOERR)then
+                  write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                  write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                  stop 1
+                endif
+                ! copy to local variable
+                x_fullmet_sp(1:nx_fullmet) = dum1d_sp(1:nx_fullmet)
+                deallocate(dum1d_sp)
+              elseif(var_xtype.eq.NF90_DOUBLE)then
+                allocate(dum1d_dp(dimlen))
+                nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
+                       start = (/1/),count = (/dimlen/))
+                if(nSTAT.ne.NF90_NOERR)then
+                  write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                  write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                  stop 1
+                endif
+                ! copy to local variable
+                x_fullmet_sp(1:nx_fullmet) = real(dum1d_dp(1:nx_fullmet),kind=sp)
+                deallocate(dum1d_dp)
               else
-                write(MR_global_error,*)"MR ERROR: Cannot determine if the grid is lon/lat or projected"
-                stop 5
+                write(MR_global_error,*)'MR ERROR: Cannot recognize variable type for x'
+                stop 1
               endif
-            endif
-            ! Finally, check for orientation
-            if(x_fullmet_sp(1).lt.x_fullmet_sp(2))then
-              x_inverted = .false.
-            else
-              x_inverted = .true.
-            endif
-            allocate(MR_dx_met(nx_fullmet))
-            x_start = x_fullmet_sp(1)
-            dx_met_const = x_fullmet_sp(2)-x_fullmet_sp(1)
-            x_fullmet_sp(0)            = x_fullmet_sp(1)          - dx_met_const
-            x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(nx_fullmet) + dx_met_const
-            do i = 1,nx_fullmet
-              MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-            enddo 
+              ! Check the units
+              nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
+                                             "units",xtype, length, attnum)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
+              else
+                nSTAT = nf90_get_att(ncid, var_id,"units",ustring)
+                if(nSTAT.ne.NF90_NOERR) then
+                  write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                  write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                  stop 1
+                endif
+                if(index(ustring,'km').gt.0.or.&
+                   index(ustring,'kilo').gt.0)then
+                  ! This is a projected grid
+                  IsLatLon_MetGrid  = .false.
+                elseif(index(ustring,'deg').gt.0)then
+                  ! This is a lon/lat grid
+                  IsLatLon_MetGrid  = .true.
+                else
+                  write(MR_global_error,*)"MR ERROR: Cannot determine if the grid is lon/lat or projected"
+                  stop 1
+                endif
+              endif
+              ! Finally, check for orientation
+              if(x_fullmet_sp(1).lt.x_fullmet_sp(2))then
+                x_inverted = .false.
+              else
+                x_inverted = .true.
+              endif
+              allocate(MR_dx_met(nx_fullmet))
+              x_start = x_fullmet_sp(1)
+              dx_met_const = x_fullmet_sp(2)-x_fullmet_sp(1)
+              x_fullmet_sp(0)            = x_fullmet_sp(1)          - dx_met_const
+              x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(nx_fullmet) + dx_met_const
+              do i = 1,nx_fullmet
+                MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+              enddo 
  
-            i_dim = 2  ! get y info
-            nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
-                         name =  dimname, &
-                         len = dimlen)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              stop 1
-            endif
-            if(index(dimname,Met_dim_names(3)).ne.0)then
-              ny_fullmet = dimlen
-              ydim_id    = var_dimIDs(i_dim)
-            endif
+              i_dim = 2  ! get y info
+              nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
+                           name =  dimname, &
+                           len = dimlen)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+                stop 1
+              endif
+              if(index(dimname,Met_dim_names(3)).ne.0)then
+                ny_fullmet = dimlen
+                ydim_id    = var_dimIDs(i_dim)
+              endif
 
-            nSTAT = nf90_inq_varid(ncid,dimname,var_id) ! get the variable associated with this dim
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-              stop 1
-            endif
-            ! Check if we need to read into a float or a double
-            nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = var_xtype)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-              stop 1
-            endif
-            allocate(y_fullmet_sp(1:ny_fullmet))
-            if(var_xtype.eq.NF90_FLOAT)then
-              allocate(dum1d_sp(dimlen))
-              nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
-                     start = (/1/),count = (/dimlen/))
+              nSTAT = nf90_inq_varid(ncid,dimname,var_id) ! get the variable associated with this dim
               if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_error,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
                 stop 1
               endif
-              ! copy to local variable
-              y_fullmet_sp(1:ny_fullmet) = dum1d_sp(1:ny_fullmet)
-              deallocate(dum1d_sp)
-            elseif(var_xtype.eq.NF90_DOUBLE)then
-              allocate(dum1d_dp(dimlen))
-              nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
-                     start = (/1/),count = (/dimlen/))
+              ! Check if we need to read into a float or a double
+              nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = var_xtype)
               if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_error,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
                 stop 1
               endif
-              ! copy to local variable
-              y_fullmet_sp(1:ny_fullmet) = real(dum1d_dp(1:ny_fullmet),kind=sp)
-              deallocate(dum1d_dp)
-            else
-              write(MR_global_error,*)'MR ERROR: Cannot recognize variable type for x'
-              stop 1
-            endif
-            ! Check the units
-            nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
-                                           "units",xtype, length, attnum)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
-            else
-              nSTAT = nf90_get_att(ncid, var_id,"units",ustring)
-              if(nSTAT.ne.NF90_NOERR) then
-                write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                stop 1
-              endif
-              if(index(ustring,'km').gt.0.or.&
-                 index(ustring,'kilo').gt.0)then
-                ! This is a projected grid
-                IsLatLon_MetGrid  = .false.
-              elseif(index(ustring,'deg').gt.0)then
-                ! This is a lon/lat grid
-                IsLatLon_MetGrid  = .true.
+              allocate(y_fullmet_sp(1:ny_fullmet))
+              if(var_xtype.eq.NF90_FLOAT)then
+                allocate(dum1d_sp(dimlen))
+                nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
+                       start = (/1/),count = (/dimlen/))
+                if(nSTAT.ne.NF90_NOERR)then
+                  write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                  write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                  stop 1
+                endif
+                ! copy to local variable
+                y_fullmet_sp(1:ny_fullmet) = dum1d_sp(1:ny_fullmet)
+                deallocate(dum1d_sp)
+              elseif(var_xtype.eq.NF90_DOUBLE)then
+                allocate(dum1d_dp(dimlen))
+                nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
+                       start = (/1/),count = (/dimlen/))
+                if(nSTAT.ne.NF90_NOERR)then
+                  write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                  write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                  stop 1
+                endif
+                ! copy to local variable
+                y_fullmet_sp(1:ny_fullmet) = real(dum1d_dp(1:ny_fullmet),kind=sp)
+                deallocate(dum1d_dp)
               else
-                write(MR_global_error,*)"MR ERROR: Cannot determine if the grid is lon/lat or projected"
+                write(MR_global_error,*)'MR ERROR: Cannot recognize variable type for x'
                 stop 1
               endif
-            endif
-            ! check for orientation
-            if(y_fullmet_sp(1).lt.y_fullmet_sp(2))then
-              y_inverted = .false.
-            else
-              y_inverted = .true.
-            endif
-            allocate(MR_dy_met(ny_fullmet))
-            y_start = y_fullmet_sp(1)
-            dy_met_const = y_fullmet_sp(2)-y_fullmet_sp(1)
-            do i = 1,ny_fullmet-1
-              MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-            enddo
-
-            ! We need to check if this is a regular grid
-            IsRegular_MetGrid = .true.
-            do i = 1,nx_fullmet-1
-              if(abs(MR_dx_met(i+1)-MR_dx_met(i)).gt.tol*MR_dx_met(i))then
-                IsRegular_MetGrid = .false.
+              ! Check the units
+              nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
+                                             "units",xtype, length, attnum)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
+              else
+                nSTAT = nf90_get_att(ncid, var_id,"units",ustring)
+                if(nSTAT.ne.NF90_NOERR) then
+                  write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                  write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                  stop 1
+                endif
+                if(index(ustring,'km').gt.0.or.&
+                   index(ustring,'kilo').gt.0)then
+                  ! This is a projected grid
+                  IsLatLon_MetGrid  = .false.
+                elseif(index(ustring,'deg').gt.0)then
+                  ! This is a lon/lat grid
+                  IsLatLon_MetGrid  = .true.
+                else
+                  write(MR_global_error,*)"MR ERROR: Cannot determine if the grid is lon/lat or projected"
+                  stop 1
+                endif
               endif
-            enddo
-            do i = 1,ny_fullmet-1
-              if(abs(MR_dy_met(i+1)-MR_dy_met(i)).gt.tol*MR_dy_met(i))then
-                IsRegular_MetGrid = .false.
+              ! check for orientation
+              if(y_fullmet_sp(1).lt.y_fullmet_sp(2))then
+                y_inverted = .false.
+              else
+                y_inverted = .true.
               endif
-            enddo
+              allocate(MR_dy_met(ny_fullmet))
+              y_start = y_fullmet_sp(1)
+              dy_met_const = y_fullmet_sp(2)-y_fullmet_sp(1)
+              do i = 1,ny_fullmet-1
+                MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+              enddo
 
-            i_dim = 4  ! get t info
-            nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
-                         name =  dimname, &
-                         len = dimlen)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              stop 1
-            endif
-            if(index(dimname,Met_dim_names(1)).ne.0)then
-              nt_fullmet = dimlen
-              tdim_id    = var_dimIDs(i_dim)
-            endif
-  
-          endif
-          ! Now checking level coordinates (pressure, height, depth); third dimension
-          i_dim = 3
-          nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
-                       name =  dimname, & 
-                       len = dimlen)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-            stop 1
-          endif
-          if(index(dimname,'lev').ne.0.or.&
-             index(dimname,'isobaric').ne.0.or.&
-             index(dimname,'pressure').ne.0.or.&
-             index(dimname,'height').ne.0.or.&
-             index(dimname,'depth').ne.0.or.&
-             index(dimname,'lv_ISBL1').ne.0.or.&
-             index(dimname,'bottom_top').ne.0.or.&
-             index(dimname,'bottom_top_stag').ne.0.or.&
-             index(dimname,'soil_layers_stag').ne.0)then
-            ! Log this level coordinate if it is the first
-            if (nlev_coords_detected.eq.0)then
-              nlev_coords_detected = nlev_coords_detected + 1
-              Met_var_zdim_idx(ivar)  = nlev_coords_detected
-              Met_var_zdim_ncid(ivar) = var_dimIDs(i_dim)
-              maxdimlen = dimlen
-            else
-              ! Otherwise, check if this level coordinate has already been logged
-              FoundOldDim = .false.
-              do iivar = 1,ivar-1
-                if (Met_var_zdim_ncid(iivar).eq.var_dimIDs(i_dim))then
-                  FoundOldDim = .true.
-                  Met_var_zdim_idx(ivar)  = Met_var_zdim_idx(iivar)
-                  Met_var_zdim_ncid(ivar) = var_dimIDs(i_dim)
-                  exit
+              ! We need to check if this is a regular grid
+              IsRegular_MetGrid = .true.
+              do i = 1,nx_fullmet-1
+                if(abs(MR_dx_met(i+1)-MR_dx_met(i)).gt.tol*MR_dx_met(i))then
+                  IsRegular_MetGrid = .false.
                 endif
               enddo
-              if(.not.FoundOldDim)then
+              do i = 1,ny_fullmet-1
+                if(abs(MR_dy_met(i+1)-MR_dy_met(i)).gt.tol*MR_dy_met(i))then
+                  IsRegular_MetGrid = .false.
+                endif
+              enddo
+
+              i_dim = 4  ! get t info
+              nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
+                           name =  dimname, &
+                           len = dimlen)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+                stop 1
+              endif
+              if(index(dimname,Met_dim_names(1)).ne.0)then
+                nt_fullmet = dimlen
+                tdim_id    = var_dimIDs(i_dim)
+              endif
+  
+            endif
+            ! Now checking level coordinates (pressure, height, depth); third dimension
+            i_dim = 3
+            nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
+                         name =  dimname, & 
+                         len = dimlen)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+              stop 1
+            endif
+            if(index(dimname,'lev').ne.0.or.&
+               index(dimname,'isobaric').ne.0.or.&
+               index(dimname,'pressure').ne.0.or.&
+               index(dimname,'height').ne.0.or.&
+               index(dimname,'depth').ne.0.or.&
+               index(dimname,'lv_ISBL1').ne.0.or.&
+               index(dimname,'bottom_top').ne.0.or.&
+               index(dimname,'bottom_top_stag').ne.0.or.&
+               index(dimname,'soil_layers_stag').ne.0)then
+              ! Log this level coordinate if it is the first
+              if (nlev_coords_detected.eq.0)then
                 nlev_coords_detected = nlev_coords_detected + 1
                 Met_var_zdim_idx(ivar)  = nlev_coords_detected
                 Met_var_zdim_ncid(ivar) = var_dimIDs(i_dim)
-                if (maxdimlen.lt.dimlen) maxdimlen = dimlen
-              endif
-            endif
-          else
-            write(MR_global_error,*)'MR ERROR: level coordinate is not in pos. 3 for ',invar
-            write(MR_global_log  ,*)'MR ERROR: level coordinate is not in pos. 3 for ',invar
-            stop 1
-          endif
-          ! tidy up
-          deallocate(var_dimIDs)
-        enddo ! ivar
-  
-        ! We have all the level dimension names and dim_ids; now we need to get the sizes
-        allocate(nlevs_fullmet(nlev_coords_detected))
-        allocate(levs_code(nlev_coords_detected))
-        allocate(levs_fullmet_sp(nlev_coords_detected,maxdimlen))
-        do ivar = 1,MR_MAXVARS
-          ! Check if this variable has a z-dimension (pressure, height, depth, etc.)
-          if(Met_var_zdim_ncid(ivar).gt.0)then
-            ! log the length of the dimension for this level coordinat
-            nSTAT = nf90_inquire_dimension(ncid,Met_var_zdim_ncid(ivar), &
-                       name =  dimname, &
-                       len = dimlen)
-            idx = Met_var_zdim_idx(ivar)
-            nlevs_fullmet(idx) = dimlen
-            ! Now inquire and populate the dimension variable info
-            nSTAT = nf90_inq_varid(ncid,dimname,var_id)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-              stop 1
-            endif
-            ! Check if we need to read into a float or a double
-            nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = var_xtype)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-              stop 1
-            endif
-            if(var_xtype.eq.NF90_FLOAT)then
-              allocate(dum1d_sp(dimlen))
-              nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
-                     start = (/1/),count = (/dimlen/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                stop 1
-              endif
-              ! copy to local variable
-              levs_fullmet_sp(idx,1:nlevs_fullmet(idx)) = dum1d_sp(1:nlevs_fullmet(idx))
-              deallocate(dum1d_sp)
-            elseif(var_xtype.eq.NF90_DOUBLE)then
-              allocate(dum1d_dp(dimlen))
-              nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
-                     start = (/1/),count = (/dimlen/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                stop 1
-              endif
-              ! copy to local variable
-              levs_fullmet_sp(idx,1:nlevs_fullmet(idx)) = real(dum1d_dp(1:nlevs_fullmet(idx)),kind=sp)
-              deallocate(dum1d_dp)
-            endif
-            ! Check the units
-            nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
-                                           "units",xtype, length, attnum)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR WARNING: cannot find dim units ',dimname,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR WARNING: cannot find dim units ',dimname,nf90_strerror(nSTAT)
-              IsPressureDimension = .false.
-              stop 1
-            else
-              nSTAT = nf90_get_att(ncid, var_id,"units",ustring)
-              if(nSTAT.ne.NF90_NOERR) then
-                write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                stop 1
-              endif
-              ! Note: the variables below are single-valued, not arrays on ivar
-              !       If a pressure is found, the assumption here is that all pressure coordinates will
-              !       be given in the same units (hPa or Pa) and the same orientations (bot to top, or
-              !       inverted.
-              if(index(ustring,'Pa').gt.0.or.&
-                 index(ustring,'millibar').gt.0)then
-                ! This is a pressure level
-                IsPressureDimension = .true.
-                if(index(ustring,'hPa').gt.0.or.&
-                   index(ustring,'millibar').gt.0)then
-                  Pressure_Conv_Fac = 100.0_sp
-                else
-                  Pressure_Conv_Fac = 1.0_sp
+                maxdimlen = dimlen
+              else
+                ! Otherwise, check if this level coordinate has already been logged
+                FoundOldDim = .false.
+                do iivar = 1,ivar-1
+                  if (Met_var_zdim_ncid(iivar).eq.var_dimIDs(i_dim))then
+                    FoundOldDim = .true.
+                    Met_var_zdim_idx(ivar)  = Met_var_zdim_idx(iivar)
+                    Met_var_zdim_ncid(ivar) = var_dimIDs(i_dim)
+                    exit
+                  endif
+                enddo
+                if(.not.FoundOldDim)then
+                  nlev_coords_detected = nlev_coords_detected + 1
+                  Met_var_zdim_idx(ivar)  = nlev_coords_detected
+                  Met_var_zdim_ncid(ivar) = var_dimIDs(i_dim)
+                  if (maxdimlen.lt.dimlen) maxdimlen = dimlen
                 endif
-              else
-                IsPressureDimension = .false.
               endif
+            else
+              write(MR_global_error,*)'MR ERROR: level coordinate is not in pos. 3 for ',invar
+              write(MR_global_log  ,*)'MR ERROR: level coordinate is not in pos. 3 for ',invar
+              stop 1
             endif
-            
-            ! Finally, check for orientation
-            if(IsPressureDimension)then
-              if(levs_fullmet_sp(idx,1).lt.levs_fullmet_sp(idx,2))then
-                z_inverted = .true.
-              else
-                z_inverted = .false.
-              endif
-            endif
-          endif
-        enddo  ! ivar
-        ! Close file
-        nSTAT = nf90_close(ncid)
-        if(nSTAT.ne.NF90_NOERR)then
-           write(MR_global_error,*)'MR ERROR: close file: ',nf90_strerror(nSTAT)
-           write(MR_global_log  ,*)'MR ERROR: close file: ',nf90_strerror(nSTAT)
-           stop 1
-        endif
+            ! tidy up
+            deallocate(var_dimIDs)
+          enddo ! ivar
   
+          ! We have all the level dimension names and dim_ids; now we need to get the sizes
+          allocate(nlevs_fullmet(nlev_coords_detected))
+          allocate(levs_code(nlev_coords_detected))
+          allocate(levs_fullmet_sp(nlev_coords_detected,maxdimlen))
+          do ivar = 1,MR_MAXVARS
+            ! Check if this variable has a z-dimension (pressure, height, depth, etc.)
+            if(Met_var_zdim_ncid(ivar).gt.0)then
+              ! log the length of the dimension for this level coordinat
+              nSTAT = nf90_inquire_dimension(ncid,Met_var_zdim_ncid(ivar), &
+                         name =  dimname, &
+                         len = dimlen)
+              idx = Met_var_zdim_idx(ivar)
+              nlevs_fullmet(idx) = dimlen
+              ! Now inquire and populate the dimension variable info
+              nSTAT = nf90_inq_varid(ncid,dimname,var_id)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
+                stop 1
+              endif
+              ! Check if we need to read into a float or a double
+              nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = var_xtype)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
+                stop 1
+              endif
+              if(var_xtype.eq.NF90_FLOAT)then
+                allocate(dum1d_sp(dimlen))
+                nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
+                       start = (/1/),count = (/dimlen/))
+                if(nSTAT.ne.NF90_NOERR)then
+                  write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                  write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                  stop 1
+                endif
+                ! copy to local variable
+                levs_fullmet_sp(idx,1:nlevs_fullmet(idx)) = dum1d_sp(1:nlevs_fullmet(idx))
+                deallocate(dum1d_sp)
+              elseif(var_xtype.eq.NF90_DOUBLE)then
+                allocate(dum1d_dp(dimlen))
+                nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
+                       start = (/1/),count = (/dimlen/))
+                if(nSTAT.ne.NF90_NOERR)then
+                  write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                  write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
+                  stop 1
+                endif
+                ! copy to local variable
+                levs_fullmet_sp(idx,1:nlevs_fullmet(idx)) = real(dum1d_dp(1:nlevs_fullmet(idx)),kind=sp)
+                deallocate(dum1d_dp)
+              endif
+              ! Check the units
+              nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
+                                             "units",xtype, length, attnum)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR WARNING: cannot find dim units ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR WARNING: cannot find dim units ',dimname,nf90_strerror(nSTAT)
+                IsPressureDimension = .false.
+                stop 1
+              else
+                nSTAT = nf90_get_att(ncid, var_id,"units",ustring)
+                if(nSTAT.ne.NF90_NOERR) then
+                  write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                  write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                  stop 1
+                endif
+                ! Note: the variables below are single-valued, not arrays on ivar
+                !       If a pressure is found, the assumption here is that all pressure coordinates will
+                !       be given in the same units (hPa or Pa) and the same orientations (bot to top, or
+                !       inverted.
+                if(index(ustring,'Pa').gt.0.or.&
+                   index(ustring,'millibar').gt.0)then
+                  ! This is a pressure level
+                  IsPressureDimension = .true.
+                  if(index(ustring,'hPa').gt.0.or.&
+                     index(ustring,'millibar').gt.0)then
+                    Pressure_Conv_Fac = 100.0_sp
+                  else
+                    Pressure_Conv_Fac = 1.0_sp
+                  endif
+                else
+                  IsPressureDimension = .false.
+                endif
+              endif
+              
+              ! Finally, check for orientation
+              if(IsPressureDimension)then
+                if(levs_fullmet_sp(idx,1).lt.levs_fullmet_sp(idx,2))then
+                  z_inverted = .true.
+                else
+                  z_inverted = .false.
+                endif
+              endif
+            endif
+          enddo  ! ivar
+          ! Close file
+          nSTAT = nf90_close(ncid)
+          if(nSTAT.ne.NF90_NOERR)then
+             write(MR_global_error,*)'MR ERROR: close file: ',nf90_strerror(nSTAT)
+             write(MR_global_log  ,*)'MR ERROR: close file: ',nf90_strerror(nSTAT)
+             stop 1
+          endif
+        endif ! MR_iwind.eq.5
+        !-----------------------------------------
+
         write(MR_global_production,*)" Found these levels"
-        write(MR_global_production,*)"  VaribleID    LevelIdx       dimID"
+        write(MR_global_production,*)"  VaribleID    LevelIdx       dimID      length"
         do ivar = 1,MR_MAXVARS
           if (Met_var_IsAvailable(ivar)) &
-              write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),Met_var_zdim_ncid(ivar)
+              write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),Met_var_zdim_ncid(ivar),&
+                                           nlevs_fullmet(Met_var_zdim_idx(ivar))
         enddo
         ! Now invert if necessary and convert to Pa
         allocate(p_fullmet_sp(maxdimlen))
@@ -573,7 +769,7 @@
         np_fullmet    = nlevs_fullmet(Met_var_zdim_idx(1))  ! Assign fullmet the length of H,U,V
   
         ! Geopotential
-        allocate(p_fullmet_sp(np_fullmet))
+        if(.not.allocated(p_fullmet_sp))  allocate(p_fullmet_sp(np_fullmet))
         idx = Met_var_zdim_idx(1)
         p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
@@ -1223,9 +1419,17 @@
         call date_and_time(VALUES=values)
         Current_Year = values(1)
         ! Now getting the actual nt of the file; trying the hgt file
- 111    format(a50,a4,i4,a3)
-        write(infile,111)trim(adjustl(MR_windfiles(1))), &
-                         "hgt.",MR_Comp_StartYear,".nc"
+        if(MR_iwindformat.eq.25)then
+ 111      format(a50,a4,i4,a3)
+          write(infile,111)trim(adjustl(MR_windfiles(1))), &
+                           "hgt.",MR_Comp_StartYear,".nc"
+        elseif(MR_iwindformat.eq.26)then
+ 112      format(a50,a17,i4,a20)
+          write(infile,112)trim(adjustl(MR_windfiles(1))), &
+                           "anl_p125.007_hgt.",MR_Comp_StartYear,"060100_2018063018.nc"
+        else
+          write(*,*)"Hard code file name for time check"
+        endif
         nSTAT = nf90_open(trim(ADJUSTL(infile)),NF90_NOWRITE,ncid)
         if(nSTAT.ne.NF90_NOERR)then
           write(MR_global_error,*)'MR ERROR: nf90_open: ',nf90_strerror(nSTAT)
@@ -1673,14 +1877,17 @@
       integer :: nSTAT
       integer :: ncid
 
-      integer            :: var_xtype
-      integer            :: xtype, length, attnum
+      !integer            :: var_xtype
+      integer            :: xtype
+      integer            :: length
+      integer            :: attnum
       character(len=40)  :: invar
       character(len = nf90_max_name) :: name_dum
-      integer :: t_dim_id,x_dim_id,y_dim_id
+      integer :: t_dim_id
+      !integer :: x_dim_id,y_dim_id
       integer :: var_id
-      real(kind=dp),dimension(:), allocatable :: dum1d_dp
-      real(kind=sp),dimension(:), allocatable :: dum1d_sp
+      !real(kind=dp),dimension(:), allocatable :: dum1d_dp
+      !real(kind=sp),dimension(:), allocatable :: dum1d_sp
       real(kind=sp):: dum_sp
       logical :: TimeHasFillVAttr
 
@@ -1912,149 +2119,174 @@
         IsCatagorical = .false.
       endif
 
-      if(MR_iwindformat.eq.25)then
-        ! Get correct file
-        if(ivar.eq.1)then
-          write(infile,115)trim(adjustl(MR_MetStep_File(istep))), &
-                           "hgt.",MR_iwind5_year(istep),".nc"
-          np_met_loc = np_fullmet
-        elseif(ivar.eq.2)then
-          write(infile,116)trim(adjustl(MR_MetStep_File(istep))), &
-                           "uwnd.",MR_iwind5_year(istep),".nc"
-          np_met_loc = np_fullmet
-        elseif(ivar.eq.3)then
-          write(infile,116)trim(adjustl(MR_MetStep_File(istep))), &
-                           "vwnd.",MR_iwind5_year(istep),".nc"
-          np_met_loc = np_fullmet
-        elseif(ivar.eq.4)then
-          write(infile,117)trim(adjustl(MR_MetStep_File(istep))), &
-                           "omega.",MR_iwind5_year(istep),".nc"
-          !np_met_loc = np_fullmet_Vz
-          np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-        elseif(ivar.eq.5)then
-          write(infile,115)trim(adjustl(MR_MetStep_File(istep))), &
-                           "air.",MR_iwind5_year(istep),".nc"
-          np_met_loc = np_fullmet
-        elseif(ivar.eq.20)then
-          write(infile,119)trim(adjustl(MR_MetStep_File(istep))), &
-                           "pres.lcb.gauss.",MR_iwind5_year(istep),".nc"
-        elseif(ivar.eq.21)then
-          write(infile,119)trim(adjustl(MR_MetStep_File(istep))), &
-                           "pres.lct.gauss.",MR_iwind5_year(istep),".nc"
-        elseif(ivar.eq.30)then
-          write(infile,116)trim(adjustl(MR_MetStep_File(istep))), &
-                           "rhum.",MR_iwind5_year(istep),".nc"
-          np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-          !np_met_loc = np_fullmet_RH
-        elseif(ivar.eq.31)then
-          write(infile,116)trim(adjustl(MR_MetStep_File(istep))), &
-                           "shum.",MR_iwind5_year(istep),".nc"
-          !np_met_loc = np_fullmet_RH
-          np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-        elseif(ivar.eq.32)then
-          write(infile,116)trim(adjustl(MR_MetStep_File(istep))), &
-                           "shum.",MR_iwind5_year(istep),".nc"
-          !np_met_loc = np_fullmet_RH
-          np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-        elseif(ivar.eq.44)then
-          write(infile,118)trim(adjustl(MR_MetStep_File(istep))), &
-                           "prate.lct.gauss.",MR_iwind5_year(istep),".nc"
-        elseif(ivar.eq.45)then
-          write(infile,118)trim(adjustl(MR_MetStep_File(istep))), &
-                           "cprat.lct.gauss.",MR_iwind5_year(istep),".nc"
+      if(MR_iwind.eq.5)then
+        ! For iwind=5, variables are given in different files.
+        ! We need to explicitly create the file name, given the input directory.
+        if(MR_iwindformat.eq.25)then
+          ! Get correct file
+          if(ivar.eq.1)then
+            write(infile,115)trim(adjustl(MR_MetStep_File(istep))), &
+                             "hgt.",MR_iwind5_year(istep),".nc"
+            np_met_loc = np_fullmet
+          elseif(ivar.eq.2)then
+            write(infile,116)trim(adjustl(MR_MetStep_File(istep))), &
+                             "uwnd.",MR_iwind5_year(istep),".nc"
+            np_met_loc = np_fullmet
+          elseif(ivar.eq.3)then
+            write(infile,116)trim(adjustl(MR_MetStep_File(istep))), &
+                             "vwnd.",MR_iwind5_year(istep),".nc"
+            np_met_loc = np_fullmet
+          elseif(ivar.eq.4)then
+            write(infile,117)trim(adjustl(MR_MetStep_File(istep))), &
+                             "omega.",MR_iwind5_year(istep),".nc"
+            np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
+          elseif(ivar.eq.5)then
+            write(infile,115)trim(adjustl(MR_MetStep_File(istep))), &
+                             "air.",MR_iwind5_year(istep),".nc"
+            np_met_loc = np_fullmet
+          elseif(ivar.eq.30)then
+            write(infile,116)trim(adjustl(MR_MetStep_File(istep))), &
+                             "rhum.",MR_iwind5_year(istep),".nc"
+            np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
+          elseif(ivar.eq.31)then
+            write(infile,116)trim(adjustl(MR_MetStep_File(istep))), &
+                             "shum.",MR_iwind5_year(istep),".nc"
+            np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
+          else
+            write(MR_global_info,*)"Requested variable not available."
+            stop 1
+          endif
+          infile = trim(adjustl(infile))
+
+ 115      format(a50,a4,i4,a3)
+ 116      format(a50,a5,i4,a3)
+ 117      format(a50,a6,i4,a3)
+! 118      format(a50,a16,i4,a3)
+! 119      format(a50,a15,i4,a3)
+        elseif(MR_iwindformat.eq.26)then
+         ! JRA-55 reanalysis 1.25 degree files 
+          ! Get correct file
+          if(ivar.eq.1)then
+            write(infile,125)trim(adjustl(MR_MetStep_File(istep))), &
+                             "anl_p125.007_hgt.",MR_iwind5_year(istep),"060100_2018063018.nc"
+            np_met_loc = np_fullmet
+          elseif(ivar.eq.2)then
+            write(infile,126)trim(adjustl(MR_MetStep_File(istep))), &
+                             "anl_p125.033_ugrd.",MR_iwind5_year(istep),"060100_2018063018.nc"
+            np_met_loc = np_fullmet
+          elseif(ivar.eq.3)then
+            write(infile,126)trim(adjustl(MR_MetStep_File(istep))), &
+                             "anl_p125.034_vgrd.",MR_iwind5_year(istep),"060100_2018063018.nc"
+            np_met_loc = np_fullmet
+          elseif(ivar.eq.4)then
+            write(infile,126)trim(adjustl(MR_MetStep_File(istep))), &
+                             "anl_p125.039_vvel.",MR_iwind5_year(istep),"060100_2018063018.nc"
+            np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
+          elseif(ivar.eq.5)then
+            write(infile,125)trim(adjustl(MR_MetStep_File(istep))), &
+                             "anl_p125.011_tmp.",MR_iwind5_year(istep),"060100_2018063018.nc"
+            np_met_loc = np_fullmet
+          !elseif(ivar.eq.31)then
+          !  write(infile,126)trim(adjustl(MR_MetStep_File(istep))), &
+          !                   "shum.",MR_iwind5_year(istep),".nc"
+          !  np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
+          else
+            write(MR_global_info,*)"Requested variable not available."
+            stop 1
+          endif
+          infile = trim(adjustl(infile))
+
+ 125      format(a50,a17,i4,a20)
+ 126      format(a50,a18,i4,a20)
+! 128      format(a50,a16,i4,a3)
+! 129      format(a50,a15,i4,a3)
+
+        elseif(MR_iwindformat.eq.27)then
+          ! Get correct file
+          !if(ivar.eq.1)then
+          !  write(infile,135)trim(adjustl(MR_MetStep_File(istep))), &
+          !                   "pgrbanl_mean_",MR_iwind5_year(istep), &
+          !                   "_HGT_pres.nc"
+          !  np_met_loc = np_fullmet
+          !elseif(ivar.eq.2)then
+          !  write(infile,136)trim(adjustl(MR_MetStep_File(istep))), &
+          !                   "pgrbanl_mean_",MR_iwind5_year(istep), &
+          !                   "_UGRD_pres.nc"
+          !  np_met_loc = np_fullmet
+          !elseif(ivar.eq.3)then
+          !  write(infile,136)trim(adjustl(MR_MetStep_File(istep))), &
+          !                   "pgrbanl_mean_",MR_iwind5_year(istep), &
+          !                   "_VGRD_pres.nc"
+          !  np_met_loc = np_fullmet
+          !elseif(ivar.eq.4)then
+          !  write(infile,136)trim(adjustl(MR_MetStep_File(istep))), &
+          !                   "pgrbanl_mean_",MR_iwind5_year(istep), &
+          !                   "_VVEL_pres.nc"
+          !  !np_met_loc = np_fullmet_Vz
+          !  np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
+          !elseif(ivar.eq.5)then
+          !  write(infile,135)trim(adjustl(MR_MetStep_File(istep))), &
+          !                   "pgrbanl_mean_",MR_iwind5_year(istep), &
+          !                   "_TMP_pres.nc"
+          !  np_met_loc = np_fullmet
+          !elseif(ivar.eq.10)then
+          !  write(infile,138)trim(adjustl(MR_MetStep_File(istep))), &
+          !                   "sflxgrbfg_mean_",MR_iwind5_year(istep), &
+          !                   "_HPBL_sfc.nc"
+          !elseif(ivar.eq.22)then
+          !  write(infile,140)trim(adjustl(MR_MetStep_File(istep))), &
+          !                   "sflxgrbfg_mean_",MR_iwind5_year(istep), &
+          !                   "_TMP_low-cldtop.nc"
+          !elseif(ivar.eq.23)then
+          !  write(infile,141)trim(adjustl(MR_MetStep_File(istep))), &
+          !                   "sflxgrbfg_mean_",MR_iwind5_year(istep), &
+          !                   "_TCDC_low-cldlay.nc"
+          !elseif(ivar.eq.30)then
+          !  write(infile,137)trim(adjustl(MR_MetStep_File(istep))), &
+          !                   "pgrbanl_mean_",MR_iwind5_year(istep), &
+          !                   "_RH_pres.nc"
+          !  !np_met_loc = np_fullmet_RH
+          !  np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
+          !elseif(ivar.eq.44)then
+          !  write(infile,139)trim(adjustl(MR_MetStep_File(istep))), &
+          !                   "sflxgrbfg_mean_",MR_iwind5_year(istep), &
+          !                   "_PRATE_sfc.nc"
+          !elseif(ivar.eq.45)then
+          !  write(infile,139)trim(adjustl(MR_MetStep_File(istep))), &
+          !                   "sflxgrbfg_mean_",MR_iwind5_year(istep), &
+          !                   "_CPRAT_sfc.nc"
+          !else
+          !  write(MR_global_info,*)"Requested variable not available."
+          !  stop 1
+          !endif
+          infile = trim(adjustl(infile))
+
+! 135      format(a50,a13,i4,a12)
+! 136      format(a50,a13,i4,a13)
+! 137      format(a50,a13,i4,a11)
+! 138      format(a50,a15,i4,a12)
+! 139      format(a50,a15,i4,a13)
+! 140      format(a50,a15,i4,a18)
+! 141      format(a50,a15,i4,a19)
+        elseif(MR_iwindformat.eq.29)then
+         ! ECMWF ERA5
+        elseif(MR_iwindformat.eq.30)then
+         ! ECMWF ERA-20C
         else
-          write(MR_global_info,*)"Requested variable not available."
+          write(MR_global_info,*)"MR ERROR: MR_iwind=5, but MR_iwindformat is not a recognized type."
+          write(MR_global_info,*)"            MR_iwindformat=25  NCEP 20th Cent. Reanalysis"
+          write(MR_global_info,*)"                           27  NOAA-CIRES"
+          write(MR_global_info,*)"                           29  ERA5"
+          write(MR_global_info,*)"                           29  ERA-20C"
+          write(MR_global_info,*)"           MR_iwindformat provided = ",MR_iwindformat
           stop 1
         endif
-        infile = trim(adjustl(infile))
-
- 115    format(a50,a4,i4,a3)
- 116    format(a50,a5,i4,a3)
- 117    format(a50,a6,i4,a3)
- 118    format(a50,a16,i4,a3)
- 119    format(a50,a15,i4,a3)
-      elseif(MR_iwindformat.eq.27)then
-        ! Get correct file
-        if(ivar.eq.1)then
-          write(infile,125)trim(adjustl(MR_MetStep_File(istep))), &
-                           "pgrbanl_mean_",MR_iwind5_year(istep), &
-                           "_HGT_pres.nc"
-          np_met_loc = np_fullmet
-        elseif(ivar.eq.2)then
-          write(infile,126)trim(adjustl(MR_MetStep_File(istep))), &
-                           "pgrbanl_mean_",MR_iwind5_year(istep), &
-                           "_UGRD_pres.nc"
-          np_met_loc = np_fullmet
-        elseif(ivar.eq.3)then
-          write(infile,126)trim(adjustl(MR_MetStep_File(istep))), &
-                           "pgrbanl_mean_",MR_iwind5_year(istep), &
-                           "_VGRD_pres.nc"
-          np_met_loc = np_fullmet
-        elseif(ivar.eq.4)then
-          write(infile,126)trim(adjustl(MR_MetStep_File(istep))), &
-                           "pgrbanl_mean_",MR_iwind5_year(istep), &
-                           "_VVEL_pres.nc"
-          !np_met_loc = np_fullmet_Vz
-          np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-        elseif(ivar.eq.5)then
-          write(infile,125)trim(adjustl(MR_MetStep_File(istep))), &
-                           "pgrbanl_mean_",MR_iwind5_year(istep), &
-                           "_TMP_pres.nc"
-          np_met_loc = np_fullmet
-        elseif(ivar.eq.10)then
-          write(infile,128)trim(adjustl(MR_MetStep_File(istep))), &
-                           "sflxgrbfg_mean_",MR_iwind5_year(istep), &
-                           "_HPBL_sfc.nc"
-        elseif(ivar.eq.22)then
-          write(infile,130)trim(adjustl(MR_MetStep_File(istep))), &
-                           "sflxgrbfg_mean_",MR_iwind5_year(istep), &
-                           "_TMP_low-cldtop.nc"
-        elseif(ivar.eq.23)then
-          write(infile,131)trim(adjustl(MR_MetStep_File(istep))), &
-                           "sflxgrbfg_mean_",MR_iwind5_year(istep), &
-                           "_TCDC_low-cldlay.nc"
-        elseif(ivar.eq.30)then
-          write(infile,127)trim(adjustl(MR_MetStep_File(istep))), &
-                           "pgrbanl_mean_",MR_iwind5_year(istep), &
-                           "_RH_pres.nc"
-          !np_met_loc = np_fullmet_RH
-          np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-        elseif(ivar.eq.44)then
-          write(infile,129)trim(adjustl(MR_MetStep_File(istep))), &
-                           "sflxgrbfg_mean_",MR_iwind5_year(istep), &
-                           "_PRATE_sfc.nc"
-        elseif(ivar.eq.45)then
-          write(infile,129)trim(adjustl(MR_MetStep_File(istep))), &
-                           "sflxgrbfg_mean_",MR_iwind5_year(istep), &
-                           "_CPRAT_sfc.nc"
-        else
-          write(MR_global_info,*)"Requested variable not available."
-          stop 1
-        endif
-        infile = trim(adjustl(infile))
-
- 125      format(a50,a13,i4,a12)
- 126      format(a50,a13,i4,a13)
- 127      format(a50,a13,i4,a11)
- 128      format(a50,a15,i4,a12)
- 129      format(a50,a15,i4,a13)
- 130      format(a50,a15,i4,a18)
- 131      format(a50,a15,i4,a19)
-      else  ! all other cases besides iwf25 and iwf27
-        !if(ivar.eq.4)then
-        !  np_met_loc = np_fullmet_Vz
-        !!elseif(ivar.eq.5)then
-        !!  np_met_loc = np_fullmet_T
-        !elseif(ivar.eq.30)then
-        !  np_met_loc = np_fullmet_RH
-        !else
-        !  np_met_loc = np_fullmet
-        !endif
-
+      else  ! cases for MR_iwind not equal to 5
         np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
           ! Files are listed directly, not through directories (as in MR_iwindformat=25,27)
         infile = trim(adjustl(MR_MetStep_File(istep)))
       endif
+
       invar = Met_var_NC_names(ivar)
 
       write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
@@ -2142,7 +2374,7 @@
         endif ! MR_iwindformat.ne.50
 
         do i=1,ict        !read subgrid at current time step
-          if(MR_iwindformat.eq.25)then
+          if(MR_iwind.eq.5.and.MR_iwindformat.eq.25)then
             ! NCEP reanalysis files are now NCv4 (stored as float), but the
             ! older version, NCv3 (stored as short) might still be around.
             if(i.eq.1)allocate(temp3d_short(nx_submet,ny_submet,np_met_loc,1))
@@ -2165,6 +2397,14 @@
                 stop 1
               endif
             endif
+          elseif(MR_iwind.eq.5.and.MR_iwindformat.eq.26)then
+            !  JRA-55
+          elseif(MR_iwind.eq.5.and.MR_iwindformat.eq.27)then
+            !  NOAA-CIRES
+          elseif(MR_iwind.eq.5.and.MR_iwindformat.eq.29)then
+            !  ECMWF ERA5
+          elseif(MR_iwind.eq.5.and.MR_iwindformat.eq.30)then
+            !  ECMWF ERA-20C
           elseif(MR_iwindformat.eq.50)then
 
             ! Now read the data and convert if necessary
@@ -2339,7 +2579,7 @@
 
             endif
 
-          else ! end of iwf25 (NECP) and iwf=50 (WRF) sections
+          else ! end of MR_iwind=5 and iwf=50 (WRF) sections
 
             ! for any other 3d variable (non-WRF, non-NCEP/2.5 reannalysis)
             nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
@@ -2356,6 +2596,8 @@
             endif
           endif
         enddo
+        !  At this point, we have temp3d_sp with the direct read from the file
+        !  Next, we need to copy it to MR_dum3d_metP
 
         If(MR_iwindformat.ne.50)then
           do j=1,ny_submet
@@ -2389,7 +2631,7 @@
           endif
         endif !MR_iwindformat.eq.50, MR_iwindformat.eq.25, else
 
-        if(MR_iwindformat.eq.25)then
+        if(MR_iwind.eq.5.and.MR_iwindformat.eq.25)then
           deallocate(temp3d_short)
         endif
         if(MR_iwindformat.eq.50)then
@@ -2506,6 +2748,8 @@
         endif ! IsCatagorical
       endif ! Dimension_of_Variable.eq.2
 
+
+      ! Quality control checks
       if(ivar.eq.1)then
         ! If this is filling HGT, then we need to do a special QC check
         !if(MR_iwindformat.eq.24)then
@@ -2639,7 +2883,10 @@
         endif
       endif
 
-      MR_dum3d_metP = MR_dum3d_metP * Met_var_conversion_factor(ivar)
+      MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_met_loc) =  &
+      MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_met_loc) * Met_var_conversion_factor(ivar)
+
+      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       end subroutine MR_Read_MetP_Variable_netcdf
 
