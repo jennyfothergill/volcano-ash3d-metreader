@@ -112,11 +112,10 @@
         !   800.00  2480.60
         ! 0 5 274.784 56.792 0.933 6367.470 #Proj flags and params
 
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
-
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .false.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
         Met_iprojflag     = 5
         Met_lam0          = 274.784027099609_8
@@ -128,41 +127,37 @@
          ! Not an NCEP grid
          !  This grid is for the WRF runs (must be read from file)
 
-!        IsLatLon_MetGrid  = .true.
-!        IsGlobal_MetGrid  = .true.
-!        IsRegular_MetGrid = .true.
-
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
       elseif(igrid.eq.1041)then
          ! Not an NCEP grid
          !  This grid is for the NASA Np
 
-!        IsLatLon_MetGrid  = .true.
-!        IsGlobal_MetGrid  = .true.
-!        IsRegular_MetGrid = .true.
-
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
       elseif(igrid.eq.1040.or.igrid.eq.1024)then
          ! Not an NCEP grid
          !  This grid is for the NASA GEOS-5 Cp or MERRA-2
 
-!        IsLatLon_MetGrid  = .true.
-!        IsGlobal_MetGrid  = .true.
-!        IsRegular_MetGrid = .true.
-
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
       elseif(igrid.eq.1033)then
          ! Not an NCEP grid
          !  This grid is for the CAM files
 
-!        IsLatLon_MetGrid  = .true.
-!        IsGlobal_MetGrid  = .true.
-!        IsRegular_MetGrid = .true.
-
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
 !        nx_fullmet = 96
 !        ny_fullmet = 48
@@ -192,31 +187,28 @@
          ! Not an NCEP grid
          !  This grid is for the AFWA files
 
-!        IsLatLon_MetGrid  = .true.
-!        IsGlobal_MetGrid  = .true.
-!        IsRegular_MetGrid = .true.
-
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
       elseif(igrid.eq.1031)then
          ! Not an NCEP grid
          !  This grid is for the Catania files
 
-!        IsLatLon_MetGrid  = .true.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
-
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
       elseif(igrid.eq.1029)then
          ! Not an NCEP grid
          !  This grid is for the ECMWF ERA5
 
-!        IsLatLon_MetGrid  = .true.
-!        IsGlobal_MetGrid  = .true.
-!        IsRegular_MetGrid = .true.
-
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
 !        nx_fullmet = 1280
 !        ny_fullmet = 640
@@ -247,49 +239,48 @@
          ! Not an NCEP grid
          !  This grid is for the NOAA Reanalysis
 
-!        IsLatLon_MetGrid  = .true.
-!        IsGlobal_MetGrid  = .true.
-!        IsRegular_MetGrid = .true.
-
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
       elseif(igrid.eq.2)then
        ! Used by NCEP DOE reanalysis, NCEP-1
        !  http://www.nco.ncep.noaa.gov/pmb/docs/on388/grids/grid002.gif
 
-!        IsLatLon_MetGrid  = .true.
-!        IsGlobal_MetGrid  = .true.
-!        IsRegular_MetGrid = .true.
-
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
       elseif(igrid.eq.3)then
         ! Used by GFS forecast
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID3
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/grids/grid003.gif
 
-!        IsLatLon_MetGrid  = .true.
-!        IsGlobal_MetGrid  = .true.
-!        IsRegular_MetGrid = .true.
-
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
       elseif(igrid.eq.4)then
         ! Used by GFS forecast
          !  http://www.nco.ncep.noaa.gov/pmb/docs/on388/grids/grid003.gif
 
-!        IsLatLon_MetGrid  = .true.
-!        IsGlobal_MetGrid  = .true.
-!        IsRegular_MetGrid = .true.
-
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
       elseif(igrid.eq.45)then
         ! Used by JMA 55
           !  http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID45
           !  http://www.nco.ncep.noaa.gov/pmb/docs/on388/grids/grid045.gif
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
       elseif(igrid.eq.91)then
         ! NAM 3-km Polar Sterographic
@@ -382,12 +373,11 @@
         ! Global Gaussian Lat/Lon T170
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID170
         ! This is used by the ERA data
-!
-!        IsLatLon_MetGrid  = .true.
-!        IsGlobal_MetGrid  = .true.
-!        IsRegular_MetGrid = .false.
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .false.
+        isGridRelative    = .true.
 
 !        nx_fullmet = 512
 !        ny_fullmet = 256
@@ -528,11 +518,10 @@
        ! Used by GFS forecast (0.25)
        !  http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID193
 
-!        IsLatLon_MetGrid  = .true.
-!        IsGlobal_MetGrid  = .true.
-!        IsRegular_MetGrid = .true.
-
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
       elseif(igrid.eq.196)then
         ! HI 2.5-km Mercator
