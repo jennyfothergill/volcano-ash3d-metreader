@@ -275,19 +275,17 @@
         endif
 
       else  ! MR_iwind not equal to 5
-        if(.not.MR_iwindformat.eq.50)then
+        if(MR_iwindformat.eq.50)then
+          ! WRF files have a special reader, but we still need to set up 
+
+          call MR_Get_WRF_grid
+
+        else  ! MR_iwindformat .ne. 50
           !---------------------------------------------------------------------------------
           ! Checking for dimension length and values for x,y,t,p
           !   Assume all files have the same format
           maxdimlen = 0
-          if(MR_iwind.eq.5)then
- 111        format(a50,a4,i4,a3)
-            write(infile,111)trim(adjustl(MR_windfiles(1))), &
-                             "hgt.",MR_Comp_StartYear,".nc"
-            nSTAT = nf90_open(trim(ADJUSTL(infile)),NF90_NOWRITE,ncid)
-          else
-            infile = adjustl(trim(MR_windfiles(1)))
-          endif
+          infile = adjustl(trim(MR_windfiles(1)))
           nSTAT=nf90_open(adjustl(trim(infile)),NF90_NOWRITE, ncid)
           if(nSTAT.ne.NF90_NOERR) then
             write(MR_global_error,*)'MR ERROR: open NC file: ',nf90_strerror(nSTAT)
@@ -427,6 +425,11 @@
               dx_met_const = x_fullmet_sp(2)-x_fullmet_sp(1)
               x_fullmet_sp(0)            = x_fullmet_sp(1)          - dx_met_const
               x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(nx_fullmet) + dx_met_const
+              if(abs(x_fullmet_sp(nx_fullmet+1)-360.0-x_fullmet_sp(1)).lt.0.1*dx_met_const)then
+                IsGlobal_MetGrid = .true.
+              else
+                IsGlobal_MetGrid = .false.
+              endif
               do i = 1,nx_fullmet
                 MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
               enddo 
@@ -686,6 +689,10 @@
                   else
                     Pressure_Conv_Fac = 1.0_sp
                   endif
+                elseif(index(ustring,'level').gt.0)then
+                  ! this is a special case for CAM files which are on hybrid levels
+                  Pressure_Conv_Fac = 100.0_sp
+                  IsPressureDimension = .true.
                 else
                   IsPressureDimension = .false.
                 endif
@@ -708,7 +715,7 @@
              write(MR_global_log  ,*)'MR ERROR: close file: ',nf90_strerror(nSTAT)
              stop 1
           endif
-        endif ! MR_iwind.eq.5
+        endif ! MR_iwindformat.eq.50
         !-----------------------------------------
 
         write(MR_global_production,*)" Found these levels"
@@ -718,20 +725,22 @@
               write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),Met_var_zdim_ncid(ivar),&
                                            nlevs_fullmet(Met_var_zdim_idx(ivar))
         enddo
-        ! Now invert if necessary and convert to Pa
-        allocate(p_fullmet_sp(maxdimlen))
-        do idx = 1,nlev_coords_detected
-          if(z_inverted)then
-            do i = 1,nlevs_fullmet(idx)
-              p_fullmet_sp(nlevs_fullmet(idx)+1-i) = levs_fullmet_sp(idx,i)*Pressure_Conv_Fac
-            enddo
-          else
-            p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))*Pressure_Conv_Fac
-          endif
-          levs_fullmet_sp(idx,:) = 0.0_sp
-          levs_fullmet_sp(idx,1:nlevs_fullmet(idx)) = p_fullmet_sp(1:nlevs_fullmet(idx))
-        enddo
-        deallocate(p_fullmet_sp)
+        if(.not.allocated(p_fullmet_sp))then
+          ! Now invert if necessary and convert to Pa
+          allocate(p_fullmet_sp(maxdimlen))
+          do idx = 1,nlev_coords_detected
+            if(z_inverted)then
+              do i = 1,nlevs_fullmet(idx)
+                p_fullmet_sp(nlevs_fullmet(idx)+1-i) = levs_fullmet_sp(idx,i)*Pressure_Conv_Fac
+              enddo
+            else
+              p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))*Pressure_Conv_Fac
+            endif
+            levs_fullmet_sp(idx,:) = 0.0_sp
+            levs_fullmet_sp(idx,1:nlevs_fullmet(idx)) = p_fullmet_sp(1:nlevs_fullmet(idx))
+          enddo
+          deallocate(p_fullmet_sp)
+        endif
   
         levs_code(1:nlev_coords_detected) = 0
         levs_code(1) = 1                       ! The first var checked (GPH) should have a one-to-one mapping
@@ -774,7 +783,7 @@
         p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
   
-      endif ! MR_iwindformat.eq.50
+      endif ! MR_iwind.eq.5
       !---------------------------------------------------------------------------------
 
       if(MR_iwindformat.eq.0)then
@@ -1247,12 +1256,7 @@
       ! The "atmosphere" module, will need access to physical pressure and will
       ! need a special case for WRF files
       np_fullmet    = neta_fullmet
-      !np_fullmet_Vz = neta_fullmet ! Vz is actually on a staggered grid, but
-                                   ! will be interpolated onto the non-staggered grid
-      !np_fullmet_RH = neta_fullmet
       allocate(p_fullmet_sp(np_fullmet))
-      !allocate(p_fullmet_Vz_sp(np_fullmet_Vz))
-      !allocate(p_fullmet_RH_sp(np_fullmet_RH))
       allocate(dum4d_sp(nx_fullmet,ny_fullmet,np_fullmet,1))
 
       ! To populate a place-holder p_fullmet_sp, read the full pressure grid and
@@ -1285,14 +1289,9 @@
         write(MR_global_log  ,*)'MR ERROR: get_var P: ',nf90_strerror(nSTAT)
         stop 1
       endif
-         p_fullmet_sp(:) = p_fullmet_sp(:) + dum4d_sp(1,1,:,1)
-      !p_fullmet_Vz_sp = p_fullmet_sp
-      !p_fullmet_RH_sp = p_fullmet_sp
+      p_fullmet_sp(:) = p_fullmet_sp(:) + dum4d_sp(1,1,:,1)
       MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)*0.01_sp) 
-
       !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
-      !p_fullmet_Vz_sp = p_fullmet_Vz_sp * 100.0_sp   ! convert from hPa to Pa
-      !p_fullmet_RH_sp = p_fullmet_RH_sp * 100.0_sp   ! convert from hPa to Pa
 
        x_inverted = .false.
        y_inverted = .false.
@@ -1316,7 +1315,6 @@
 
        Met_var_zdim_idx(:)  = 1
        !Met_var_zdim_ncid(ivar) = var_dimIDs(i_dim)
-
 
        end subroutine MR_Get_WRF_grid
 
@@ -1360,6 +1358,10 @@
       integer :: time_var_id = 0
       integer :: reftime_var_id
       integer :: t_dim_id
+      integer :: reftimedimID
+      integer :: var_ndims
+      integer,dimension(:),allocatable :: var_dimIDs
+      integer :: reftimedimlen
       real(kind=sp),dimension(:),allocatable :: filetime_in_sp
       character(len=19) :: Timestr_WRF
       integer :: filetime_in_int
@@ -1472,367 +1474,322 @@
         do iwstep = 1,nt_fullmet
           MR_windfile_stephour(:,iwstep) = (iwstep-1)*6.0_dp
         enddo
-      elseif(MR_iwindformat.eq.31)then
-        ! Here's the branch for the Catania files
-        do iw = 1,MR_iwindfiles
-          nSTAT = nf90_open(trim(ADJUSTL(MR_windfiles(iw))),NF90_NOWRITE,ncid)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: nf90_open to read header:', &
-                           nf90_strerror(nSTAT)
-            write(MR_global_error,*)'Could not open ',trim(ADJUSTL(MR_windfiles(iw)))
-            write(MR_global_error,*)'Exiting'
-            stop 1
-          endif
-          if(iw.eq.1)then
-            nSTAT = nf90_inq_dimid(ncid,Met_dim_names(1),t_dim_id)
+      else ! MR_iwind = 3 or 4
+        if(MR_iwindformat.eq.50)then
+          ! Branch for WRF files
+          ! Loop through all the windfiles
+          do iw = 1,MR_iwindfiles
+            nSTAT = nf90_open(trim(ADJUSTL(MR_windfiles(iw))),NF90_NOWRITE,ncid)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: nf90_open to read header:', &
+                             nf90_strerror(nSTAT)
+              write(MR_global_error,*)'Could not open ',trim(ADJUSTL(MR_windfiles(iw)))
+              write(MR_global_error,*)'Exiting'
+              stop 1
+            endif
+            if(iw.eq.1)then
+              ! Find the id of the time dimension
+              nSTAT = nf90_inq_dimid(ncid,trim(ADJUSTL(Met_dim_names(1))),t_dim_id)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+                write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(1)
+                write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+                stop 1
+              endif
+              ! Get length of time dimension and allocate MR_windfile_stephour
+              nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,len=nt_fullmet)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: Inquire_Dimension time: ', &
+                                   nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension time: ', &
+                                   nf90_strerror(nSTAT)
+                stop 1
+              endif
+              write(MR_global_info,*)"  Assuming all NWP files have the same number of steps."
+              write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"files"
+              write(MR_global_info,*)"                              ",nt_fullmet,"step(s) each"
+              allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
+              MR_windfile_stephour(:,:) = 0.0_dp
+              nSTAT = nf90_inq_varid(ncid,"Times",time_var_id)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: inq_varid:',"Times",nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: inq_varid:',"Times",nf90_strerror(nSTAT)
+                stop 1
+              endif
+              nSTAT = nf90_inquire_variable(ncid, time_var_id, invar, &
+                  xtype = var_xtype)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: inq_variable:',"Times",nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: inq_variable:',"Times",nf90_strerror(nSTAT)
+                stop 1
+              endif
+              allocate(filetime_in_sp(nt_fullmet))
+              If(nt_fullmet.gt.1)then
+                write(MR_global_error,*)"MR ERROR: Currently WRF files are expected to only have one"
+                write(MR_global_error,*)"       timestep/file"
+                stop 1
+              endif
+              filetime_in_sp = 0.0_sp
+            endif
+            nSTAT = nf90_get_var(ncid,time_var_id,Timestr_WRF,&
+                           start = (/1,1/),       &
+                           count = (/19,1/))
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: get_var:',"Times",nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: get_var:',"Times",nf90_strerror(nSTAT)
+              stop 1
+            endif
+
+            nSTAT = nf90_close(ncid)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: Could not close file',nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: Could not close file:',nf90_strerror(nSTAT)
+              stop 1
+            endif
+
+            read(Timestr_WRF,121)itstart_year,itstart_month,itstart_day, &
+                              itstart_hour,itstart_min,itstart_sec
+            filestart_hour = real(itstart_hour,kind=sp) + &
+                             real(itstart_min,kind=sp)/60.0_sp      + &
+                             real(itstart_sec,kind=sp)/3600.0_sp
+ 121        format(i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2,1x)
+            MR_windfiles_nt_fullmet(iw)=nt_fullmet
+            MR_windfile_starthour(iw) = real(HS_hours_since_baseyear(itstart_year,itstart_month, &
+                                         itstart_day,real(filestart_hour,kind=8),MR_BaseYear,MR_useLeap),kind=4)
+            do iwstep = 1,nt_fullmet
+              MR_windfile_stephour(iw,iwstep) = MR_windfile_stephour(iw,1) + filetime_in_sp(iwstep)
+            enddo
+          enddo
+        else
+          ! For all other formats, try to read the GRIB_orgReferenceTime string
+          ! Loop through all the windfiles
+          do iw = 1,MR_iwindfiles
+
+            ! Each wind file needs a ref-time which in almost all cases is given
+            ! in the 'units' attribute of the time variable
+            write(MR_global_info,*)iw,trim(ADJUSTL(MR_windfiles(iw)))
+            nSTAT = nf90_open(trim(ADJUSTL(MR_windfiles(iw))),NF90_NOWRITE,ncid)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: nf90_open to read header:', &
+                             nf90_strerror(nSTAT)
+              write(MR_global_error,*)'Could not open ',trim(ADJUSTL(MR_windfiles(iw)))
+              write(MR_global_error,*)'Exiting'
+              stop 1
+            endif
+            ! Find the id of the time dimension
+            nSTAT = nf90_inq_dimid(ncid,trim(ADJUSTL(Met_dim_names(1))),t_dim_id)
             if(nSTAT.ne.NF90_NOERR)then
               write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
               write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(1)
               write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
               stop 1
             endif
-            nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,len=nt_fullmet)
+            if(iw.eq.1)then
+              ! Get length of time dimension and allocate MR_windfile_stephour
+              nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,len=nt_fullmet)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: Inquire_Dimension time: ', &
+                                   nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension time: ', &
+                                   nf90_strerror(nSTAT)
+                stop 1
+              endif
+              write(MR_global_info,*)"  Assuming all NWP files have the same number of steps."
+              write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"files"
+              write(MR_global_info,*)"                              ",nt_fullmet,"step(s) each"
+              allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
+            endif
+
+            ! get variable id for time
+            nSTAT = nf90_inq_varid(ncid,trim(ADJUSTL(Met_dim_names(1))),time_var_id)
             if(nSTAT.ne.NF90_NOERR) then
-              write(MR_global_error,*)'MR ERROR: Inquire_Dimension time: ', &
-                                 nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension time: ', &
-                                 nf90_strerror(nSTAT)
+              write(MR_global_error,*)'MR ERROR: inq_varid:',"time",nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: inq_varid:',"time",nf90_strerror(nSTAT)
               stop 1
             endif
-            allocate(filetime_in_sp(nt_fullmet))
-            if(iw.eq.1)allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
-          endif
-          MR_windfiles_nt_fullmet(iw)=nt_fullmet
-
-          ! get id for time
-          nSTAT = nf90_inq_varid(ncid,Met_dim_names(1),time_var_id)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: inq_varid:',"time",nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: inq_varid:',"time",nf90_strerror(nSTAT)
-            stop 1
-          endif
-          ! time is an interger*4
-          nSTAT = nf90_get_var(ncid,time_var_id,filetime_in_sp)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: get_var:',"time",nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: get_var:',"time",nf90_strerror(nSTAT)
-            stop 1
-          endif
-          filetime_in_int = nint(filetime_in_sp(1))
-
-          nSTAT = nf90_inq_varid(ncid,"reftime",reftime_var_id)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: inq_varid:',"reftime",nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: inq_varid:',"reftime",nf90_strerror(nSTAT)
-            stop 1
-          endif
-
-          nSTAT = nf90_get_var(ncid,reftime_var_id,tstring)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: get_var:',"reftime",nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: get_var:',"reftime",nf90_strerror(nSTAT)
-            stop 1
-          endif
-
-          read(tstring,131)itstart_year,itstart_month,itstart_day, &
-                            itstart_hour,itstart_min
-          itstart_sec = 0
-          filestart_hour = real(itstart_hour+filetime_in_int,kind=sp) + &
-                           real(itstart_min,kind=sp)/60.0_sp      + &
-                           real(itstart_sec,kind=sp)/3600.0_sp
- 131      format(i4,1x,i2,1x,i2,1x,i2,1x,i2)
-
-          nSTAT = nf90_close(ncid)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: Could not close file',nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: Could not close file:',nf90_strerror(nSTAT)
-            stop 1
-          endif
-
-          MR_windfile_starthour(iw) =  real(HS_hours_since_baseyear(itstart_year,itstart_month, &
-                                         itstart_day,real(filestart_hour,kind=8),MR_BaseYear,MR_useLeap),kind=4)
-
-          do iwstep = 1,nt_fullmet
-            MR_windfile_stephour(iw,iwstep) = MR_windfile_stephour(iw,1) + filetime_in_sp(iwstep)
-          enddo
-        enddo
-      elseif(MR_iwindformat.eq.50)then
-        ! Branch for WRF files
-        ! Loop through all the windfiles
-        do iw = 1,MR_iwindfiles
-          nSTAT = nf90_open(trim(ADJUSTL(MR_windfiles(iw))),NF90_NOWRITE,ncid)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: nf90_open to read header:', &
-                           nf90_strerror(nSTAT)
-            write(MR_global_error,*)'Could not open ',trim(ADJUSTL(MR_windfiles(iw)))
-            write(MR_global_error,*)'Exiting'
-            stop 1
-          endif
-          if(iw.eq.1)then
-            nSTAT = nf90_inq_varid(ncid,"Times",time_var_id)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_varid:',"Times",nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_varid:',"Times",nf90_strerror(nSTAT)
-              stop 1
-            endif
-            nSTAT = nf90_inquire_variable(ncid, time_var_id, invar, &
-                xtype = var_xtype)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_variable:',"Times",nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_variable:',"Times",nf90_strerror(nSTAT)
-              stop 1
-            endif
-            allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
-            allocate(filetime_in_sp(nt_fullmet))
-            If(nt_fullmet.gt.1)then
-              write(MR_global_error,*)"MR ERROR: Currently WRF files are expected to only have one"
-              write(MR_global_error,*)"       timestep/file"
-              stop 1
-            endif
-            filetime_in_sp = 0.0_sp
-          endif
-          nSTAT = nf90_get_var(ncid,time_var_id,Timestr_WRF,&
-                         start = (/1,1/),       &
-                         count = (/19,1/))
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: get_var:',"Times",nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: get_var:',"Times",nf90_strerror(nSTAT)
-            stop 1
-          endif
-
-          nSTAT = nf90_close(ncid)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: Could not close file',nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: Could not close file:',nf90_strerror(nSTAT)
-            stop 1
-          endif
-
-          read(Timestr_WRF,121)itstart_year,itstart_month,itstart_day, &
-                            itstart_hour,itstart_min,itstart_sec
-          filestart_hour = real(itstart_hour,kind=sp) + &
-                           real(itstart_min,kind=sp)/60.0_sp      + &
-                           real(itstart_sec,kind=sp)/3600.0_sp
- 121      format(i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2,1x)
-          MR_windfiles_nt_fullmet(iw)=nt_fullmet
-          MR_windfile_starthour(iw) = real(HS_hours_since_baseyear(itstart_year,itstart_month, &
-                                       itstart_day,real(filestart_hour,kind=8),MR_BaseYear,MR_useLeap),kind=4)
-          do iwstep = 1,nt_fullmet
-            MR_windfile_stephour(iw,iwstep) = MR_windfile_stephour(iw,1) + filetime_in_sp(iwstep)
-          enddo
-        enddo
-
-      else
-        ! For all other formats, try to read the GRIB_orgReferenceTime string
-        ! Loop through all the windfiles
-        do iw = 1,MR_iwindfiles
-
-          ! Each wind file needs a ref-time which in almost all cases is given
-          ! in the 'units' attribute of the time variable
-          write(MR_global_info,*)iw,trim(ADJUSTL(MR_windfiles(iw)))
-          nSTAT = nf90_open(trim(ADJUSTL(MR_windfiles(iw))),NF90_NOWRITE,ncid)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: nf90_open to read header:', &
-                           nf90_strerror(nSTAT)
-            write(MR_global_error,*)'Could not open ',trim(ADJUSTL(MR_windfiles(iw)))
-            write(MR_global_error,*)'Exiting'
-            stop 1
-          endif
-          ! Find the id of the time dimension
-          nSTAT = nf90_inq_dimid(ncid,trim(ADJUSTL(Met_dim_names(1))),t_dim_id)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-            write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(1)
-            write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-            stop 1
-          endif
-          if(iw.eq.1)then
-            ! Get length of time dimension and allocate MR_windfile_stephour
-            nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,len=nt_fullmet)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: Inquire_Dimension time: ', &
-                                 nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension time: ', &
-                                 nf90_strerror(nSTAT)
-              stop 1
-            endif
-            write(MR_global_info,*)"  Assuming all NWP files have the same number of steps."
-            write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"files"
-            write(MR_global_info,*)"                              ",nt_fullmet,"step(s) each"
-            allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
-          endif
-
-          ! get variable id for time
-          nSTAT = nf90_inq_varid(ncid,trim(ADJUSTL(Met_dim_names(1))),time_var_id)
-          if(nSTAT.ne.NF90_NOERR) then
-            write(MR_global_error,*)'MR ERROR: inq_varid:',"time",nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: inq_varid:',"time",nf90_strerror(nSTAT)
-            stop 1
-          endif
-          ! We need the reftime for this file, check time variable for 'units'
-          nSTAT = nf90_Inquire_Attribute(ncid, time_var_id,&
-                                         "units",xtype, length, attnum)
-          if(nSTAT.eq.0)then
-            TimeHasUnitsAttr = .true.
-            nSTAT = nf90_get_att(ncid, time_var_id,"units",tstring2)
-            if(nSTAT.ne.NF90_NOERR) then
-              write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-              stop 1
-            endif
-          else
-            ! Try GRIB_orgReferenceTime
+            ! We need the reftime for this file, check time variable for 'units'
             nSTAT = nf90_Inquire_Attribute(ncid, time_var_id,&
-                                           "GRIB_orgReferenceTime",xtype, length, attnum)
-            if(nSTAT.ne.NF90_NOERR) then
-              write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-              stop 1
-            endif
+                                           "units",xtype, length, attnum)
             if(nSTAT.eq.0)then
-              nSTAT = nf90_get_att(ncid, time_var_id,"GRIB_orgReferenceTime",tstring2)
+              TimeHasUnitsAttr = .true.
+              nSTAT = nf90_get_att(ncid, time_var_id,"units",tstring2)
               if(nSTAT.ne.NF90_NOERR) then
                 write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
                 write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
                 stop 1
               endif
-              TimeHasUnitsAttr = .true.
+              reftimedimlen = 31  ! set the length to the full amount
             else
-              TimeHasUnitsAttr = .false.
-            endif
-          endif
-
-          if(TimeHasUnitsAttr)then
-            do i=1,26
-              ! try to parse
-              !  time:units = "Hour since 2016-01-11T00:00:00Z" ;
-              !  time:units = "days since 0001-01-01 00:00:00" ;
-              if(tstring2(i:i+5).eq.'since ')then
-                ii = i+6
-                read(tstring2(ii:31),103)itstart_year,itstart_month,itstart_day, &
-                                  itstart_hour,itstart_min,itstart_sec
-                write(MR_global_info,2100)"Ref time = ",itstart_year,itstart_month,itstart_day, &
-                                           itstart_hour,itstart_min,itstart_sec
-                filestart_hour = real(itstart_hour,kind=sp) + &
-                                 real(itstart_min,kind=sp)/60.0_sp      + &
-                                 real(itstart_sec,kind=sp)/3600.0_sp
-                exit
-              elseif(i.eq.26)then
-                ! If we got to the end of the string without finding 'since',
-                ! this may be an old MERRA file
-                ii = 1
-                read(tstring2(ii:31),103)itstart_year,itstart_month,itstart_day,&
-                                  itstart_hour,itstart_min,itstart_sec
-                write(MR_global_info,2100)"Ref time = ",itstart_year,itstart_month,itstart_day, &
-                                           itstart_hour,itstart_min,itstart_sec
-                filestart_hour = real(itstart_hour,kind=sp) + &
-                                 real(itstart_min,kind=sp)/60.0_sp      + &
-                                 real(itstart_sec,kind=sp)/3600.0_sp
-                exit
+              ! Try GRIB_orgReferenceTime
+              nSTAT = nf90_Inquire_Attribute(ncid, time_var_id,&
+                                             "GRIB_orgReferenceTime",xtype, length, attnum)
+              if(nSTAT.ne.NF90_NOERR) then
+                write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                stop 1
               endif
-            enddo
-          else
-            ! Time variable does not have units attribute
-            ! Try variable 'reftime'
-            nSTAT = nf90_inq_varid(ncid,'reftime',reftime_var_id)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)"MR ERROR:  Could not read time:units or reftime"
-              write(MR_global_error,*)"        Windfile start time is not defined."
-              stop 1
-            endif
-            nSTAT = nf90_get_var(ncid,reftime_var_id,tstring2)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)"MR ERROR:  Could not read reftime"
-              write(MR_global_error,*)"        Windfile start time is not defined."
-              stop 1
-            endif
-            do i=1,30
-              if(tstring2(i:i+1).eq.'20'.or.tstring2(i:i+1).eq.'19')then
-                write(MR_global_info,*)"Found reference time: ",tstring2(i:31)
-                read(tstring2(i:31),103)itstart_year,itstart_month,itstart_day, &
-                                  itstart_hour,itstart_min,itstart_sec
-                write(MR_global_info,2100)"Ref time = ",itstart_year,itstart_month,itstart_day, &
-                                           itstart_hour,itstart_min,itstart_sec
-                filestart_hour = real(itstart_hour,kind=sp) + &
-                                 real(itstart_min,kind=sp)/60.0_sp      + &
-                                 real(itstart_sec,kind=sp)/3600.0_sp
-                exit
+              if(nSTAT.eq.0)then
+                nSTAT = nf90_get_att(ncid, time_var_id,"GRIB_orgReferenceTime",tstring2)
+                if(nSTAT.ne.NF90_NOERR) then
+                  write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                  write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
+                  stop 1
+                endif
+                TimeHasUnitsAttr = .true.
+              else
+                TimeHasUnitsAttr = .false.
               endif
-            enddo
-          endif
-2100      format(20x,a11,i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2)
- 103      format(i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2)
+            endif
 
-          ! Assume we now have the parsed reftime
+            if(TimeHasUnitsAttr)then
+              if(index(tstring2,'since').ne.0)then
+                do i=1,26
+                  ! try to parse
+                  !  time:units = "Hour since 2016-01-11T00:00:00Z" ;
+                  !  time:units = "days since 0001-01-01 00:00:00" ;
+                  if(tstring2(i:i+5).eq.'since ')then
+                    ii = i+6
+                    read(tstring2(ii:31),103)itstart_year,itstart_month,itstart_day, &
+                                      itstart_hour,itstart_min,itstart_sec
+                    write(MR_global_info,2100)"Ref time = ",itstart_year,itstart_month,itstart_day, &
+                                               itstart_hour,itstart_min,itstart_sec
+                    filestart_hour = real(itstart_hour,kind=sp) + &
+                                     real(itstart_min,kind=sp)/60.0_sp      + &
+                                     real(itstart_sec,kind=sp)/3600.0_sp
+                    exit
+                !elseif(i.eq.26)then
+                !  ! If we got to the end of the string without finding 'since',
+                !  ! this may be an old MERRA file
+                !  ii = 1
+                !  read(tstring2(ii:31),103)itstart_year,itstart_month,itstart_day,&
+                !                    itstart_hour,itstart_min,itstart_sec
+                !  write(MR_global_info,2100)"Ref time = ",itstart_year,itstart_month,itstart_day, &
+                !                             itstart_hour,itstart_min,itstart_sec
+                !  filestart_hour = real(itstart_hour,kind=sp) + &
+                !                   real(itstart_min,kind=sp)/60.0_sp      + &
+                !                   real(itstart_sec,kind=sp)/3600.0_sp
+                !  exit
+                  endif
+                enddo
+              endif
+            endif
 
-          ! Now get time data
-          ! Check if we need to read into an int, float or a double
-          !nSTAT = nf90_inquire_variable(ncid, time_var_id, invar, xtype = var_xtype)
-          nSTAT = nf90_inquire_variable(ncid, time_var_id, name = invar, xtype = var_xtype)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-            stop 1
-          endif
-          if(var_xtype.eq.NF90_FLOAT)then
-            allocate(dum1d_sp(nt_fullmet))
-            nSTAT = nf90_get_var(ncid,time_var_id,dum1d_sp, &
-                   start = (/1/),count = (/nt_fullmet/))
+            if(index(tstring2,'since').eq.0)then
+              ! Time variable does not have units attribute
+              ! Try variable 'reftime'
+              nSTAT = nf90_inq_varid(ncid,'reftime',reftime_var_id)
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)"MR ERROR:  Could not read time:units or reftime"
+                write(MR_global_error,*)"        Windfile start time is not defined."
+                stop 1
+              endif
+
+              var_ndims = 1
+              allocate(var_dimIDs(1))
+              nSTAT = nf90_inquire_variable(ncid, reftime_var_id, invar, &
+                        dimids = var_dimIDs(:var_ndims))
+              reftimedimID = var_dimIDs(1)
+              nSTAT = nf90_inquire_dimension(ncid,reftimedimID, &
+                           len = reftimedimlen)
+
+              nSTAT = nf90_get_var(ncid,reftime_var_id,tstring2(:reftimedimlen))
+              if(nSTAT.ne.0)then
+                write(MR_global_error,*)"MR ERROR:  Could not read reftime"
+                write(MR_global_error,*)"        Windfile start time is not defined."
+                stop 1
+              endif
+              if(index(tstring2,'20').ne.0.or.index(tstring2,'19').ne.0)then
+                do i=1,reftimedimlen-1
+                  if(tstring2(i:i+1).eq.'20'.or.tstring2(i:i+1).eq.'19')then
+                    write(MR_global_info,*)"Found reference time: ",tstring2(i:reftimedimlen)
+                    read(tstring2(i:reftimedimlen),103)itstart_year,itstart_month,itstart_day, &
+                                      itstart_hour,itstart_min,itstart_sec
+                    write(MR_global_info,2100)"Ref time = ",itstart_year,itstart_month,itstart_day, &
+                                               itstart_hour,itstart_min,itstart_sec
+                    filestart_hour = real(itstart_hour,kind=sp) + &
+                                     real(itstart_min,kind=sp)/60.0_sp      + &
+                                     real(itstart_sec,kind=sp)/3600.0_sp
+                    exit
+                  endif
+                enddo
+              endif
+            endif
+2100        format(20x,a11,i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2)
+ 103        format(i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2)
+
+            ! Assume we now have the parsed reftime
+
+            ! Now get time data
+            ! Check if we need to read into an int, float or a double
+            !nSTAT = nf90_inquire_variable(ncid, time_var_id, invar, xtype = var_xtype)
+            nSTAT = nf90_inquire_variable(ncid, time_var_id, name = invar, xtype = var_xtype)
             if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
+              write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
               stop 1
             endif
-            ! copy to local variable
-            MR_windfile_stephour(iw,1:nt_fullmet) = dum1d_sp(1:nt_fullmet)* &
-                                                         Met_dim_fac(1)
-            deallocate(dum1d_sp)
-          elseif(var_xtype.eq.NF90_DOUBLE)then
-            allocate(dum1d_dp(nt_fullmet))
-            nSTAT = nf90_get_var(ncid,time_var_id,dum1d_dp, &
-                   start = (/1/),count = (/nt_fullmet/))
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
+            if(var_xtype.eq.NF90_FLOAT)then
+              allocate(dum1d_sp(nt_fullmet))
+              nSTAT = nf90_get_var(ncid,time_var_id,dum1d_sp, &
+                     start = (/1/),count = (/nt_fullmet/))
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
+                stop 1
+              endif
+              ! copy to local variable
+              MR_windfile_stephour(iw,1:nt_fullmet) = dum1d_sp(1:nt_fullmet)* &
+                                                           Met_dim_fac(1)
+              deallocate(dum1d_sp)
+            elseif(var_xtype.eq.NF90_DOUBLE)then
+              allocate(dum1d_dp(nt_fullmet))
+              nSTAT = nf90_get_var(ncid,time_var_id,dum1d_dp, &
+                     start = (/1/),count = (/nt_fullmet/))
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
+                stop 1
+              endif
+              ! copy to local variable
+              MR_windfile_stephour(iw,1:nt_fullmet) = real(dum1d_dp(1:nt_fullmet),kind=4)* &
+                                                           Met_dim_fac(1)
+              deallocate(dum1d_dp)
+            elseif(var_xtype.eq.NF90_INT)then
+              allocate(dum1d_int4(nt_fullmet))
+              nSTAT = nf90_get_var(ncid,time_var_id,dum1d_int4, &
+                     start = (/1/),count = (/nt_fullmet/))
+              if(nSTAT.ne.NF90_NOERR)then
+                write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
+                stop 1
+              endif
+              ! copy to local variable
+              MR_windfile_stephour(iw,1:nt_fullmet) = real(dum1d_int4(1:nt_fullmet),kind=4)* &
+                                                           Met_dim_fac(1)
+              deallocate(dum1d_int4)
+            else
+              write(MR_global_error,*)"MR ERROR: Unexpected time variable type ",Met_dim_names(i)
               stop 1
             endif
-            ! copy to local variable
-            MR_windfile_stephour(iw,1:nt_fullmet) = real(dum1d_dp(1:nt_fullmet),kind=4)* &
-                                                         Met_dim_fac(1)
-            deallocate(dum1d_dp)
-          elseif(var_xtype.eq.NF90_INT)then
-            allocate(dum1d_int4(nt_fullmet))
-            nSTAT = nf90_get_var(ncid,time_var_id,dum1d_int4, &
-                   start = (/1/),count = (/nt_fullmet/))
+
+            nSTAT = nf90_close(ncid)
             if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
+              write(MR_global_error,*)'MR ERROR: Could not close file',nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: Could not close file:',nf90_strerror(nSTAT)
               stop 1
             endif
-            ! copy to local variable
-            MR_windfile_stephour(iw,1:nt_fullmet) = real(dum1d_int4(1:nt_fullmet),kind=4)* &
-                                                         Met_dim_fac(1)
-            deallocate(dum1d_int4)
-          else
-            write(MR_global_error,*)"MR ERROR: Unexpected time variable type ",Met_dim_names(i)
-            stop 1
-          endif
 
-          nSTAT = nf90_close(ncid)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: Could not close file',nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: Could not close file:',nf90_strerror(nSTAT)
-            stop 1
-          endif
-
-          MR_windfiles_nt_fullmet(iw) = nt_fullmet
-          MR_windfile_starthour(iw) =  real(HS_hours_since_baseyear(itstart_year,itstart_month, &
-                                         itstart_day,real(filestart_hour,kind=8),MR_BaseYear,MR_useLeap),kind=4)
-        enddo
-      endif
+            MR_windfiles_nt_fullmet(iw) = nt_fullmet
+            write(*,*)itstart_year,itstart_month,itstart_day,real(filestart_hour,kind=8),MR_BaseYear,MR_useLeap
+            MR_windfile_starthour(iw) =  real(HS_hours_since_baseyear(itstart_year,itstart_month, &
+                                           itstart_day,real(filestart_hour,kind=8),MR_BaseYear,MR_useLeap),kind=4)
+          enddo
+        endif  ! MR_iwindformat = 50 v.s. all others
+      endif  ! MR_iwind = 5 v.s. 3/4
       ! Finished setting up the start time of each wind file in HoursSince : MR_windfile_starthour(iw)
       !  and the forecast (offset from start of file) for each step        : MR_windfile_stephour(iw,iwstep)
 
-      if (MR_iwindformat.ne.25.and.MR_iwindformat.ne.27)then
+      if (MR_iwind.ne.5)then
         write(MR_global_info,*)"File, step, Ref, Offset, HoursSince"
         do iw = 1,MR_iwindfiles
           do iws = 1,nt_fullmet

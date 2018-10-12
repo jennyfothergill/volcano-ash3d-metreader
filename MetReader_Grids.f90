@@ -183,6 +183,7 @@
 !        enddo
 !        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 !
+
       elseif(igrid.eq.1032)then
          ! Not an NCEP grid
          !  This grid is for the AFWA files
@@ -1011,7 +1012,7 @@
           ! Make sure the start of the comp grid is not below the domain of the
           ! met files
           istart = 1
-          do i = 1,nx_fullmet-1
+          do i = 1,nx_fullmet
             ! For the start index, we assign the lower node of the interval
             ! Note: cond1 is not satisfied when xLL.eq.x_fullmet_sp(1) so we
             !       must initialize istart to 1
@@ -1026,7 +1027,7 @@
           stop 1
         endif
         iend = 1
-        do i = 1,nx_fullmet-1
+        do i = 1,nx_fullmet
           ! For the end index, we assign the upper node of the interval
           cond1 = x_fullmet_sp(i  ).lt.xUR
           cond2 = x_fullmet_sp(i+1).ge.xUR
@@ -1036,7 +1037,7 @@
           if(IsGlobal_MetGrid)then
           ! If iend was not assigned, then the wrap back to the beginning
             iend = nx_fullmet
-            do i = 1,nx_fullmet-1
+            do i = 1,nx_fullmet
               ! For the end index, we assign the upper node of the interval
               cond1 = x_fullmet_sp(i  ).lt.xUR-360.0_sp
               cond2 = x_fullmet_sp(i+1).ge.xUR-360.0_sp

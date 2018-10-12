@@ -54,7 +54,6 @@
                                        ! 28 ECMWF Interim Reanalysis (ERA-Interim)  :: ds627.0  requires catted grib files
                                        ! 29 ECMWF ERA5                              :: ds630.0  iwind=5
                                        ! 30 ECMWF 20-Century (ERA-20C)              :: ds626.0  iwind=5
-                                       ! 31 Catania forecast
                                        ! 32 Air Force Weather Agency subcenter = 0
                                        ! 33 CCSM3.0 Community Atmosphere Model (CAM)
                                        ! 40 NASA-GEOS Cp
@@ -1886,29 +1885,6 @@
         Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V" ! e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W" ! e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T" ! e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
-
-      elseif (MR_iwindformat.eq.31)then
-         ! Catania forecast
-
-        write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "Catania forecast"
-
-        MR_iGridCode = 1031
-        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
-        MR_Reannalysis = .false.
-
-        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "frtime"
-        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "level"
-        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
-        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
-
-        ! Momentum / State variables
-        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="H"
-        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="u"
-        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="v"
-        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T"
-
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
 
       elseif (MR_iwindformat.eq.32)then
          ! Air Force Weather Agency subcenter = 0
@@ -3911,7 +3887,7 @@
           ! increase linearly with k
           do k=2,np_fullmet
             if (z_col_metP(k)<z_col_metP(k-1))then
-              write(*,*)"MR_WARNING: Need to fix value in MR_Regrid_MetP_to_MetH"
+              write(MR_global_info,*)"MR_WARNING: Need to fix value in MR_Regrid_MetP_to_MetH"
               knext=k       !find the first value of z_col_metP that's above z_col_metP(k-1)
               do while (z_col_metP(knext)<z_col_metP(k-1))
                  knext=knext+1
