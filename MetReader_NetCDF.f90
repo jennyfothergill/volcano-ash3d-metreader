@@ -188,7 +188,7 @@
           allocate(MR_dx_met(nx_fullmet))
           allocate(MR_dy_met(ny_fullmet))
           dx_met_const = 1.25_sp
-          dy_met_const = 2.0_sp
+          dy_met_const = 1.25_sp
           x_start =   0.0_dp
           y_start =  90.0_dp
           DO i = 0,nx_fullmet+1
@@ -209,7 +209,6 @@
 
         elseif(MR_iwindformat.eq.27)then
           !  NOAA-CIRES reanalysis 2.0 degree files  :: ds131.2
-
           maxdimlen            = 24
           nlev_coords_detected = 2
           allocate(nlevs_fullmet(nlev_coords_detected))
@@ -267,9 +266,91 @@
           MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
         elseif(MR_iwindformat.eq.29)then
-         write(*,*) MR_iwindformat
+          ! ECMWF ERA5
+          maxdimlen            = 37
+          nlev_coords_detected = 1
+          allocate(nlevs_fullmet(nlev_coords_detected))
+          nlevs_fullmet(1) = 37
+          allocate(levs_code(nlev_coords_detected))
+          levs_code(1) = 1
+          allocate(levs_fullmet_sp(nlev_coords_detected,maxdimlen))
+          np_fullmet = 37
+          allocate(p_fullmet_sp(np_fullmet))
+          levs_fullmet_sp(:,:) = 0.0_sp
+          p_fullmet_sp(1:np_fullmet) = &
+            (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
+               875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
+               750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
+               500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
+               250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
+               125.0_sp, 100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp, &
+                20.0_sp,  10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp, &
+                 2.0_sp, 1.0_sp /)
+          z_inverted = .true.
+          levs_fullmet_sp(1,1:37) = p_fullmet_sp(1:37)*Pressure_Conv_Fac
+          Met_var_zdim_idx( 1) = 1
+          Met_var_zdim_idx( 2) = 1
+          Met_var_zdim_idx( 3) = 1
+          Met_var_zdim_idx( 4) = 1
+          Met_var_zdim_idx( 5) = 1
+
+          IsLatLon_MetGrid  = .true.
+          IsGlobal_MetGrid  = .true.
+          IsRegular_MetGrid = .false.
+
+          allocate(MR_dx_met(nx_fullmet))
+          allocate(MR_dy_met(ny_fullmet))
+          DO i = 1,nx_fullmet
+            MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+          ENDDO
+          DO i = 1,ny_fullmet-1
+            MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+          ENDDO
+          MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+
         elseif(MR_iwindformat.eq.30)then
-         write(*,*) MR_iwindformat
+          ! ECMWF ERA=20c
+          maxdimlen            = 37
+          nlev_coords_detected = 1
+          allocate(nlevs_fullmet(nlev_coords_detected))
+          nlevs_fullmet(1) = 37
+          allocate(levs_code(nlev_coords_detected))
+          levs_code(1) = 1
+          allocate(levs_fullmet_sp(nlev_coords_detected,maxdimlen))
+          np_fullmet = 37
+          allocate(p_fullmet_sp(np_fullmet))
+          levs_fullmet_sp(:,:) = 0.0_sp
+          p_fullmet_sp(1:np_fullmet) = &
+            (/1000.0_sp, 975.0_sp, 950.0_sp, 925.0_sp, 900.0_sp, &
+               875.0_sp, 850.0_sp, 825.0_sp, 800.0_sp, 775.0_sp, &
+               750.0_sp, 700.0_sp, 650.0_sp, 600.0_sp, 550.0_sp, &
+               500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
+               250.0_sp, 225.0_sp, 200.0_sp, 175.0_sp, 150.0_sp, &
+               125.0_sp, 100.0_sp,  70.0_sp,  50.0_sp,  30.0_sp, &
+                20.0_sp,  10.0_sp,   7.0_sp,   5.0_sp,   3.0_sp, &
+                 2.0_sp, 1.0_sp /)
+          z_inverted = .true.
+          levs_fullmet_sp(1,1:37) = p_fullmet_sp(1:37)*Pressure_Conv_Fac
+          Met_var_zdim_idx( 1) = 1
+          Met_var_zdim_idx( 2) = 1
+          Met_var_zdim_idx( 3) = 1
+          Met_var_zdim_idx( 4) = 1
+          Met_var_zdim_idx( 5) = 1
+
+          IsLatLon_MetGrid  = .true.
+          IsGlobal_MetGrid  = .true.
+          IsRegular_MetGrid = .false.
+
+          allocate(MR_dx_met(nx_fullmet))
+          allocate(MR_dy_met(ny_fullmet))
+          DO i = 1,nx_fullmet
+            MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+          ENDDO
+          DO i = 1,ny_fullmet-1
+            MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+          ENDDO
+          MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+
         else
           stop 1
         endif
@@ -994,6 +1075,8 @@
          !   stand_lon
          !proj +proj=lcc +lon_0=-175.0 +lat_0=55.0 +lat_1=50.0 +lat_2=60.0 +R=6371.229
 
+        write(MR_global_info,*)"  WRF projection detected: Lambert Conformal"
+
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "DX", WRF_dx)
         if(nSTAT.ne.NF90_NOERR)then
           write(MR_global_error,*)'MR ERROR: get_att DX: ',nf90_strerror(nSTAT)
@@ -1032,6 +1115,7 @@
         endif
 
           ! convert dx, dy to km
+        IsLatLon_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         dx_met_const = WRF_dx*1.0e-3_4
         dy_met_const = WRF_dy*1.0e-3_4
@@ -1074,7 +1158,7 @@
         ! In the example WRF files, x and y projected values are not actually
         ! provided, so we recreate them here using the coordinates if the LL
         ! point of the Lon/Lat grid
-        allocate(x_fullmet_sp(nx_fullmet))
+        allocate(x_fullmet_sp(0:nx_fullmet+1))
         allocate(y_fullmet_sp(ny_fullmet))
         allocate(MR_dx_met(nx_fullmet))
         allocate(MR_dy_met(ny_fullmet))
@@ -1093,7 +1177,7 @@
         call PJ_proj_for(lon_in,lat_in, &
                        Met_iprojflag,Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re, &
                        x_start,y_start)
-        do i = 1,nx_fullmet
+        do i = 0,nx_fullmet+1
           x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=4)
         enddo
         do i = 1,ny_fullmet
@@ -1112,6 +1196,9 @@
         ! Polar Stereographic
         !   truelat1
         !   stand_lon
+
+        write(MR_global_info,*)"  WRF projection detected: Polar Stereographic"
+
         write(MR_global_info,*)&
          "WRF: MAP_PROJ=2 : Polar Stereographic : Not implemented"
         stop 1
@@ -1120,6 +1207,8 @@
         !  truelat1
          ! stand_lon
          !proj +proj=merc 
+
+        write(MR_global_info,*)"  WRF projection detected: Mercator"
 
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "DX", WRF_dx)
         if(nSTAT.ne.NF90_NOERR)then
@@ -1159,6 +1248,7 @@
         endif
 
           ! convert dx, dy to km
+        IsLatLon_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         dx_met_const = WRF_dx*1.0e-3_4
         dy_met_const = WRF_dy*1.0e-3_4
@@ -1201,7 +1291,7 @@
         ! In the example WRF files, x and y projected values are not actually
         ! provided, so we recreate them here using the coordinates if the LL
         ! point of the Lon/Lat grid
-        allocate(x_fullmet_sp(nx_fullmet))
+        allocate(x_fullmet_sp(0:nx_fullmet+1))
         allocate(y_fullmet_sp(ny_fullmet))
         allocate(MR_dx_met(nx_fullmet))
         allocate(MR_dy_met(ny_fullmet))
@@ -1220,7 +1310,7 @@
         call PJ_proj_for(lon_in,lat_in, &
                        Met_iprojflag,Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re, &
                        x_start,y_start)
-        do i = 1,nx_fullmet
+        do i = 0,nx_fullmet+1
           x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=4)
         enddo
         do i = 1,ny_fullmet
@@ -1240,6 +1330,9 @@
         !   pole_lat
         !   pole_lon
         !   stand_lon
+
+        write(MR_global_info,*)"  WRF projection detected: Lon-Lat"
+
         write(MR_global_info,*)"WRF: MAP_PROJ=6 : Lon-Lat : Not implemented"
         stop 1
       else
@@ -1358,30 +1451,32 @@
       integer :: time_var_id = 0
       integer :: reftime_var_id
       integer :: t_dim_id
+      integer :: x_dim_id,y_dim_id,x_var_id,y_var_id
       integer :: reftimedimID
       integer :: var_ndims
       integer,dimension(:),allocatable :: var_dimIDs
       integer :: reftimedimlen
       real(kind=sp),dimension(:),allocatable :: filetime_in_sp
       character(len=19) :: Timestr_WRF
-      integer :: filetime_in_int
 
       integer            :: var_xtype
       character(len=NF90_MAX_NAME)  :: invar
       integer            :: xtype, length, attnum
-      character(len=20)  :: tstring
       character(len=31)  :: tstring2
       real(kind=8)       :: HS_hours_since_baseyear !,HS_HourOfDay
-      character(len=130) :: dumstr
+      real(kind=8)       :: iwf_int,iwf_tot
       integer            :: iwstep
       logical            :: TimeHasUnitsAttr = .false.
       integer            :: i,ii
       real(kind=dp),dimension(:), allocatable :: dum1d_dp
       real(kind=sp),dimension(:), allocatable :: dum1d_sp
       integer(kind=4),dimension(:), allocatable :: dum1d_int4
-      integer,dimension(8) :: values
-      integer              :: Current_Year,nt_tst
-      character(len=130)   :: infile
+      integer,dimension(8)  :: values
+      integer               :: Current_Year,nt_tst
+      character(len=130)    :: Z_infile
+      integer               :: HS_YearOfEvent
+      integer               :: HS_MonthOfEvent
+      integer               :: HS_DayOfEvent
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                MR_Read_Met_Times_netcdf                    ----------"
@@ -1395,84 +1490,167 @@
 
       allocate(MR_windfile_starthour(MR_iwindfiles))
       if(MR_iwind.eq.5)then
-      !if(MR_iwindformat.eq.25.or.MR_iwindformat.eq.27)then
+        ! For iw=5, we need to know the start and end day,month,year
+        MR_Comp_StartYear        = HS_YearOfEvent(MR_Comp_StartHour,MR_BaseYear,MR_useLeap)
+        MR_Comp_StartMonth       = HS_MonthOfEvent(MR_Comp_StartHour,MR_BaseYear,MR_useLeap)
+        MR_Comp_StartDay         = HS_DayOfEvent(MR_Comp_StartHour,MR_BaseYear,MR_useLeap)
+
         ! Here the branch for when MR_iwindformat = 25 or 27
         ! First copy path read in to slot 2
-        dumstr = MR_windfiles(1)
+        MR_iw5_root = MR_windfiles(1)
  110    format(a50,a1,i4,a1)
-        write(MR_windfiles(1),110)trim(ADJUSTL(dumstr)),'/', &
+        write(MR_windfiles(1),110)trim(ADJUSTL(MR_iw5_root)),'/', &
                                    MR_Comp_StartYear,'/'
-        write(MR_windfiles(2),110)trim(ADJUSTL(dumstr)),'/', &
-                                   MR_Comp_StartYear+1,'/'
-        MR_windfile_starthour(1) = real(HS_hours_since_baseyear( &
-                                    MR_Comp_StartYear,1,1,0.0_8,MR_BaseYear,MR_useLeap),kind=sp)
-        MR_windfile_starthour(2) = real(HS_hours_since_baseyear( &
-                                    MR_Comp_StartYear+1,1,1,0.0_8,MR_BaseYear,MR_useLeap),kind=sp)
-        if  ((mod(MR_Comp_StartYear,4).eq.0)     .and.                     &
-             (mod(MR_Comp_StartYear,100).ne.0).or.(mod(MR_Comp_StartYear,400).eq.0))then
-          nt_fullmet = 1464     ! Leap year
-        else
-          nt_fullmet = 1460     ! Not a leap year
-        endif
-        ! Note: The nt_fullmet given above is the expected number based on a complete year.
-        !       If MR_Comp_StartYear is the current year, then we will not have this many
-        !       time steps available.  Double-check
-        ! Getting current year
-        call date_and_time(VALUES=values)
-        Current_Year = values(1)
-        ! Now getting the actual nt of the file; trying the hgt file
         if(MR_iwindformat.eq.25)then
- 111      format(a50,a4,i4,a3)
-          write(infile,111)trim(adjustl(MR_windfiles(1))), &
-                           "hgt.",MR_Comp_StartYear,".nc"
+          iwf_int = 6.0_dp
+          iwf_tot = 8784.0_dp
         elseif(MR_iwindformat.eq.26)then
- 112      format(a50,a17,i4,a20)
-          write(infile,112)trim(adjustl(MR_windfiles(1))), &
-                           "anl_p125.007_hgt.",MR_Comp_StartYear,"060100_2018063018.nc"
-        else
-          write(*,*)"Hard code file name for time check"
+          iwf_int = 6.0_dp
+          iwf_tot = 744.0_dp
+        elseif(MR_iwindformat.eq.27)then
+          iwf_int = 6.0_dp
+          iwf_tot = 8784.0_dp
+        elseif(MR_iwindformat.eq.29)then
+          iwf_int = 1.0_dp
+          iwf_tot = 24.0_dp
+        elseif(MR_iwindformat.eq.30)then
+          iwf_int = 3.0_dp
+          iwf_tot = 744.0_dp
         endif
-        nSTAT = nf90_open(trim(ADJUSTL(infile)),NF90_NOWRITE,ncid)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: nf90_open: ',nf90_strerror(nSTAT)
-          write(MR_global_error,*)"    Could not open file: ",trim(ADJUSTL(infile))
-          write(MR_global_log  ,*)'MR ERROR: nf90_open: ',nf90_strerror(nSTAT)
-          write(MR_global_error,*)'Exiting'
-          stop 1
+        nt_fullmet = 1
+        do iw = 1,MR_iwindfiles
+          if(MR_iwindformat.eq.25)then
+            MR_windfile_starthour(iw) = &
+              real(HS_hours_since_baseyear(MR_Comp_StartYear+(iw-1),1,&
+                                           1,0.0_8,MR_BaseYear,MR_useLeap),kind=sp)
+          elseif(MR_iwindformat.eq.26)then
+            MR_windfile_starthour(iw) = &
+              real(HS_hours_since_baseyear(MR_Comp_StartYear,MR_Comp_StartMonth+(iw-1),&
+                                           1,0.0_8,MR_BaseYear,MR_useLeap),kind=sp)
+          elseif(MR_iwindformat.eq.27)then
+            MR_windfile_starthour(iw) = &
+              real(HS_hours_since_baseyear(MR_Comp_StartYear+(iw-1),1,&
+                                           1,0.0_8,MR_BaseYear,MR_useLeap),kind=sp)
+          elseif(MR_iwindformat.eq.29)then
+            MR_windfile_starthour(iw) = &
+              real(HS_hours_since_baseyear(MR_Comp_StartYear,MR_Comp_StartMonth,&
+                                           MR_Comp_StartDay+(iw-1),0.0_8,MR_BaseYear,MR_useLeap),kind=sp)
+          elseif(MR_iwindformat.eq.30)then
+            MR_windfile_starthour(iw) = &
+              real(HS_hours_since_baseyear(MR_Comp_StartYear,MR_Comp_StartMonth+(iw-1),&
+                                           1,0.0_8,MR_BaseYear,MR_useLeap),kind=sp)
+          endif
+
+          ! Building the name of the first windfile (for hgt) to inspect for nt
+          call MR_Set_iwind5_filenames(MR_Comp_StartHour+(iw-1)*iwf_tot,1,Z_infile)
+          nSTAT = nf90_open(trim(ADJUSTL(Z_infile)),NF90_NOWRITE,ncid)
+          if(nSTAT.ne.NF90_NOERR)then
+            if(iw.eq.1)then
+              ! Do a hard stop if we can't even read the first file
+              write(MR_global_error,*)'MR ERROR: nf90_open: ',nf90_strerror(nSTAT)
+              write(MR_global_error,*)"    Could not open file: ",trim(ADJUSTL(Z_infile))
+              write(MR_global_log  ,*)'MR ERROR: nf90_open: ',nf90_strerror(nSTAT)
+              write(MR_global_error,*)'Exiting'
+              stop 1
+            else
+              ! This is probably OK as long as the sim time is within the first file
+              write(MR_global_error,*)'MR WARNING: nf90_open: ',nf90_strerror(nSTAT)
+              write(MR_global_error,*)"    Could not open file: ",trim(ADJUSTL(Z_infile))
+              write(MR_global_error,*)"    This should be OK if the previous file exits."
+              exit
+            endif
+          endif
+          nSTAT = nf90_inq_dimid(ncid,Met_dim_names(1),t_dim_id)
+          if(nSTAT.ne.NF90_NOERR)then
+            write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+            write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(1)
+            write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+            stop 1
+          endif
+          nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,len=nt_tst)
+          if(nSTAT.ne.NF90_NOERR)then
+            write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+            write(MR_global_error,*)"    Could not dimension length: "
+            write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
+            stop 1
+          endif
+          if(iw.eq.1.and.(MR_iwindformat.eq.29.or.&
+                          MR_iwindformat.eq.30))then
+            ! Normally we would populate the x and y arrays in MR_Read_Met_DimVars_netcdf, but
+            ! for Gaussian grids, it is easier to just read the grids directly.  We will do
+            ! this now while we have the Geopotential Height file open.  
+            nSTAT = nf90_inq_dimid(ncid,Met_dim_names(3),y_dim_id)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_dimid lat: ',nf90_strerror(nSTAT)
+              write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(3)
+              write(MR_global_log  ,*)'MR ERROR: inq_dimid lat: ',nf90_strerror(nSTAT)
+              stop 1
+            endif
+            nSTAT = nf90_Inquire_Dimension(ncid,y_dim_id,len=ny_fullmet)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_dimid lat: ',nf90_strerror(nSTAT)
+              write(MR_global_error,*)"    Could not dimension length: "
+              write(MR_global_log  ,*)'MR ERROR: inq_dimid lat: ',nf90_strerror(nSTAT)
+              stop 1
+            endif
+            allocate(y_fullmet_sp(ny_fullmet))
+            allocate(dum1d_dp(ny_fullmet))
+            nSTAT = nf90_inq_varid(ncid,Met_dim_names(3),y_var_id)
+            nSTAT = nf90_get_var(ncid,y_var_id,dum1d_dp, &
+                     start = (/1/),count = (/ny_fullmet/))
+            y_fullmet_sp(1:ny_fullmet) = real(dum1d_dp(1:ny_fullmet),kind=sp)
+            y_inverted = .true.
+            deallocate(dum1d_dp)
+
+            nSTAT = nf90_inq_dimid(ncid,Met_dim_names(4),x_dim_id)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_dimid lon: ',nf90_strerror(nSTAT)
+              write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(4)
+              write(MR_global_log  ,*)'MR ERROR: inq_dimid lon: ',nf90_strerror(nSTAT)
+              stop 1
+            endif
+            nSTAT = nf90_Inquire_Dimension(ncid,x_dim_id,len=nx_fullmet)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_dimid lon: ',nf90_strerror(nSTAT)
+              write(MR_global_error,*)"    Could not dimension length: "
+              write(MR_global_log  ,*)'MR ERROR: inq_dimid lon: ',nf90_strerror(nSTAT)
+              stop 1
+            endif
+            allocate(x_fullmet_sp(0:nx_fullmet+1))
+            allocate(dum1d_dp(nx_fullmet))
+            nSTAT = nf90_inq_varid(ncid,Met_dim_names(4),x_var_id)
+            nSTAT = nf90_get_var(ncid,x_var_id,dum1d_dp, &
+                     start = (/1/),count = (/nx_fullmet/))
+            x_fullmet_sp(1:nx_fullmet) = real(dum1d_dp(1:nx_fullmet),kind=sp)
+            x_inverted = .false.
+            x_fullmet_sp(0)            = x_fullmet_sp(nx_fullmet)-360.0_sp
+            x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(1)          +360.0_sp
+            deallocate(dum1d_dp)
+
+          endif
+          nSTAT = nf90_close(ncid)
+           ! Set this (and subsequent) iw to the current number of timesteps
+          MR_windfiles_nt_fullmet(iw:) = nt_tst
+          if(nt_tst.gt.nt_fullmet) nt_fullmet = nt_tst
+        enddo
+        
+        if(MR_iwindformat.eq.25)then
+          ! Getting current year
+          call date_and_time(VALUES=values)
+          Current_Year = values(1)
+          if(MR_Comp_StartYear.lt.Current_Year.and.nt_tst.lt.nt_fullmet)then
+            write(MR_global_info,*)"WARNING:  The NCEP files are for an archived year yet are incomplete."
+            write(MR_global_info,*)"          To get the complete year, run the script "
+            write(MR_global_info,*)"            autorun_scripts/get_NCEP_50YearReanalysis.sh",MR_Comp_StartYear
+            write(MR_global_info,*)"          Steps available = ",nt_tst
+            write(MR_global_info,*)"          Hours into year = ",(nt_tst-1)*6
+          endif
         endif
-        nSTAT = nf90_inq_dimid(ncid,Met_dim_names(1),t_dim_id)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-          write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(1)
-          write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
-        nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,len=nt_tst)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-          write(MR_global_error,*)"    Could not dimension length: "
-          write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
-        nSTAT = nf90_close(ncid)
-        if(MR_Comp_StartYear.lt.Current_Year.and.nt_tst.lt.nt_fullmet)then
-          write(MR_global_info,*)"WARNING:  The NCEP files are for an archived year yet are incomplete."
-          write(MR_global_info,*)"          To get the complete year, run the script "
-          write(MR_global_info,*)"            autorun_scripts/get_NCEP_50YearReanalysis.sh",MR_Comp_StartYear
-          write(MR_global_info,*)"          Steps available = ",nt_tst
-          write(MR_global_info,*)"          Hours into year = ",(nt_tst-1)*6
-        endif
-        nt_fullmet = nt_tst
-        MR_windfiles_nt_fullmet(1)=nt_fullmet
-        MR_windfiles_nt_fullmet(2)=nt_fullmet  ! Note: we don't care if the next
-                                               !       year is a leap year since
-                                               !       the simulation will never
-                                               !       be long enough to matter.
         allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
 
           ! the interval for both iwf25 and iwf27 is 6 hours
         do iwstep = 1,nt_fullmet
-          MR_windfile_stephour(:,iwstep) = (iwstep-1)*6.0_dp
+          MR_windfile_stephour(:,iwstep) = (iwstep-1)*iwf_int
         enddo
       else ! MR_iwind = 3 or 4
         if(MR_iwindformat.eq.50)then
@@ -1657,18 +1835,6 @@
                                      real(itstart_min,kind=sp)/60.0_sp      + &
                                      real(itstart_sec,kind=sp)/3600.0_sp
                     exit
-                !elseif(i.eq.26)then
-                !  ! If we got to the end of the string without finding 'since',
-                !  ! this may be an old MERRA file
-                !  ii = 1
-                !  read(tstring2(ii:31),103)itstart_year,itstart_month,itstart_day,&
-                !                    itstart_hour,itstart_min,itstart_sec
-                !  write(MR_global_info,2100)"Ref time = ",itstart_year,itstart_month,itstart_day, &
-                !                             itstart_hour,itstart_min,itstart_sec
-                !  filestart_hour = real(itstart_hour,kind=sp) + &
-                !                   real(itstart_min,kind=sp)/60.0_sp      + &
-                !                   real(itstart_sec,kind=sp)/3600.0_sp
-                !  exit
                   endif
                 enddo
               endif
@@ -1780,7 +1946,6 @@
             endif
 
             MR_windfiles_nt_fullmet(iw) = nt_fullmet
-            write(*,*)itstart_year,itstart_month,itstart_day,real(filestart_hour,kind=8),MR_BaseYear,MR_useLeap
             MR_windfile_starthour(iw) =  real(HS_hours_since_baseyear(itstart_year,itstart_month, &
                                            itstart_day,real(filestart_hour,kind=8),MR_BaseYear,MR_useLeap),kind=4)
           enddo
@@ -1804,6 +1969,201 @@
 
       end subroutine MR_Read_Met_Times_netcdf
 !##############################################################################
+
+
+!##############################################################################
+!
+!     MR_Set_iwind5_filenames
+!
+!     Called from MR_Read_Met_Times_netcdf
+!
+!     Sets the name of the iwind=5 file that contains the data for the requested
+!     time as well as the next filename
+!
+!##############################################################################
+
+      subroutine MR_Set_iwind5_filenames(inhour,ivar,infile)
+
+      use MetReader
+
+      implicit none
+
+      integer, parameter :: sp        = 4 ! single precision
+      integer, parameter :: dp        = 8 ! double precision
+
+      real(kind=8)      ,intent(in)  :: inhour
+      integer           ,intent(in)  :: ivar
+      character(len=130),intent(out) :: infile
+
+      integer               :: HS_YearOfEvent
+      integer               :: HS_MonthOfEvent
+      integer               :: HS_DayOfEvent
+      logical               :: HS_IsLeapYear
+      integer,dimension(12) :: DaysInMonth
+      integer               :: dum_i1,dum_i2,dum_i3
+
+      integer :: thisYear,thisMonth,thisDay
+
+      if(ivar.ne.1.and. &
+         ivar.ne.2.and. &
+         ivar.ne.3.and. &
+         ivar.ne.4.and. &
+         ivar.ne.5)then
+        write(MR_global_error,*)"MR ERROR: iwind=5 only compatible with the following variables:"
+        write(MR_global_error,*)"  ivar = 1 :: ",Met_var_NC_names(1)
+        write(MR_global_error,*)"  ivar = 2 :: ",Met_var_NC_names(2)
+        write(MR_global_error,*)"  ivar = 3 :: ",Met_var_NC_names(3)
+        write(MR_global_error,*)"  ivar = 4 :: ",Met_var_NC_names(4)
+        write(MR_global_error,*)"  ivar = 5 :: ",Met_var_NC_names(5)
+      endif
+
+      thisYear        = HS_YearOfEvent( inhour,MR_BaseYear,MR_useLeap)
+      thisMonth       = HS_MonthOfEvent(inhour,MR_BaseYear,MR_useLeap)
+      thisDay         = HS_DayOfEvent(  inhour,MR_BaseYear,MR_useLeap)
+
+      if(HS_IsLeapYear(thisYear))then
+        DaysInMonth=(/31,29,31,30,31,30,31,31,30,31,30,31 /)
+      else
+        DaysInMonth=(/31,28,31,30,31,30,31,31,30,31,30,31 /)
+      endif
+      if(MR_iwindformat.eq.25)then   ! Not needed for iwf=25
+        ! YYYY/hgt.2018.nc
+        dum_i1 = 1                                 ! Start day in file
+        dum_i2 = DaysInMonth(thisMonth)   ! End day in file
+        dum_i3 = 18                                ! End hour in file
+        if(ivar.eq.1)then
+          write(MR_iw5_prefix ,251)'hgt.'
+        elseif(ivar.eq.2)then
+          write(MR_iw5_prefix ,252)'uwnd.'
+        elseif(ivar.eq.3)then
+          write(MR_iw5_prefix ,253)'vwnd.'
+        elseif(ivar.eq.4)then
+          write(MR_iw5_prefix ,254)'omega.'
+        elseif(ivar.eq.5)then
+          write(MR_iw5_prefix ,255)'air.'
+        endif
+        write(MR_iw5_suffix1,325)thisYear,'.nc'
+        write(MR_iw5_suffix2,325)thisYear+1,'.nc'   ! Next file for iwf=25 is next year
+        write(infile,425)trim(ADJUSTL(MR_iw5_root)),'/',thisYear,'/', &
+                         trim(adjustl(MR_iw5_prefix)),   &
+                         trim(adjustl(MR_iw5_suffix1))
+ 251    format(a4)
+ 252    format(a5)
+ 253    format(a5)
+ 254    format(a6)
+ 255    format(a4)
+ 325    format(i4,a3)
+ 425    format(a50,a1,i4,a1,a,a7)
+      elseif(MR_iwindformat.eq.26)then
+        ! YYYY/anl_p125.007_hgt.2018060100_2018063018.nc
+        dum_i1 = 1                                 ! Start day in file
+        dum_i2 = DaysInMonth(thisMonth)   ! End day in file
+        dum_i3 = 18                                ! End hour in file
+        if(ivar.eq.1)then
+          write(MR_iw5_prefix ,261)'anl_p125.007_hgt.'
+        elseif(ivar.eq.2)then
+          write(MR_iw5_prefix ,262)'anl_p125.033_ugrd.'
+        elseif(ivar.eq.3)then
+          write(MR_iw5_prefix ,263)'anl_p125.034_vgrd.'
+        elseif(ivar.eq.4)then
+          write(MR_iw5_prefix ,264)'anl_p125.039_vvel.'
+        elseif(ivar.eq.5)then
+          write(MR_iw5_prefix ,265)'anl_p125.011_tmp.'
+        endif
+        write(MR_iw5_suffix1,326)thisYear,thisMonth,dum_i1,'00_',&
+                                 thisYear,thisMonth,dum_i2,dum_i3,'.nc'
+        write(MR_iw5_suffix2,326)thisYear,thisMonth,dum_i1,'00_',&
+                                 thisYear,thisMonth,dum_i2,dum_i3,'.nc'
+
+        write(infile,426)trim(ADJUSTL(MR_iw5_root)),'/',MR_Comp_StartYear,'/', &
+                         trim(adjustl(MR_iw5_prefix)),   &
+                         trim(adjustl(MR_iw5_suffix1))
+ 261    format(a17)
+ 262    format(a18)
+ 263    format(a18)
+ 264    format(a18)
+ 265    format(a17)
+ 326    format(i4,i0.2,i0.2,a3,i4,i0.2,i0.2,i0.2,a3)
+ 426    format(a50,a1,i4,a1,a,a24)
+      elseif(MR_iwindformat.eq.27)then  ! Not needed for iwf=27
+        ! YYYY/hgt.1912.nc
+        dum_i1 = 1                                 ! Start day in file
+        dum_i2 = DaysInMonth(thisMonth)   ! End day in file
+        dum_i3 = 18                                ! End hour in file
+        if(ivar.eq.1)then  ! These are the same as for iwf=25 so just use the format
+                           ! statements above
+          write(MR_iw5_prefix ,251)'hgt.'
+        elseif(ivar.eq.2)then
+          write(MR_iw5_prefix ,252)'uwnd.'
+        elseif(ivar.eq.3)then
+          write(MR_iw5_prefix ,253)'vwnd.'
+        elseif(ivar.eq.4)then
+          write(MR_iw5_prefix ,254)'omega.'
+        elseif(ivar.eq.5)then
+          write(MR_iw5_prefix ,255)'air.'
+        endif
+        write(MR_iw5_suffix1,327)thisYear,'.nc'
+
+        write(infile,427)trim(ADJUSTL(MR_iw5_root)),'/',MR_Comp_StartYear,'/', &
+                         trim(adjustl(MR_iw5_prefix)),   &
+                         trim(adjustl(MR_iw5_suffix1))
+ 327    format(i4,a3)
+ 427    format(a50,a1,i4,a1,a,a7)
+      elseif(MR_iwindformat.eq.29)then
+        ! YYYY/e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
+        dum_i1 = thisDay                  ! Start day in file
+        dum_i2 = thisDay                  ! End day in file
+        dum_i3 = 23                                ! End hour in file
+        if(ivar.eq.1)then
+          write(MR_iw5_prefix ,291)'e5.oper.an.pl.128_129_z.regn320sc.'
+        elseif(ivar.eq.2)then
+          write(MR_iw5_prefix ,291)'e5.oper.an.pl.128_131_u.regn320uv.'
+        elseif(ivar.eq.3)then
+          write(MR_iw5_prefix ,291)'e5.oper.an.pl.128_132_v.regn320uv.'
+        elseif(ivar.eq.4)then
+          write(MR_iw5_prefix ,291)'e5.oper.an.pl.128_135_w.regn320sc.'
+        elseif(ivar.eq.5)then
+          write(MR_iw5_prefix ,291)'e5.oper.an.pl.128_130_t.regn320sc.'
+        endif
+        write(MR_iw5_suffix1,329)thisYear,thisMonth,dum_i1,'00_',&
+                                 thisYear,thisMonth,dum_i2,dum_i3,'.nc'
+        write(infile,429)trim(ADJUSTL(MR_iw5_root)),'/',MR_Comp_StartYear,'/', &
+                         trim(adjustl(MR_iw5_prefix)),   &
+                         trim(adjustl(MR_iw5_suffix1))
+ 291    format(a34)
+ 329    format(i4,i0.2,i0.2,a3,i4,i0.2,i0.2,i0.2,a3)
+ 429    format(a50,a1,i4,a1,a,a24)
+      elseif(MR_iwindformat.eq.30)then
+        ! YYYY/e20c.oper.an.pl.3hr.128_129_z.regn80sc.1912060100_1912063021.nc
+        dum_i1 = 1                                 ! Start day in file
+        dum_i2 = DaysInMonth(thisMonth)   ! End day in file
+        dum_i3 = 21                                ! End hour in file
+        if(ivar.eq.1)then
+          write(MR_iw5_prefix ,230)'e20c.oper.an.pl.3hr.128_129_z.regn80sc.'
+        elseif(ivar.eq.2)then
+          write(MR_iw5_prefix ,230)'e20c.oper.an.pl.3hr.128_131_u.regn80uv.'
+        elseif(ivar.eq.3)then
+          write(MR_iw5_prefix ,230)'e20c.oper.an.pl.3hr.128_132_v.regn80uv.'
+        elseif(ivar.eq.4)then
+          write(MR_iw5_prefix ,230)'e20c.oper.an.pl.3hr.128_135_w.regn80sc.'
+        elseif(ivar.eq.5)then
+          write(MR_iw5_prefix ,230)'e20c.oper.an.pl.3hr.128_130_t.regn80sc.'
+        endif
+        write(MR_iw5_suffix1,330)thisYear,thisMonth,dum_i1,'00_',&
+                                 thisYear,thisMonth,dum_i2,dum_i3,'.nc'
+        write(infile,430)trim(ADJUSTL(MR_iw5_root)),'/',MR_Comp_StartYear,'/', &
+                         trim(adjustl(MR_iw5_prefix)),   &
+                         trim(adjustl(MR_iw5_suffix1))
+ 230    format(a39)
+ 330    format(i4,i0.2,i0.2,a3,i4,i0.2,i0.2,i0.2,a3)
+ 430    format(a50,a1,i4,a1,a,a24)
+      endif
+
+      end subroutine MR_Set_iwind5_filenames
+
+
+!##############################################################################
+
 
 !##############################################################################
 !
@@ -2077,172 +2437,14 @@
       endif
 
       if(MR_iwind.eq.5)then
-        ! For iwind=5, variables are given in different files.
-        ! We need to explicitly create the file name, given the input directory.
-        if(MR_iwindformat.eq.25)then
-          ! Get correct file
-          if(ivar.eq.1)then
-            write(infile,115)trim(adjustl(MR_MetStep_File(istep))), &
-                             "hgt.",MR_iwind5_year(istep),".nc"
-            np_met_loc = np_fullmet
-          elseif(ivar.eq.2)then
-            write(infile,116)trim(adjustl(MR_MetStep_File(istep))), &
-                             "uwnd.",MR_iwind5_year(istep),".nc"
-            np_met_loc = np_fullmet
-          elseif(ivar.eq.3)then
-            write(infile,116)trim(adjustl(MR_MetStep_File(istep))), &
-                             "vwnd.",MR_iwind5_year(istep),".nc"
-            np_met_loc = np_fullmet
-          elseif(ivar.eq.4)then
-            write(infile,117)trim(adjustl(MR_MetStep_File(istep))), &
-                             "omega.",MR_iwind5_year(istep),".nc"
-            np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-          elseif(ivar.eq.5)then
-            write(infile,115)trim(adjustl(MR_MetStep_File(istep))), &
-                             "air.",MR_iwind5_year(istep),".nc"
-            np_met_loc = np_fullmet
-          elseif(ivar.eq.30)then
-            write(infile,116)trim(adjustl(MR_MetStep_File(istep))), &
-                             "rhum.",MR_iwind5_year(istep),".nc"
-            np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-          elseif(ivar.eq.31)then
-            write(infile,116)trim(adjustl(MR_MetStep_File(istep))), &
-                             "shum.",MR_iwind5_year(istep),".nc"
-            np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-          else
-            write(MR_global_info,*)"Requested variable not available."
-            stop 1
-          endif
-          infile = trim(adjustl(infile))
-
- 115      format(a50,a4,i4,a3)
- 116      format(a50,a5,i4,a3)
- 117      format(a50,a6,i4,a3)
-! 118      format(a50,a16,i4,a3)
-! 119      format(a50,a15,i4,a3)
-        elseif(MR_iwindformat.eq.26)then
-         ! JRA-55 reanalysis 1.25 degree files 
-          ! Get correct file
-          if(ivar.eq.1)then
-            write(infile,125)trim(adjustl(MR_MetStep_File(istep))), &
-                             "anl_p125.007_hgt.",MR_iwind5_year(istep),"060100_2018063018.nc"
-            np_met_loc = np_fullmet
-          elseif(ivar.eq.2)then
-            write(infile,126)trim(adjustl(MR_MetStep_File(istep))), &
-                             "anl_p125.033_ugrd.",MR_iwind5_year(istep),"060100_2018063018.nc"
-            np_met_loc = np_fullmet
-          elseif(ivar.eq.3)then
-            write(infile,126)trim(adjustl(MR_MetStep_File(istep))), &
-                             "anl_p125.034_vgrd.",MR_iwind5_year(istep),"060100_2018063018.nc"
-            np_met_loc = np_fullmet
-          elseif(ivar.eq.4)then
-            write(infile,126)trim(adjustl(MR_MetStep_File(istep))), &
-                             "anl_p125.039_vvel.",MR_iwind5_year(istep),"060100_2018063018.nc"
-            np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-          elseif(ivar.eq.5)then
-            write(infile,125)trim(adjustl(MR_MetStep_File(istep))), &
-                             "anl_p125.011_tmp.",MR_iwind5_year(istep),"060100_2018063018.nc"
-            np_met_loc = np_fullmet
-          !elseif(ivar.eq.31)then
-          !  write(infile,126)trim(adjustl(MR_MetStep_File(istep))), &
-          !                   "shum.",MR_iwind5_year(istep),".nc"
-          !  np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-          else
-            write(MR_global_info,*)"Requested variable not available."
-            stop 1
-          endif
-          infile = trim(adjustl(infile))
-
- 125      format(a50,a17,i4,a20)
- 126      format(a50,a18,i4,a20)
-! 128      format(a50,a16,i4,a3)
-! 129      format(a50,a15,i4,a3)
-
-        elseif(MR_iwindformat.eq.27)then
-          ! Get correct file
-          !if(ivar.eq.1)then
-          !  write(infile,135)trim(adjustl(MR_MetStep_File(istep))), &
-          !                   "pgrbanl_mean_",MR_iwind5_year(istep), &
-          !                   "_HGT_pres.nc"
-          !  np_met_loc = np_fullmet
-          !elseif(ivar.eq.2)then
-          !  write(infile,136)trim(adjustl(MR_MetStep_File(istep))), &
-          !                   "pgrbanl_mean_",MR_iwind5_year(istep), &
-          !                   "_UGRD_pres.nc"
-          !  np_met_loc = np_fullmet
-          !elseif(ivar.eq.3)then
-          !  write(infile,136)trim(adjustl(MR_MetStep_File(istep))), &
-          !                   "pgrbanl_mean_",MR_iwind5_year(istep), &
-          !                   "_VGRD_pres.nc"
-          !  np_met_loc = np_fullmet
-          !elseif(ivar.eq.4)then
-          !  write(infile,136)trim(adjustl(MR_MetStep_File(istep))), &
-          !                   "pgrbanl_mean_",MR_iwind5_year(istep), &
-          !                   "_VVEL_pres.nc"
-          !  !np_met_loc = np_fullmet_Vz
-          !  np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-          !elseif(ivar.eq.5)then
-          !  write(infile,135)trim(adjustl(MR_MetStep_File(istep))), &
-          !                   "pgrbanl_mean_",MR_iwind5_year(istep), &
-          !                   "_TMP_pres.nc"
-          !  np_met_loc = np_fullmet
-          !elseif(ivar.eq.10)then
-          !  write(infile,138)trim(adjustl(MR_MetStep_File(istep))), &
-          !                   "sflxgrbfg_mean_",MR_iwind5_year(istep), &
-          !                   "_HPBL_sfc.nc"
-          !elseif(ivar.eq.22)then
-          !  write(infile,140)trim(adjustl(MR_MetStep_File(istep))), &
-          !                   "sflxgrbfg_mean_",MR_iwind5_year(istep), &
-          !                   "_TMP_low-cldtop.nc"
-          !elseif(ivar.eq.23)then
-          !  write(infile,141)trim(adjustl(MR_MetStep_File(istep))), &
-          !                   "sflxgrbfg_mean_",MR_iwind5_year(istep), &
-          !                   "_TCDC_low-cldlay.nc"
-          !elseif(ivar.eq.30)then
-          !  write(infile,137)trim(adjustl(MR_MetStep_File(istep))), &
-          !                   "pgrbanl_mean_",MR_iwind5_year(istep), &
-          !                   "_RH_pres.nc"
-          !  !np_met_loc = np_fullmet_RH
-          !  np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-          !elseif(ivar.eq.44)then
-          !  write(infile,139)trim(adjustl(MR_MetStep_File(istep))), &
-          !                   "sflxgrbfg_mean_",MR_iwind5_year(istep), &
-          !                   "_PRATE_sfc.nc"
-          !elseif(ivar.eq.45)then
-          !  write(infile,139)trim(adjustl(MR_MetStep_File(istep))), &
-          !                   "sflxgrbfg_mean_",MR_iwind5_year(istep), &
-          !                   "_CPRAT_sfc.nc"
-          !else
-          !  write(MR_global_info,*)"Requested variable not available."
-          !  stop 1
-          !endif
-          infile = trim(adjustl(infile))
-
-! 135      format(a50,a13,i4,a12)
-! 136      format(a50,a13,i4,a13)
-! 137      format(a50,a13,i4,a11)
-! 138      format(a50,a15,i4,a12)
-! 139      format(a50,a15,i4,a13)
-! 140      format(a50,a15,i4,a18)
-! 141      format(a50,a15,i4,a19)
-        elseif(MR_iwindformat.eq.29)then
-         ! ECMWF ERA5
-        elseif(MR_iwindformat.eq.30)then
-         ! ECMWF ERA-20C
-        else
-          write(MR_global_info,*)"MR ERROR: MR_iwind=5, but MR_iwindformat is not a recognized type."
-          write(MR_global_info,*)"            MR_iwindformat=25  NCEP 20th Cent. Reanalysis"
-          write(MR_global_info,*)"                           27  NOAA-CIRES"
-          write(MR_global_info,*)"                           29  ERA5"
-          write(MR_global_info,*)"                           29  ERA-20C"
-          write(MR_global_info,*)"           MR_iwindformat provided = ",MR_iwindformat
-          stop 1
-        endif
-      else  ! cases for MR_iwind not equal to 5
-        np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
-          ! Files are listed directly, not through directories (as in MR_iwindformat=25,27)
+          ! Files are hard-coded
+        call MR_Set_iwind5_filenames(MR_MetStep_Hour_since_baseyear(istep),ivar,infile)
+        infile = trim(adjustl(infile))
+      else
+          ! Files are provided directly by calling program, not hard-coded
         infile = trim(adjustl(MR_MetStep_File(istep)))
       endif
+      np_met_loc = nlevs_fullmet(Met_var_zdim_idx(ivar))
 
       invar = Met_var_NC_names(ivar)
 
@@ -2331,39 +2533,36 @@
         endif ! MR_iwindformat.ne.50
 
         do i=1,ict        !read subgrid at current time step
-          if(MR_iwind.eq.5.and.MR_iwindformat.eq.25)then
+          ! Branch on four cases: (1) iw=5, NCEP with NetCDFv3
+          !                       (2) All other iw=5
+          !                       (3) WRF iwf=50
+          !                       (4) All other iw=3/4
+          if(MR_iwind.eq.5.and.MR_iwindformat.eq.25.and.var_xtype.eq.NF90_SHORT)then
             ! NCEP reanalysis files are now NCv4 (stored as float), but the
             ! older version, NCv3 (stored as short) might still be around.
             if(i.eq.1)allocate(temp3d_short(nx_submet,ny_submet,np_met_loc,1))
-            if(var_xtype.eq.NF90_FLOAT)then
-              nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
-                       start = (/iistart(i),jstart,1,iwstep/),       &
-                       count = (/iicount(i),ny_submet,np_met_loc,1/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var: ',nf90_strerror(nSTAT),iicount(i),ny_submet,np_met_loc
-                write(MR_global_log  ,*)'MR ERROR: get_var: ',nf90_strerror(nSTAT),iicount(i),ny_submet,np_met_loc
-                stop 1
-              endif
-            elseif(var_xtype.eq.NF90_SHORT)then
-              nSTAT = nf90_get_var(ncid,in_var_id,temp3d_short(ileft(i):iright(i),:,:,:), &
-                       start = (/iistart(i),jstart,1,iwstep/),       &
-                       count = (/iicount(i),ny_submet,np_met_loc,1/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var: ',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var: ',nf90_strerror(nSTAT)
-                stop 1
-              endif
+            nSTAT = nf90_get_var(ncid,in_var_id,temp3d_short(ileft(i):iright(i),:,:,:), &
+                     start = (/iistart(i),jstart,1,iwstep/),       &
+                     count = (/iicount(i),ny_submet,np_met_loc,1/))
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: get_var: ',nf90_strerror(nSTAT)
+              write(MR_global_log  ,*)'MR ERROR: get_var: ',nf90_strerror(nSTAT)
+              stop 1
             endif
-          elseif(MR_iwind.eq.5.and.MR_iwindformat.eq.26)then
-            !  JRA-55
-          elseif(MR_iwind.eq.5.and.MR_iwindformat.eq.27)then
-            !  NOAA-CIRES
-          elseif(MR_iwind.eq.5.and.MR_iwindformat.eq.29)then
-            !  ECMWF ERA5
-          elseif(MR_iwind.eq.5.and.MR_iwindformat.eq.30)then
-            !  ECMWF ERA-20C
+          elseif(MR_iwind.eq.5.and.(MR_iwindformat.eq.25.or.&
+                                    MR_iwindformat.eq.26.or.&
+                                    MR_iwindformat.eq.27.or.&
+                                    MR_iwindformat.eq.29.or.&
+                                    MR_iwindformat.eq.30))then
+            nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
+                     start = (/iistart(i),jstart,1,iwstep/),       &
+                     count = (/iicount(i),ny_submet,np_met_loc,1/))
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: get_var: ',nf90_strerror(nSTAT),iicount(i),ny_submet,np_met_loc
+              write(MR_global_log  ,*)'MR ERROR: get_var: ',nf90_strerror(nSTAT),iicount(i),ny_submet,np_met_loc
+              stop 1
+            endif
           elseif(MR_iwindformat.eq.50)then
-
             ! Now read the data and convert if necessary
             if(ivar.eq.1)then
                 ! Geopotential

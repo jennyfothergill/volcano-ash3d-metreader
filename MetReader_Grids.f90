@@ -29,10 +29,6 @@
 
       integer,intent(in) :: igrid
 
-      !integer :: i
-      !real(kind=dp) :: x_start,y_start
-      !real(kind=sp),dimension(:)  ,allocatable :: tmp_sp      !
-
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                          MR_Set_Met_NCEPGeoGrid            ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
@@ -102,33 +98,12 @@
         Met_k0            =  0.933_8
         Met_Re            =  6367.470_8
 
-      elseif(igrid.eq.1051)then
-        ! Not an NCEP grid
-        !  This grid is for the SENAMHI 22 km files
-        ! proj +proj=merc  +lat_ts=56.792 +lon_0=274.784 +R=6367.470
-        ! 198.475 18.073
-        !   0.00    1920.62
-        ! 206.131 23.088
-        !   800.00  2480.60
-        ! 0 5 274.784 56.792 0.933 6367.470 #Proj flags and params
-
-        IsLatLon_MetGrid  = .false.
-        IsGlobal_MetGrid  = .false.
-        IsRegular_MetGrid = .true.
-        isGridRelative    = .true.
-
-        Met_iprojflag     = 5
-        Met_lam0          = 274.784027099609_8
-        Met_phi0          =  56.7920036315918_8
-        Met_k0            =  0.933_8
-        Met_Re            =  6367.470_8
-
       elseif(igrid.eq.1050)then
          ! Not an NCEP grid
          !  This grid is for the WRF runs (must be read from file)
 
-        IsLatLon_MetGrid  = .true.
-        IsGlobal_MetGrid  = .true.
+        IsLatLon_MetGrid  = .true.   ! this might be reset
+        IsGlobal_MetGrid  = .false.
         IsRegular_MetGrid = .true.
         isGridRelative    = .true.
 
@@ -159,31 +134,6 @@
         IsRegular_MetGrid = .true.
         isGridRelative    = .true.
 
-!        nx_fullmet = 96
-!        ny_fullmet = 48
-!        dx_met_const = 3.75_sp
-!        dy_met_const = 3.7_sp
-!        x_start = 0.0_dp
-!        y_start = -87.1590945558628_dp
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
-
       elseif(igrid.eq.1032)then
          ! Not an NCEP grid
          !  This grid is for the AFWA files
@@ -193,13 +143,13 @@
         IsRegular_MetGrid = .true.
         isGridRelative    = .true.
 
-      elseif(igrid.eq.1031)then
+      elseif(igrid.eq.1030)then
          ! Not an NCEP grid
-         !  This grid is for the Catania files
+         !  This grid is for the ECMWF ERA-20c
 
         IsLatLon_MetGrid  = .true.
-        IsGlobal_MetGrid  = .false.
-        IsRegular_MetGrid = .true.
+        IsGlobal_MetGrid  = .true.
+        IsRegular_MetGrid = .false.
         isGridRelative    = .true.
 
       elseif(igrid.eq.1029)then
@@ -208,34 +158,9 @@
 
         IsLatLon_MetGrid  = .true.
         IsGlobal_MetGrid  = .true.
-        IsRegular_MetGrid = .true.
+        IsRegular_MetGrid = .false.
         isGridRelative    = .true.
 
-!        nx_fullmet = 1280
-!        ny_fullmet = 640
-!        dx_met_const = 0.281_sp
-!        dy_met_const = 0.281_sp
-!        x_start =  0.0_dp
-!        y_start = 90.0_dp
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
-!
       elseif(igrid.eq.1027)then
          ! Not an NCEP grid
          !  This grid is for the NOAA Reanalysis
@@ -373,148 +298,13 @@
       elseif(igrid.eq.170)then
         ! Global Gaussian Lat/Lon T170
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID170
-        ! This is used by the ERA data
+        ! This is used by the ERA-Itrm data
 
         IsLatLon_MetGrid  = .true.
         IsGlobal_MetGrid  = .true.
         IsRegular_MetGrid = .false.
         isGridRelative    = .true.
 
-!        nx_fullmet = 512
-!        ny_fullmet = 256
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(tmp_sp(ny_fullmet))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        x_fullmet_sp(1:nx_fullmet) = &
-!         (/ 0.0_sp,0.7031252_sp, 1.406250_sp, 2.109376_sp, 2.812501_sp, 3.515626_sp, 4.218751_sp,& 
-!       4.921877_sp, 5.625002_sp, 6.328127_sp, 7.031252_sp, 7.734378_sp, 8.437503_sp, 9.140628_sp,& 
-!       9.843754_sp, 10.54688_sp, 11.25000_sp, 11.95313_sp, 12.65625_sp, 13.35938_sp, 14.06250_sp,& 
-!       14.76563_sp, 15.46876_sp, 16.17188_sp, 16.87501_sp, 17.57813_sp, 18.28126_sp, 18.98438_sp,& 
-!       19.68751_sp, 20.39063_sp, 21.09376_sp, 21.79688_sp, 22.50001_sp, 23.20313_sp, 23.90626_sp,& 
-!       24.60938_sp, 25.31251_sp, 26.01563_sp, 26.71876_sp, 27.42188_sp, 28.12501_sp, 28.82813_sp,& 
-!       29.53126_sp, 30.23439_sp, 30.93751_sp, 31.64064_sp, 32.34376_sp, 33.04689_sp, 33.75001_sp,& 
-!       34.45314_sp, 35.15626_sp, 35.85939_sp, 36.56251_sp, 37.26564_sp, 37.96876_sp, 38.67189_sp,& 
-!       39.37502_sp, 40.07814_sp, 40.78127_sp, 41.48439_sp, 42.18752_sp, 42.89064_sp, 43.59377_sp,& 
-!       44.29689_sp, 45.00002_sp, 45.70314_sp, 46.40627_sp, 47.10939_sp, 47.81252_sp, 48.51564_sp,& 
-!       49.21877_sp, 49.92189_sp, 50.62502_sp, 51.32814_sp, 52.03127_sp, 52.73439_sp, 53.43752_sp,& 
-!       54.14064_sp, 54.84377_sp, 55.54689_sp, 56.25002_sp, 56.95314_sp, 57.65627_sp, 58.35939_sp,& 
-!       59.06252_sp, 59.76564_sp, 60.46877_sp, 61.17190_sp, 61.87502_sp, 62.57815_sp, 63.28127_sp,& 
-!       63.98440_sp, 64.68752_sp, 65.39065_sp, 66.09377_sp, 66.79690_sp, 67.50002_sp, 68.20315_sp,& 
-!       68.90627_sp, 69.60940_sp, 70.31252_sp, 71.01565_sp, 71.71877_sp, 72.42190_sp, 73.12502_sp,& 
-!       73.82815_sp, 74.53127_sp, 75.23440_sp, 75.93752_sp, 76.64065_sp, 77.34378_sp, 78.04691_sp,& 
-!       78.75003_sp, 79.45316_sp, 80.15628_sp, 80.85941_sp, 81.56253_sp, 82.26566_sp, 82.96878_sp,& 
-!       83.67191_sp, 84.37503_sp, 85.07816_sp, 85.78128_sp, 86.48441_sp, 87.18753_sp, 87.89066_sp,& 
-!       88.59378_sp, 89.29691_sp, 90.00003_sp, 90.70316_sp, 91.40628_sp, 92.10941_sp, 92.81253_sp,& 
-!       93.51566_sp, 94.21878_sp, 94.92191_sp, 95.62503_sp, 96.32816_sp, 97.03128_sp, 97.73441_sp,& 
-!       98.43753_sp, 99.14066_sp, 99.84379_sp, 100.5469_sp, 101.2500_sp, 101.9532_sp, 102.6563_sp,& 
-!       103.3594_sp, 104.0625_sp, 104.7657_sp, 105.4688_sp, 106.1719_sp, 106.8750_sp, 107.5782_sp,& 
-!       108.2813_sp, 108.9844_sp, 109.6875_sp, 110.3907_sp, 111.0938_sp, 111.7969_sp, 112.5000_sp,& 
-!       113.2032_sp, 113.9063_sp, 114.6094_sp, 115.3125_sp, 116.0157_sp, 116.7188_sp, 117.4219_sp,& 
-!       118.1250_sp, 118.8282_sp, 119.5313_sp, 120.2344_sp, 120.9375_sp, 121.6407_sp, 122.3438_sp,& 
-!       123.0469_sp, 123.7500_sp, 124.4532_sp, 125.1563_sp, 125.8594_sp, 126.5625_sp, 127.2657_sp,& 
-!       127.9688_sp, 128.6719_sp, 129.3750_sp, 130.0782_sp, 130.7813_sp, 131.4844_sp, 132.1875_sp,& 
-!       132.8907_sp, 133.5938_sp, 134.2969_sp, 135.0000_sp, 135.7032_sp, 136.4063_sp, 137.1094_sp,& 
-!       137.8125_sp, 138.5157_sp, 139.2188_sp, 139.9219_sp, 140.6250_sp, 141.3282_sp, 142.0313_sp,& 
-!       142.7344_sp, 143.4375_sp, 144.1407_sp, 144.8438_sp, 145.5469_sp, 146.2500_sp, 146.9532_sp,& 
-!       147.6563_sp, 148.3594_sp, 149.0625_sp, 149.7657_sp, 150.4688_sp, 151.1719_sp, 151.8750_sp,& 
-!       152.5782_sp, 153.2813_sp, 153.9844_sp, 154.6876_sp, 155.3907_sp, 156.0938_sp, 156.7969_sp,& 
-!       157.5001_sp, 158.2032_sp, 158.9063_sp, 159.6094_sp, 160.3126_sp, 161.0157_sp, 161.7188_sp,& 
-!       162.4219_sp, 163.1251_sp, 163.8282_sp, 164.5313_sp, 165.2344_sp, 165.9376_sp, 166.6407_sp,& 
-!       167.3438_sp, 168.0469_sp, 168.7501_sp, 169.4532_sp, 170.1563_sp, 170.8594_sp, 171.5626_sp,& 
-!       172.2657_sp, 172.9688_sp, 173.6719_sp, 174.3751_sp, 175.0782_sp, 175.7813_sp, 176.4844_sp,& 
-!       177.1876_sp, 177.8907_sp, 178.5938_sp, 179.2969_sp, 180.0001_sp, 180.7032_sp, 181.4063_sp,& 
-!       182.1094_sp, 182.8126_sp, 183.5157_sp, 184.2188_sp, 184.9219_sp, 185.6251_sp, 186.3282_sp,& 
-!       187.0313_sp, 187.7344_sp, 188.4376_sp, 189.1407_sp, 189.8438_sp, 190.5469_sp, 191.2501_sp,& 
-!       191.9532_sp, 192.6563_sp, 193.3594_sp, 194.0626_sp, 194.7657_sp, 195.4688_sp, 196.1719_sp,& 
-!       196.8751_sp, 197.5782_sp, 198.2813_sp, 198.9845_sp, 199.6876_sp, 200.3907_sp, 201.0938_sp,& 
-!       201.7970_sp, 202.5001_sp, 203.2032_sp, 203.9063_sp, 204.6095_sp, 205.3126_sp, 206.0157_sp,& 
-!       206.7188_sp, 207.4220_sp, 208.1251_sp, 208.8282_sp, 209.5313_sp, 210.2345_sp, 210.9376_sp,& 
-!       211.6407_sp, 212.3438_sp, 213.0470_sp, 213.7501_sp, 214.4532_sp, 215.1563_sp, 215.8595_sp,& 
-!       216.5626_sp, 217.2657_sp, 217.9688_sp, 218.6720_sp, 219.3751_sp, 220.0782_sp, 220.7813_sp,& 
-!       221.4845_sp, 222.1876_sp, 222.8907_sp, 223.5938_sp, 224.2970_sp, 225.0001_sp, 225.7032_sp,& 
-!       226.4063_sp, 227.1095_sp, 227.8126_sp, 228.5157_sp, 229.2188_sp, 229.9220_sp, 230.6251_sp,& 
-!       231.3282_sp, 232.0313_sp, 232.7345_sp, 233.4376_sp, 234.1407_sp, 234.8438_sp, 235.5470_sp,& 
-!       236.2501_sp, 236.9532_sp, 237.6563_sp, 238.3595_sp, 239.0626_sp, 239.7657_sp, 240.4688_sp,& 
-!       241.1720_sp, 241.8751_sp, 242.5782_sp, 243.2813_sp, 243.9845_sp, 244.6876_sp, 245.3907_sp,& 
-!       246.0938_sp, 246.7970_sp, 247.5001_sp, 248.2032_sp, 248.9063_sp, 249.6095_sp, 250.3126_sp,& 
-!       251.0157_sp, 251.7188_sp, 252.4220_sp, 253.1251_sp, 253.8282_sp, 254.5313_sp, 255.2345_sp,& 
-!       255.9376_sp, 256.6407_sp, 257.3438_sp, 258.0470_sp, 258.7501_sp, 259.4532_sp, 260.1563_sp,& 
-!       260.8595_sp, 261.5626_sp, 262.2657_sp, 262.9688_sp, 263.6720_sp, 264.3751_sp, 265.0782_sp,& 
-!       265.7813_sp, 266.4845_sp, 267.1876_sp, 267.8907_sp, 268.5938_sp, 269.2970_sp, 270.0001_sp,& 
-!       270.7032_sp, 271.4063_sp, 272.1095_sp, 272.8126_sp, 273.5157_sp, 274.2188_sp, 274.9220_sp,& 
-!       275.6251_sp, 276.3282_sp, 277.0313_sp, 277.7345_sp, 278.4376_sp, 279.1407_sp, 279.8438_sp,& 
-!       280.5470_sp, 281.2501_sp, 281.9532_sp, 282.6563_sp, 283.3595_sp, 284.0626_sp, 284.7657_sp,& 
-!       285.4688_sp, 286.1720_sp, 286.8751_sp, 287.5782_sp, 288.2813_sp, 288.9845_sp, 289.6876_sp,& 
-!       290.3907_sp, 291.0938_sp, 291.7970_sp, 292.5001_sp, 293.2032_sp, 293.9063_sp, 294.6095_sp,& 
-!       295.3126_sp, 296.0157_sp, 296.7188_sp, 297.4220_sp, 298.1251_sp, 298.8282_sp, 299.5313_sp,& 
-!       300.2345_sp, 300.9376_sp, 301.6407_sp, 302.3438_sp, 303.0470_sp, 303.7501_sp, 304.4532_sp,& 
-!       305.1563_sp, 305.8595_sp, 306.5626_sp, 307.2657_sp, 307.9689_sp, 308.6720_sp, 309.3751_sp,& 
-!       310.0782_sp, 310.7814_sp, 311.4845_sp, 312.1876_sp, 312.8907_sp, 313.5939_sp, 314.2970_sp,& 
-!       315.0001_sp, 315.7032_sp, 316.4064_sp, 317.1095_sp, 317.8126_sp, 318.5157_sp, 319.2189_sp,& 
-!       319.9220_sp, 320.6251_sp, 321.3282_sp, 322.0314_sp, 322.7345_sp, 323.4376_sp, 324.1407_sp,& 
-!       324.8439_sp, 325.5470_sp, 326.2501_sp, 326.9532_sp, 327.6564_sp, 328.3595_sp, 329.0626_sp,& 
-!       329.7657_sp, 330.4689_sp, 331.1720_sp, 331.8751_sp, 332.5782_sp, 333.2814_sp, 333.9845_sp,& 
-!       334.6876_sp, 335.3907_sp, 336.0939_sp, 336.7970_sp, 337.5001_sp, 338.2032_sp, 338.9064_sp,& 
-!       339.6095_sp, 340.3126_sp, 341.0157_sp, 341.7189_sp, 342.4220_sp, 343.1251_sp, 343.8282_sp,& 
-!       344.5314_sp, 345.2345_sp, 345.9376_sp, 346.6407_sp, 347.3439_sp, 348.0470_sp, 348.7501_sp,& 
-!       349.4532_sp, 350.1564_sp, 350.8595_sp, 351.5626_sp, 352.2657_sp, 352.9689_sp, 353.6720_sp,& 
-!       354.3751_sp, 355.0782_sp, 355.7814_sp, 356.4845_sp, 357.1876_sp, 357.8907_sp, 358.5939_sp,& 
-!       359.2970_sp /)
-!        x_fullmet_sp(0)            = x_fullmet_sp(nx_fullmet) - 360.0_sp
-!        x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(         1) + 360.0_sp
-!
-!        y_fullmet_sp(1:ny_fullmet) = &
-!                  (/ 89.46282_sp,  88.76695_sp,  88.06697_sp,   87.36607_sp,  86.66480_sp,  85.96337_sp, & 
-!       85.26185_sp,  84.56026_sp,  83.85863_sp,   83.15699_sp,  82.45532_sp,  81.75363_sp,  81.05194_sp, & 
-!       80.35023_sp,  79.64853_sp,  78.94681_sp,   78.24509_sp,  77.54337_sp,  76.84164_sp,  76.13991_sp, & 
-!       75.43818_sp,  74.73644_sp,  74.03471_sp,   73.33297_sp,  72.63123_sp,  71.92949_sp,  71.22775_sp, & 
-!       70.52601_sp,  69.82426_sp,  69.12252_sp,   68.42078_sp,  67.71903_sp,  67.01729_sp,  66.31554_sp, & 
-!       65.61379_sp,  64.91205_sp,  64.21030_sp,   63.50855_sp,  62.80680_sp,  62.10506_sp,  61.40331_sp, & 
-!       60.70156_sp,  59.99981_sp,  59.29806_sp,   58.59631_sp,  57.89456_sp,  57.19281_sp,  56.49106_sp, & 
-!       55.78931_sp,  55.08756_sp,  54.38581_sp,   53.68406_sp,  52.98231_sp,  52.28056_sp,  51.57881_sp, & 
-!       50.87706_sp,  50.17531_sp,  49.47356_sp,   48.77180_sp,  48.07005_sp,  47.36830_sp,  46.66655_sp, & 
-!       45.96480_sp,  45.26305_sp,  44.56129_sp,   43.85954_sp,  43.15779_sp,  42.45604_sp,  41.75429_sp, & 
-!       41.05254_sp,  40.35078_sp,  39.64903_sp,   38.94728_sp,  38.24553_sp,  37.54378_sp,  36.84202_sp, & 
-!       36.14027_sp,  35.43852_sp,  34.73677_sp,   34.03502_sp,  33.33326_sp,  32.63151_sp,  31.92976_sp, & 
-!       31.22800_sp,  30.52625_sp,  29.82450_sp,   29.12275_sp,  28.42099_sp,  27.71924_sp,  27.01749_sp, & 
-!       26.31573_sp,  25.61398_sp,  24.91223_sp,   24.21048_sp,  23.50872_sp,  22.80697_sp,  22.10522_sp, & 
-!       21.40347_sp,  20.70171_sp,  19.99996_sp,   19.29821_sp,  18.59645_sp,  17.89470_sp,  17.19295_sp, & 
-!       16.49120_sp,  15.78944_sp,  15.08769_sp,   14.38594_sp,  13.68418_sp,  12.98243_sp,  12.28068_sp, & 
-!       11.57893_sp,  10.87717_sp,  10.17542_sp,   9.473666_sp,  8.771913_sp,  8.070160_sp,  7.368407_sp, & 
-!       6.666654_sp,  5.964901_sp,  5.263148_sp,   4.561395_sp,  3.859642_sp,  3.157889_sp,  2.456136_sp, & 
-!       1.754383_sp,  1.052630_sp, 0.3508765_sp, -0.3508765_sp,  -1.05263_sp, -1.754383_sp, -2.456136_sp, & 
-!      -3.157889_sp, -3.859642_sp, -4.561395_sp,  -5.263148_sp, -5.964901_sp, -6.666654_sp, &
-!      -7.368407_sp, -8.070160_sp, -8.771913_sp,  -9.473666_sp, -10.17542_sp, -10.87717_sp, &
-!      -11.57893_sp, -12.28068_sp, -12.98243_sp,  -13.68418_sp, -14.38594_sp, -15.08769_sp, &
-!      -15.78944_sp, -16.49120_sp, -17.19295_sp,  -17.89470_sp, -18.59645_sp, -19.29821_sp, &
-!      -19.99996_sp, -20.70171_sp, -21.40347_sp,  -22.10522_sp, -22.80697_sp, -23.50872_sp, &
-!      -24.21048_sp, -24.91223_sp, -25.61398_sp,  -26.31573_sp, -27.01749_sp, -27.71924_sp, &
-!      -28.42099_sp, -29.12275_sp, -29.82450_sp,  -30.52625_sp, -31.22800_sp, -31.92976_sp, -32.63151_sp, & 
-!      -33.33326_sp, -34.03502_sp, -34.73677_sp,  -35.43852_sp, -36.14027_sp, -36.84202_sp, &
-!      -37.54378_sp, -38.24553_sp, -38.94728_sp,  -39.64903_sp, -40.35078_sp, -41.05254_sp, &
-!      -41.75429_sp, -42.45604_sp, -43.15779_sp,  -43.85954_sp, -44.56129_sp, -45.26305_sp, &
-!      -45.96480_sp, -46.66655_sp, -47.36830_sp,  -48.07005_sp, -48.77180_sp, -49.47356_sp, -50.17531_sp, & 
-!      -50.87706_sp, -51.57881_sp, -52.28056_sp,  -52.98231_sp, -53.68406_sp, -54.38581_sp, &
-!      -55.08756_sp, -55.78931_sp, -56.49106_sp,  -57.19281_sp, -57.89456_sp, -58.59631_sp, &
-!      -59.29806_sp, -59.99981_sp, -60.70156_sp,  -61.40331_sp, -62.10506_sp, -62.80680_sp, &
-!      -63.50855_sp, -64.21030_sp, -64.91205_sp,  -65.61379_sp, -66.31554_sp, -67.01729_sp, &
-!      -67.71903_sp, -68.42078_sp, -69.12252_sp,  -69.82426_sp, -70.52601_sp, -71.22775_sp, &
-!      -71.92949_sp, -72.63123_sp, -73.33297_sp,  -74.03471_sp, -74.73644_sp, -75.43818_sp, &
-!      -76.13991_sp, -76.84164_sp, -77.54337_sp,  -78.24509_sp, -78.94681_sp, -79.64853_sp, &
-!      -80.35023_sp, -81.05194_sp, -81.75363_sp,  -82.45532_sp, -83.15699_sp, -83.85863_sp, &
-!      -84.56026_sp, -85.26185_sp, -85.96337_sp,  -86.66480_sp, -87.36607_sp, -88.06697_sp, &
-!      -88.76695_sp, -89.46282_sp /)
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i)-y_fullmet_sp(i+1)
-!        enddo
-!        deallocate(tmp_sp)
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
       elseif(igrid.eq.193)then
        ! Used by GFS forecast (0.25)
        !  http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID193
@@ -677,9 +467,9 @@
         !  phi2        =  25.0     : latitude of cone intersection 2
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 4 265.0 25.0 25.0 25.0 6371.229    #Proj flags and params  
-!        IsLatLon_MetGrid  = .false.
-!        IsGlobal_MetGrid  = .false.
-!        IsRegular_MetGrid = .true.
+
+        isGridRelative = .true.
+
         Met_iprojflag     = 4
         Met_lam0          =  265.0_8
         Met_phi0          =  25.0_8
@@ -687,32 +477,7 @@
         Met_phi2          =  25.0_8
         Met_k0            =  0.933_8
         Met_Re            =  6371.229_8
-!
-!        nx_fullmet = 369
-!        ny_fullmet = 257
-!        dx_met_const = 20.317625_sp
-!        dy_met_const = 20.317625_sp
-!        x_start =  -4226.108_dp
-!        y_start =  -832.6978_dp
-!        !allocate(x_fullmet_sp(nx_fullmet))
-!        allocate(x_fullmet_sp(0:nx_fullmet+1))
-!        allocate(y_fullmet_sp(ny_fullmet))
-!        allocate(MR_dx_met(nx_fullmet))
-!        allocate(MR_dy_met(ny_fullmet))
-!        do i = 0,nx_fullmet+1
-!          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-!        enddo
-!        do i = 1,ny_fullmet
-!          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
-!        enddo
-!        do i = 1,nx_fullmet
-!          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-!        enddo
-!        do i = 1,ny_fullmet-1
-!          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-!        enddo
-!        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-!
+
       elseif(igrid.eq.216)then
         ! NAM 45-km Polar Sterographic
         ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID216

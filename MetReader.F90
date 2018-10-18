@@ -59,7 +59,6 @@
                                        ! 40 NASA-GEOS Cp
                                        ! 41 NASA-GEOS Np
                                        ! 50 WRF - output
-                                       ! 51 WRF - SENAMHI 22 km
 
       integer,public :: MR_iGridCode   !   MR_iGridCode specifies the NCEP grid described in:
                                     !   http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html
@@ -76,6 +75,10 @@
 #else
       character(len=130), allocatable,dimension(:)  ,public :: MR_windfiles            ! name of file
 #endif
+      character(len=130)                            ,public :: MR_iw5_root
+      character(len=42)                             ,public :: MR_iw5_prefix
+      character(len=24)                             ,public :: MR_iw5_suffix1  ! e.g. 1912060100_1912063021.nc
+      character(len=24)                             ,public :: MR_iw5_suffix2
       real(kind=dp)     , allocatable,dimension(:)  ,public :: MR_windfile_starthour   ! start hour of the file
       integer           , allocatable,dimension(:)  ,public :: MR_windfiles_nt_fullmet ! number of steps in files
       real(kind=dp)     , allocatable,dimension(:,:),public :: MR_windfile_stephour    ! offset hours of step
@@ -297,8 +300,9 @@
       logical       :: MR_useLeap             = .true.  ! This too
       integer       :: MR_Comp_StartYear
       integer       :: MR_Comp_StartMonth
-      real(kind=dp) :: MR_Comp_StartHour
-      real(kind=dp) :: MR_Comp_Time_in_hours
+      integer       :: MR_Comp_StartDay
+      real(kind=dp) :: MR_Comp_StartHour      = 0.0_dp
+      real(kind=dp) :: MR_Comp_Time_in_hours  = 0.0_dp
       integer       :: nx_comp
       integer       :: ny_comp
       integer       :: nz_comp
@@ -1859,6 +1863,8 @@
         !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="CRWC"! e5.oper.an.pl.128_075_crwc.regn320sc.2018062000_2018062023.nc
         !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="CSWC"! e5.oper.an.pl.128_076_cswc.regn320sc.2018062000_2018062023.nc
 
+        Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
+
       elseif (MR_iwindformat.eq.30)then
          ! ECMWF ERA 20C
          ! https://rda.ucar.edu/datasets/ds626.0
@@ -1867,24 +1873,24 @@
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "ECMWF ERA20C reanalysis"
 
-        MR_iGridCode = 1029
+        MR_iGridCode = 1030
         call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
 
         Met_var_GRIB1_Table(1:MR_MAXVARS) = 128
 
 
-        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
-        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "level"
-        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "latitude"
-        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "longitude"
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "initial_time0_hours"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "lv_ISBL1"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "g4_lat_2"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "g4_lon_3"
 
         ! Momentum / State variables
-        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="Z" ! e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
-        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U" ! e5.oper.an.pl.128_131_u.regn320uv.2018062000_2018062023.nc
-        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V" ! e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
-        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W" ! e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
-        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T" ! e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="Z_GDS4_ISBL" ! e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U_GDS4_ISBL" ! e5.oper.an.pl.128_131_u.regn320uv.2018062000_2018062023.nc
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_GDS4_ISBL" ! e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W_GDS4_ISBL" ! e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T_GDS4_ISBL" ! e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
 
       elseif (MR_iwindformat.eq.32)then
          ! Air Force Weather Agency subcenter = 0
@@ -1908,29 +1914,8 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_IsAvailable(10)=.true.; Met_var_GRIB2_DPcPnSt(10,1:4)=(/0, 3, 18, 1/)
-        Met_var_IsAvailable(11)=.true.
-        Met_var_IsAvailable(12)=.true.
-        Met_var_IsAvailable(13)=.true.; Met_var_GRIB_names(13)="fricv"
-                                        Met_var_GRIB2_DPcPnSt(13,1:4)=(/0, 2, 30, 1/)
-        Met_var_IsAvailable(15)=.false.; Met_var_NC_names(15)="Water_equivalent_of_accumulated_snow_depth_surface"
-                                        Met_var_GRIB2_DPcPnSt(15,1:4)=(/0, 1, 13, 1/)
-        Met_var_IsAvailable(16)=.false.; Met_var_NC_names(16)="Column-integrated_soil_moisture_depth_below_surface"
-        Met_var_IsAvailable(17)=.true.
-        Met_var_IsAvailable(18)=.true.; Met_var_GRIB2_DPcPnSt(18,1:4)=(/0, 2, 22, 103/)
-        ! Atmospheric Structure
-        Met_var_IsAvailable(20)=.true.; Met_var_GRIB2_DPcPnSt(20,1:4)=(/0, 6, 11, 2/)
-        Met_var_IsAvailable(21)=.true.; Met_var_GRIB2_DPcPnSt(21,1:4)=(/0, 6, 12, 3/)
-        Met_var_IsAvailable(22)=.true.; Met_var_GRIB2_DPcPnSt(23,1:4)=(/0, 6, 1, 10/)
         ! Moisture
         Met_var_IsAvailable(30)=.true.
-        Met_var_IsAvailable(32)=.true.
-        ! Precipitation
-        Met_var_IsAvailable(44)=.true.; Met_var_GRIB_names(44)="prate"
-                                        Met_var_GRIB2_DPcPnSt(44,1:4)=(/0, 1, 54, 1/)
-        Met_var_IsAvailable(45)=.true.; Met_var_GRIB_names(45)="prate"
-                                        Met_var_GRIB2_DPcPnSt(45,1:4)=(/0, 1, 37, 1/)
 
         fill_value_sp(MR_iwindformat) = -9999._sp ! actually NaNf
 
@@ -2064,39 +2049,6 @@
 
         Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
 
-      elseif (MR_iwindformat.eq.51)then
-        ! SENAMHI - WRF 22km
-
-        write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "SENAMHI 22km"
-
-        MR_iGridCode = 1051
-        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
-        MR_Reannalysis = .false.
-
-        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time1"
-        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric"
-        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "y"
-        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "x"
-
-        ! Mechanical / State variables
-        Met_var_IsAvailable(1)=.true.
-        Met_var_IsAvailable(2)=.true.
-        Met_var_IsAvailable(3)=.true.
-        Met_var_IsAvailable(4)=.true.
-        Met_var_IsAvailable(5)=.true.
-        ! Surface
-        Met_var_IsAvailable(10)=.true.; Met_var_NC_names(10)="Planetary_boundary_layer_height_surface"
-        Met_var_IsAvailable(11)=.true.
-        Met_var_IsAvailable(12)=.true.
-        Met_var_IsAvailable(15)=.true.
-        Met_var_IsAvailable(23)=.true.
-        ! Moisture
-        Met_var_IsAvailable(30)=.true.
-        Met_var_IsAvailable(31)=.true.
-
-        fill_value_sp(MR_iwindformat) = -9999._sp ! actually NaNf
-
       else
         write(MR_global_error,*)'MR ERROR : MR_iwindformat not supported'
         write(MR_global_error,*)'           MR_iwindformat=',MR_iwindformat,&
@@ -2133,12 +2085,27 @@
       write(MR_global_info,*)"     Allocating space for ",MR_iwindfiles,"files."
 
       if (MR_iwind.eq.5)then
-        write(MR_global_info,*)"For NWP files with one variable per file,"
-        write(MR_global_info,*)"only the directory should be listed. The remaining"
-        write(MR_global_info,*)"path is hardcoded."
+        write(MR_global_info,*)"For iwf=5:: one variable per file,"
+        write(MR_global_info,*)"Only the directory should be listed. The remaining"
+        write(MR_global_info,*)"path is hard-coded."
         ! Reset MR_iwindfiles to 2: only one "file" will be read,
-        ! but we need this to be 2 to accommodate runs that might span two years
-        MR_iwindfiles = 2
+        ! but we need this to be 2 to accommodate runs that might span two years/months
+        ! For ERA5 files, data is provided in daily files so MR_iwindfiles might be > 2
+        if(MR_Comp_Time_in_hours.gt.0.0)then
+          if(MR_iwindformat.eq.25)then
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/8760.0_dp) + 1 ! These are yearly files
+          elseif(MR_iwindformat.eq.26)then
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/627.0_dp) + 1  ! Monthly files
+          elseif(MR_iwindformat.eq.27)then
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/8760.0_dp) + 1 ! yearly files
+          elseif(MR_iwindformat.eq.29)then
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/24.0_dp) + 1   ! daily files
+          elseif(MR_iwindformat.eq.30)then
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/672.0_dp) + 1  ! monthly
+          endif
+        else
+          MR_iwindfiles = 2
+        endif
       endif
 
       allocate (MR_windfiles(MR_iwindfiles))
@@ -2228,7 +2195,7 @@
 
       implicit none
 
-      integer, optional,intent(in) :: iy  ! Note: this is only needed for iwf=25 or 27
+      integer, optional,intent(in) :: iy  ! Note: this is only needed for iw=5
                                           !       since we need to know how many
                                           !       metsteps to allocate
 
@@ -2260,7 +2227,7 @@
 #endif
 
       if(MR_iwind.eq.5)then
-        ! For iwind=5 files (NCEP 2.5 degree reanalysis and the NOAA product), only the directory
+        ! For iwind=5 files (NCEP 2.5 degree reanalysis, NOAA, etc. ), only the directory
         ! was read into slot 1 of MR_windfiles(:).  We need to copy to slot 2
         ! to make sure we don't throw an error
         MR_windfiles(2)   = MR_windfiles(1)
@@ -2271,8 +2238,8 @@
           ! is given
           MR_Comp_StartYear = iy
         else
-          write(MR_global_info,*)"MR WARNING: If the iwf=25 (NCEP Reannalysis) or iwf=27 (NOAA"
-          write(MR_global_info,*)"            Reannalysis) are used, then MR_Read_Met_DimVars"
+          write(MR_global_info,*)"MR WARNING: If the iw=5 (NCEP Reannalysis, NOAA Reannalysis, "
+          write(MR_global_info,*)"            etc.) are used, then MR_Read_Met_DimVars"
           write(MR_global_info,*)"            should be called with a start year.  This is needed"
           write(MR_global_info,*)"            to allocate the correct number of time steps per file."
           write(MR_global_info,*)"            Setting MR_Comp_StartYear to 2018 for a non-leap year."
@@ -2286,7 +2253,7 @@
 
       endif
 
-      ! Verify that the first windfile has been changed from it's initiallized value
+      ! Verify that the first windfile has been changed from its initiallized value
       tmp_str = MR_windfiles(1)
       if(tmp_str(1:15).eq.'              ')then
         write(MR_global_error,*)"MR ERROR: The array MR_windfiles appears to not be set."
@@ -2686,6 +2653,7 @@
       endif
       MR_Comp_StartYear        = HS_YearOfEvent(MR_Comp_StartHour,MR_BaseYear,MR_useLeap)
       MR_Comp_StartMonth       = HS_MonthOfEvent(MR_Comp_StartHour,MR_BaseYear,MR_useLeap)
+      MR_Comp_StartDay         = HS_DayOfEvent(MR_Comp_StartHour,MR_BaseYear,MR_useLeap)
 
       ! Now we want to loop through all the steps of each windfile and find the
       ! file/step that immediately preceeds the time needed (MR_Comp_StartHour)
@@ -2786,7 +2754,6 @@
           write(MR_global_error,*)"  MR_Comp_Time_in_hours= ",MR_Comp_Time_in_hours
           write(MR_global_error,*)"  met_t1               = ",met_t1
           write(MR_global_error,*)"  met_dt1              = ",met_dt1
-
           stop 1
         endif
       else
