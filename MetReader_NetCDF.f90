@@ -227,7 +227,14 @@
                500.0_sp, 450.0_sp, 400.0_sp, 350.0_sp, 300.0_sp, &
                250.0_sp, 200.0_sp, 150.0_sp, 100.0_sp,  70.0_sp, &
                 50.0_sp,  30.0_sp,  20.0_sp,  10.0_sp /)
-          z_inverted = .false.
+          if(MR_Use_RDA)then
+            ! Files from rda.ucar.edu/datasets/ds131.2/ converted from grib with ncl_convert2nc
+            ! are top down
+            z_inverted = .true.
+          else
+            ! Files from www.esrl.noaa.gov are bottom up
+            z_inverted = .false.
+          endif
           levs_fullmet_sp(1,1:24) = p_fullmet_sp(1:24)*Pressure_Conv_Fac
           levs_fullmet_sp(2,1:19) = p_fullmet_sp(1:19)*Pressure_Conv_Fac
           Met_var_zdim_idx( 1) = 1
@@ -2086,29 +2093,45 @@
  326    format(i4,i0.2,i0.2,a3,i4,i0.2,i0.2,i0.2,a3)
  426    format(a50,a1,i4,a1,a,a24)
       elseif(MR_iwindformat.eq.27)then  ! Not needed for iwf=27
-        ! YYYY/hgt.1912.nc
         dum_i1 = 1                                 ! Start day in file
         dum_i2 = DaysInMonth(thisMonth)   ! End day in file
         dum_i3 = 18                                ! End hour in file
-        if(ivar.eq.1)then  ! These are the same as for iwf=25 so just use the format
-                           ! statements above
-          write(MR_iw5_prefix ,251)'hgt.'
-        elseif(ivar.eq.2)then
-          write(MR_iw5_prefix ,252)'uwnd.'
-        elseif(ivar.eq.3)then
-          write(MR_iw5_prefix ,253)'vwnd.'
-        elseif(ivar.eq.4)then
-          write(MR_iw5_prefix ,254)'omega.'
-        elseif(ivar.eq.5)then
-          write(MR_iw5_prefix ,255)'air.'
+        if(MR_Use_RDA)then
+          if(ivar.eq.1)then
+            write(MR_iw5_prefix ,271)'pgrbanl_mean_',thisYear,'_HGT'
+          elseif(ivar.eq.2)then
+            write(MR_iw5_prefix ,271)'pgrbanl_mean_',thisYear,'_UGRD'
+          elseif(ivar.eq.3)then
+            write(MR_iw5_prefix ,271)'pgrbanl_mean_',thisYear,'_VGRD'
+          elseif(ivar.eq.4)then
+            write(MR_iw5_prefix ,271)'pgrbanl_mean_',thisYear,'_VVEL'
+          elseif(ivar.eq.5)then
+            write(MR_iw5_prefix ,271)'pgrbanl_mean_',thisYear,'_TMP'
+          endif
+          write(MR_iw5_suffix1,272)'_pres.nc'
+        else
+          if(ivar.eq.1)then  ! These are the same as for iwf=25 so just use the format
+                             ! statements above
+            write(MR_iw5_prefix ,251)'hgt.'
+          elseif(ivar.eq.2)then
+            write(MR_iw5_prefix ,252)'uwnd.'
+          elseif(ivar.eq.3)then
+            write(MR_iw5_prefix ,253)'vwnd.'
+          elseif(ivar.eq.4)then
+            write(MR_iw5_prefix ,254)'omega.'
+          elseif(ivar.eq.5)then
+            write(MR_iw5_prefix ,255)'air.'
+          endif
+          write(MR_iw5_suffix1,327)thisYear,'.nc'
         endif
-        write(MR_iw5_suffix1,327)thisYear,'.nc'
 
         write(infile,427)trim(ADJUSTL(MR_iw5_root)),'/',MR_Comp_StartYear,'/', &
                          trim(adjustl(MR_iw5_prefix)),   &
                          trim(adjustl(MR_iw5_suffix1))
+ 271    format(a13,i4,a)
+ 272    format(a8)
  327    format(i4,a3)
- 427    format(a50,a1,i4,a1,a,a7)
+ 427    format(a50,a1,i4,a1,a,a)
       elseif(MR_iwindformat.eq.29)then
         ! YYYY/e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
         dum_i1 = thisDay                  ! Start day in file

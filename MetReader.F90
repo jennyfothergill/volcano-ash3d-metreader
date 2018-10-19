@@ -59,7 +59,7 @@
                                        ! 40 NASA-GEOS Cp
                                        ! 41 NASA-GEOS Np
                                        ! 50 WRF - output
-
+      logical,public :: MR_Use_RDA     = .true.
       integer,public :: MR_iGridCode   !   MR_iGridCode specifies the NCEP grid described in:
                                     !   http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html
       integer,public :: MR_idataFormat !   Specifies the data model used
@@ -1774,18 +1774,38 @@
 
         Met_var_GRIB1_Table(1:MR_MAXVARS) = 2
 
-        ! Version 2c (https://rda.ucar.edu/datasets/ds131.2/)
-        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "initial_time0_hours"
-        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "lv_ISBL1"
-        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "g0_lat_2"
-        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "g0_lon_3"
-
-        ! Momentum / State variables
-        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="HGT_GDS0_ISBL_10"
-        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U_GRD_GDS0_ISBL_10"
-        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_GRD_GDS0_ISBL_10"
-        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="V_VEL_GDS0_ISBL_10"
-        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="TMP_GDS0_ISBL_10"
+        if(MR_Use_RDA)then
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          ! Version 2c (https://rda.ucar.edu/datasets/ds131.2/)
+          ! Note: these must be converted from grib using
+          !   ncl_convert2nc pgrbanl_mean_1912_VVEL_pres.grib -L
+          ! netcdf-java does not seem to work on these
+          Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "initial_time0_hours"
+          Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "lv_ISBL1"
+          Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "g0_lat_2"
+          Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "g0_lon_3"
+  
+          ! Momentum / State variables
+          Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="HGT_GDS0_ISBL"
+          Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U_GRD_GDS0_ISBL"
+          Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_GRD_GDS0_ISBL"
+          Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="V_VEL_GDS0_ISBL"
+          Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="TMP_GDS0_ISBL"
+        else 
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          ! Version 2c (https://www.esrl.noaa.gov/psd/data/gridded/data.20thC_ReanV2c.pressure.html)
+          Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+          Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "level"
+          Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+          Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+  
+          ! Momentum / State variables
+          Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="hgt"
+          Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="uwnd"
+          Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="vwnd"
+          Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="omega"
+          Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="air"
+        endif
 
 
         fill_value_sp(MR_iwindformat) = 1.e+20_sp
@@ -1891,6 +1911,8 @@
         Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_GDS4_ISBL" ! e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W_GDS4_ISBL" ! e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T_GDS4_ISBL" ! e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
+
+        Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
 
       elseif (MR_iwindformat.eq.32)then
          ! Air Force Weather Agency subcenter = 0

@@ -69,6 +69,11 @@ or for Ubuntu
 \begin{verbatim}
      sudo apt-get install libnetcdf* libgrib-api*
 \end{verbatim}
+The library grib-api will be replaced by ecCodes (\texttt{https://confluence.ecmwf.int/display/ECC/ecCodes+Home})
+in 2018.  To use this interface to the grib files, the makefile can be edited to point to
+\begin{verbatim}
+grbLIBS = -leccodes -leccodes_f90
+\end{verbatim}
 To compile MetReader as a library, simple type:
 \begin{verbatim}
      make all
@@ -134,7 +139,14 @@ data to be read.
  \item 2 : 3-D grid is read from a ASCII file
  \item 3 : single, multistep 3-D datafile
  \item 4 : multiple 3-D datafiles
- \item 5 : special case for NCEP 50-year reanalysis and NOAA reanalysis
+ \item 5 : special case for products with one variable per file
+   \begin{itemize}
+     \item NCEP 50-year reanalysis
+     \item JRA-55
+     \item NOAA reanalysis
+     \item ERA-5
+     \item ERA 20th Century Reanalysis
+   \end{itemize}
  \end{itemize}
 \item \texttt{iwf} :: windfile format number (linked to specific product in Table
   \ref{Tabiwf} of Appendix \ref{Apiwf})
@@ -181,8 +193,10 @@ set of NWP files is needed, this subroutine can be called to free all allocated 
 This allocates the variable \texttt{MR\_windfiles(1:MR\_iwindfiles)}.
 
 \paragraph{Step 2:} The calling program must now fill the list of file names \texttt{MR\_windfiles()}
-with each name not exceeding 130 characters in length.  For the special cases for the NCEP/NCAR
-Reanalysis 1 or the NOAA-CIRES 20th Century Reanalysis (\texttt{iwf=}25 or 27), MetReader expects
+with each name not exceeding 130 characters in length.  For the special cases of one-variable files (\texttt{iwf}=5),
+%for the NCEP/NCAR
+%Reanalysis 1 or the NOAA-CIRES 20th Century Reanalysis (\texttt{iwf=}25 or 27),
+MetReader expects
 a specific structure to the directory holding the NWP files.  For these reanalysis product,
 the list of files is only one string (\texttt{iwfiles}=1)
 with the `file' given as the root directory to the NWP files.  For example, for the
@@ -198,14 +212,12 @@ where the files are stored as follows:
 |   |-- air.2016.nc
 |   |-- hgt.2016.nc
 |   |-- omega.2016.nc
-|   |-- shum.2016.nc
 |   |-- uwnd.2016.nc
 |   `-- vwnd.2016.nc
 |-- 2017
     |-- air.2017.nc
     |-- hgt.2017.nc
     |-- omega.2017.nc
-    |-- shum.2017.nc
     |-- uwnd.2017.nc
     `-- vwnd.2017.nc
 \end{verbatim}
@@ -218,15 +230,7 @@ where the files are stored as follows:
 \begin{verbatim}
 /data/WindFiles/NOAA
 |-- 2008
-|   |-- GRIB
-|   |   |-- pgrbanl_mean_2008_HGT_pres.grib
-|   |   |-- pgrbanl_mean_2008_RH_pres.grib
-|   |   |-- pgrbanl_mean_2008_TMP_pres.grib
-|   |   |-- pgrbanl_mean_2008_UGRD_pres.grib
-|   |   |-- pgrbanl_mean_2008_VGRD_pres.grib
-|   |   `-- pgrbanl_mean_2008_VVEL_pres.grib
 |   |-- pgrbanl_mean_2008_HGT_pres.nc
-|   |-- pgrbanl_mean_2008_RH_pres.nc
 |   |-- pgrbanl_mean_2008_TMP_pres.nc
 |   |-- pgrbanl_mean_2008_UGRD_pres.nc
 |   |-- pgrbanl_mean_2008_VGRD_pres.nc
@@ -234,8 +238,17 @@ where the files are stored as follows:
 |-- 2009
     | -- ...
 \end{verbatim}
-Note that the GRIB files are in version 1 format and cannot yet be directly read by
-MetReader.  They must first be converted to NetCDF and placed as described above.
+if the files are retrieved from \texttt{https://rda.ucar.edu/datasets/ds131.2/}.  This product is
+provided in GRIB format and must be converted to NetCDF using \texttt{ncl\_convert2nc -L}.
+%Alternatively, this product is also available from
+%\texttt{https://www.esrl.noaa.gov/psd/data/gridded/data.20thC\_ReanV2c.pressure.html}
+%with the variables \texttt{air.2017.nc,hgt.2017.nc,omega.2017.nc,uwnd.2017.nc,vwnd.2017.nc}.
+%If these files are used, the logical variable must be set: \texttt{MR\_Use\_RDA = .false.} in
+%\texttt{MetReader.F90}.
+Other compatible products include:
+JRA-55 reanalysis (\texttt{https://rda.ucar.edu/datasets/ds628.0}),
+ECMWF ERA5 (\texttt{https://rda.ucar.edu/datasets/ds630.0}), and
+ECMWF ERA 20th Century Reanalysis (\texttt{https://rda.ucar.edu/datasets/ds626.0})
 
 \paragraph{Step 3:} Once the names of the NWP files are specified, the files must
 be queried to determine the scope of the available data.
@@ -608,7 +621,7 @@ If the string "TTAA`` is found
 in the ASCII file, this format is attemped first, otherwise the "Text:List" is
 assumed.  This WMO/GTS format is intended for the Rapid Update Cycle data and
 does not contain the year or month (only the day-of-month and hour) of the data.
-If this format is detected, the year and month of the at
+If this format is detected, the year and month at
 execution time is assumed unless otherwise
 specified by the calling program.
 
@@ -635,7 +648,7 @@ MetReader's preferred format for 3-D forecast and reanalysis files is NetCDF.  M
 products are available directly in NetCDF. format such as NCEP/NCAR Reanalysis 1 or
 NASA GEOS-5.  These products generally require NetCDF version 4.  Most of the NCEP
 forecast products are provided in GRIB format.  To convert these forecast products
-to NetCDF format, MetReader relies on the NetCDF. java package\\
+to NetCDF format, MetReader relies on the NetCDF java package\\
 (\texttt{https://www.unidata.ucar.edu/software/thredds/current/netcdf-java/}).  The
 conversion script in the \texttt{autorun\_scripts} folder are linked to \texttt{netcdfAll-4.5}
 however any recent version should work.  Older versions create NetCDF files with

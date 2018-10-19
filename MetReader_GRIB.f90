@@ -189,8 +189,8 @@
             do j=1,ny_fullmet
               do i=1,nx_fullmet
                 idx = (j-1)*nx_fullmet + i
-                x_fullmet_sp(i) = lons(idx)
-                y_fullmet_sp(j) = lats(idx)
+                x_fullmet_sp(i) = real(lons(idx),kind=sp)
+                y_fullmet_sp(j) = real(lats(idx),kind=sp)
               enddo
             enddo
             ReadGrid = .true.
@@ -228,8 +228,8 @@
             do j=1,ny_fullmet
               do i=1,nx_fullmet
                 idx = (j-1)*nx_fullmet + i
-                x_fullmet_sp(i) = lons(idx)
-                y_fullmet_sp(j) = lats(idx)
+                x_fullmet_sp(i) = real(lons(idx),kind=sp)
+                y_fullmet_sp(j) = real(lats(idx),kind=sp)
               enddo
             enddo
             ReadGrid = .true.
