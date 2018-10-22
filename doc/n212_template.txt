@@ -2,14 +2,14 @@
 3.0                                                                                                          Time interval
 9 29                                                                                                         ndims, nvars
 d      1        1.0 time                                                                                     hours since
-d      2        1.0 isobaric1                                                                                Pa
+d      2        1.0 isobaric3                                                                                Pa
 d      3        1.0 y                                                                                        km or deg
 d      4        1.0 x                                                                                        km or deg
-d      5        1.0 isobaric1                                                                                Pa
-d      6        1.0 isobaric1                                                                                Pa
+d      5        1.0 isobaric3                                                                                Pa
+d      6        1.0 isobaric3                                                                                Pa
 d      7        1.0 height_above_ground2                                                                     m
 d      8        1.0 depth_below_surface_layer                                                                m
-d      9        1.0 isobaric1                                                                                Pa
+d      9        1.0 isobaric3                                                                                Pa
 v 4  2 1        1.0    HGT   Geopotential_height_isobaric                                                    gpm
 v 4  2 2        1.0   UGRD   u-component_of_wind_isobaric                                                    m/s
 v 4  2 3        1.0   VGRD   v-component_of_wind_isobaric                                                    m/s

@@ -45,9 +45,7 @@ INSTALLDIR=/opt/USGS
 #  For each data format you want to include in the library, set the corresponding
 #  variable below to 'T'.  Set to 'F' any you do not want compiled or any unavailable
 USENETCDF = T
-USEGRIB2 = T
-USEGRIB1 = F
-
+USEGRIB = T
 
 # MEMORY
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'
@@ -67,19 +65,17 @@ else
  ncOBJS =
  nclib =
 endif
-ifeq ($(USEGRIB2), T)
- grb2FPPFLAG = -DUSEGRIB2
- grb2OBJS = MetReader_GRIB.o MetReader_GRIB_index.o
+ifeq ($(USEGRIB), T)
+ grbFPPFLAG = -DUSEGRIB
+ grbOBJS = MetReader_GRIB.o MetReader_GRIB_index.o
+ # These are the libraries for grib_api
  grblib = -lgrib_api_f90 -lgrib_api
+ # These are the libraries for ecCodes
+ #grblib = -leccodes -leccodes_f90
 else
  grb2FPPFLAG =
  grb2OBJS =
  grblib =
-endif
-ifeq ($(USEGRIB1), T)
- grb1FPPFLAG = -DUSEGRIB1
-else
- grb1FPPFLAG =
 endif
 
 ifeq ($(USEPOINTERS), T)
@@ -88,7 +84,7 @@ else
  memFPPFLAG =
 endif
 
-FPPFLAGS = -x f95-cpp-input $(ncFPPFLAG) $(grb2FPPFLAG) $(grb1FPPFLAG) $(memFPPFLAG)
+FPPFLAGS = -x f95-cpp-input $(ncFPPFLAG) $(grbFPPFLAG) $(grbFPPFLAG) $(memFPPFLAG)
 
 # location of HoursSince and projection
 USGSLIBDIR = -L$(INSTALLDIR)/lib
@@ -96,7 +92,7 @@ USGSINC = -I$(INSTALLDIR)/include
 USGSLIB = $(USGSLIBDIR) $(USGSINC) -lhourssince -lprojection
 
 EXEC = \
- gen_GRIB2_index   \
+ gen_GRIB_index   \
  tools/MetSonde  \
  tools/MetTraj_F \
  tools/MetTraj_B \
@@ -111,10 +107,13 @@ ifeq ($(SYSTEM), gfortran)
     FCHOME=/usr
     FC = /usr/bin/gfortran
 
-    COMPINC = -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules -I$(INSTALLDIR)/include
-    COMPLIBS = -L$(FCHOME)/lib64 -L${INSTALLDIR}/lib 
+    #COMPINC = -I$(FCHOME)/local/include -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules -I$(INSTALLDIR)/include
+    #COMPLIBS = -L$(FCHOME)/local/lib -L$(FCHOME)/lib64 -L${INSTALLDIR}/lib 
 
-    LIBS = $(COMPLIBS) $(COMPINC)
+    COMPINC = -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules -I$(INSTALLDIR)/include
+    COMPLIBS = -L$(FCHOME)/lib64 -L${INSTALLDIR}/lib
+
+    LIBS = $(COMPLIBS) $(COMPINC) #-lefence
     # -lefence 
 # Debugging flags
 ifeq ($(RUN), DEBUG)
@@ -134,8 +133,8 @@ endif
 
 all: libMetReader.a tools
 
-libMetReader.a: MetReader.F90 MetReader.o $(ncOBJS) $(grb2OBJS) MetReader_Grids.o MetReader_ASCII.o makefile
-	ar rcs libMetReader.a MetReader.o $(ncOBJS) $(grb2OBJS) MetReader_Grids.o MetReader_ASCII.o
+libMetReader.a: MetReader.F90 MetReader.o $(ncOBJS) $(grbOBJS) MetReader_Grids.o MetReader_ASCII.o makefile
+	ar rcs libMetReader.a MetReader.o $(ncOBJS) $(grbOBJS) MetReader_Grids.o MetReader_ASCII.o
 
 MetReader.o: MetReader.F90 makefile
 	$(FC) $(FPPFLAGS) $(EXFLAGS) -c MetReader.F90
@@ -146,21 +145,21 @@ MetReader_ASCII.o: MetReader_ASCII.f90 MetReader.o makefile
 
 ifeq ($(USENETCDF), T)
 MetReader_NetCDF.o: MetReader_NetCDF.f90 MetReader.o makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) -c MetReader_NetCDF.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(USGSLIB) -c MetReader_NetCDF.f90
 endif
-ifeq ($(USEGRIB2), T)
+ifeq ($(USEGRIB), T)
 MetReader_GRIB_index.o: MetReader_GRIB_index.f90 makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c MetReader_GRIB_index.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) $(USGSLIB) -c MetReader_GRIB_index.f90
 MetReader_GRIB.o: MetReader_GRIB.f90 MetReader_GRIB_index.o MetReader.o makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c MetReader_GRIB.f90
-gen_GRIB2_index: gen_GRIB2_index.f90 MetReader_GRIB_index.o makefile libMetReader.a
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c gen_GRIB2_index.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) MetReader_GRIB_index.o gen_GRIB2_index.o $(LIBS) $(grblib) -o gen_GRIB2_index
+gen_GRIB_index: gen_GRIB_index.f90 MetReader_GRIB_index.o makefile libMetReader.a
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c gen_GRIB_index.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) MetReader_GRIB_index.o gen_GRIB_index.o $(LIBS) $(grblib) -o gen_GRIB_index
 endif
 
 
-ifeq ($(USEGRIB2), T)
-  GRIBTOOL = gen_GRIB2_index
+ifeq ($(USEGRIB), T)
+  GRIBTOOL = gen_GRIB_index
 else
   GRIBTOOL =
 endif

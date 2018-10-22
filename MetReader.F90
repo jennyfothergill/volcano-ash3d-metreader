@@ -3,6 +3,11 @@
       integer, parameter,private :: sp        = 4 ! single precision
       integer, parameter,private :: dp        = 8 ! double precision
 
+      integer, parameter :: MR_MAXVARS        = 50 ! Maximum number of variables in fixed arrays
+
+      real(kind=dp), parameter :: MR_EPS_SMALL  = 1.0e-7_dp  ! Small number
+      real(kind=dp), parameter :: MR_EPS_TINY   = 1.0e-12_dp ! Very small number
+
       real(kind=sp), parameter :: RAD_EARTH_MET = 6371.229_sp ! Radius of Earth in km
       real(kind=sp), parameter :: DEG2RAD_MET   = 1.7453292519943295e-2_sp
 
@@ -26,40 +31,41 @@
                                        !  0 Custom format based on template
                                        !  1 ASCII profile
                                        !  2 Radiosonde data
-                                       !  3 NARR3D NAM221 32 km North America files
-                                       !  4 NARR3D NAM221 32 km North America files
-                                       !  5 NAM216 AK 45km
-                                       !  6 NAM Regional 90 km grid 104
-                                       !  7 CONUS 212 40km
-                                       !  8 CONUS 218 (12km)
-                                       !  9 Unassigned
-                                       ! 10 NAM 242 11.25 km AK
-                                       ! 11 NAM 196 2.5 km HI
-                                       ! 12 NAM 198 5.953 km AK
-                                       ! 13 NAM 91 2.976 km AK
+                                       !  3 NARR3D 32 km North America files (32 km) :: ds608.0
+                                       !  4 NAM Regional North America 221 (32 km)
+                                       !  5 NAM AK 216  (45 km)
+                                       !  6 NAM Regional 104 (90 km)
+                                       !  7 NAM CONUS 212 (40 km)
+                                       !  8 NAM CONUS 218 (12 km)
+                                       !  9 NAM CONUS 227 (5.08 km)
+                                       ! 10 NAM AK 242 (11.25 km)
+                                       ! 11 NAM HI 196 (2.5 km)
+                                       ! 12 NAM AK 198 (5.953 km)
+                                       ! 13 NAM AK 91 (2.976 km)
+                                       ! 14 NAM CONUS 1227 (3.0 km)
                                        ! 20 GFS 0.5
                                        ! 21 GFS 1.0
                                        ! 22 GFS 0.25
-                                       ! 23 NCEP / DOE reanalysis 2.5 degree files
+                                       ! 23 NCEP / DOE reanalysis 2.5 degree files  :: ds091.0
                                        ! 24 NASA-MERRA-2 reanalysis 0.625/0.5 degree files
-                                       ! 25 NCEP/NCAR reanalysis 2.5 degree files
-                                       ! 27 NOAA-CIRES reanalysis 2.5 degree files
-                                       ! 28 ECMWF Interim Reanalysis (ERA-Interim)
-                                       ! 31 Catania forecast
+                                       ! 25 NCEP/NCAR reanalysis 2.5 degree files   :: ds090.0  iwind=4 or 5
+                                       ! 26 JRA-55                                  :: ds628.0  iwind=5
+                                       ! 27 NOAA-CIRES reanalysis 2.0 degree files  :: ds131.2  iwind=5
+                                       ! 28 ECMWF Interim Reanalysis (ERA-Interim)  :: ds627.0  requires catted grib files
+                                       ! 29 ECMWF ERA5                              :: ds630.0  iwind=5
+                                       ! 30 ECMWF 20-Century (ERA-20C)              :: ds626.0  iwind=5
                                        ! 32 Air Force Weather Agency subcenter = 0
                                        ! 33 CCSM3.0 Community Atmosphere Model (CAM)
                                        ! 40 NASA-GEOS Cp
                                        ! 41 NASA-GEOS Np
                                        ! 50 WRF - output
-                                       ! 51 WRF - SENAMHI 22 km
-
+      logical,public :: MR_Use_RDA     = .true.
       integer,public :: MR_iGridCode   !   MR_iGridCode specifies the NCEP grid described in:
                                     !   http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html
       integer,public :: MR_idataFormat !   Specifies the data model used
                                     !    =1 ASCII
                                     !    =2 netcdf
-                                    !    =3 grib2
-                                    !    =4 grib1
+                                    !    =3 grib1 or grib2
 
         ! These variables describe the full list of windfiles read
       integer                                       ,public :: MR_iwindfiles           ! number of files provided
@@ -69,6 +75,10 @@
 #else
       character(len=130), allocatable,dimension(:)  ,public :: MR_windfiles            ! name of file
 #endif
+      character(len=130)                            ,public :: MR_iw5_root
+      character(len=42)                             ,public :: MR_iw5_prefix
+      character(len=24)                             ,public :: MR_iw5_suffix1  ! e.g. 1912060100_1912063021.nc
+      character(len=24)                             ,public :: MR_iw5_suffix2
       real(kind=dp)     , allocatable,dimension(:)  ,public :: MR_windfile_starthour   ! start hour of the file
       integer           , allocatable,dimension(:)  ,public :: MR_windfiles_nt_fullmet ! number of steps in files
       real(kind=dp)     , allocatable,dimension(:,:),public :: MR_windfile_stephour    ! offset hours of step
@@ -91,8 +101,6 @@
       integer           , allocatable,dimension(:),public :: MR_MetStep_DOY
       real(kind=dp)     , allocatable,dimension(:),public :: MR_MetStep_Hour_Of_Day
 
-      !logical                                             :: MR_runAsForecast = .false.
-      !real(kind=dp)                                       :: MR_FC_Offset     = 0.0_dp
       logical                                             :: MR_Reannalysis   = .false.
       integer           ,dimension(:), allocatable,public :: MR_iwind5_year
 
@@ -143,7 +151,7 @@
       integer :: MR_nSnd_Locs      = 1  ! Number of Sonde locations
       integer :: MR_Snd_nt_fullmet = 1  ! Number of times at the Sonde locations
       integer :: MR_Snd_nvars      = 5  ! Number of Sonde variables (P,H,U,V,T,+user-specified)
-      logical :: Snd_Have_PT = .false.
+      logical :: Snd_Have_PT    = .false.
       logical :: Snd_Have_Coord = .false.  ! If the 1-d data have the optional projection params
                                            ! then it will be used, otherwise vel will be relative
                                            ! to comp grid.
@@ -182,26 +190,43 @@
       integer       :: nt_fullmet    ! length of t of file
       integer       :: nx_fullmet    ! length of x or lon of full met grid
       integer       :: ny_fullmet    ! length of y or lat of full met grid
-      integer       :: np_fullmet    ! length of pressure of full met grid
-      integer       :: np_fullmet_Vz ! length of pressure of full met grid for Vz
-      integer       :: np_fullmet_RH ! length of pressure of full met grid for RH
-      integer       :: np_fullmet_P0 ! length of pressure of full met grid for Precip 
-                                     !   (=1 for all cases except iwindformat=24)
+      integer       :: np_fullmet    ! length of pressure of full met grid for H,U,V
       integer       :: np_fullmet_pad = 1 ! We might need to pad the top of the pressure grid.
       integer       :: neta_fullmet  ! Only used by WRF
+      real(kind=sp) :: Pressure_Conv_Fac = 100.0_sp  ! factor for converting from Met file units to Pa
 
 #ifdef USEPOINTERS
-      real(kind=sp),dimension(:), pointer :: x_fullmet_sp    => null() ! x-coordinates of full met grid
-      real(kind=sp),dimension(:), pointer :: y_fullmet_sp    => null() ! y-coordinates of full met grid
-      real(kind=sp),dimension(:), pointer :: p_fullmet_sp    => null() ! z-coordinates of full met grid for U,V,T,H
-      real(kind=sp),dimension(:), pointer :: p_fullmet_Vz_sp => null() ! z-coordinates of full met grid for Vz
-      real(kind=sp),dimension(:), pointer :: p_fullmet_RH_sp => null() ! z-coordinates of full met grid for RH
+      real(kind=sp),dimension(:),   pointer :: x_fullmet_sp    => null() ! x-coordinates of full met grid
+      real(kind=sp),dimension(:),   pointer :: y_fullmet_sp    => null() ! y-coordinates of full met grid
+      real(kind=sp),dimension(:),   pointer :: p_fullmet_sp    => null() ! z-coordinates of full met grid for H
+      real(kind=sp),dimension(:,:), pointer :: levs_fullmet_sp => null() ! This hold each of the numbered level coordinates:
+                                                                         !    i.e. isobaric, isobaric1, isobaric2, but also
+                                                                         !    height_above_ground, depth_below_surface_layer, etc.
+                                                                         !    p_fullmet_sp,p_fullmet_[Vz,RH]sp are copies of one
+                                                                         !    of the slices
+      integer,dimension(:), pointer :: nlevs_fullmet                     ! length of z coordinate
+      integer,dimension(:), pointer :: levs_code                         ! code indicating how to map to the GPH grid
+                                                                         !   0 = no mapping (not a pressure coordinate)
+                                                                         !   1 = one-to-one mapping (U,V)
+                                                                         !   2 = upper truncation (missing upper levels)
+                                                                         !   3 = interpolation (missing mid-levels)
+                                                                         !   4 = more levels than GPH grid
 #else
-      real(kind=sp),dimension(:), allocatable :: x_fullmet_sp    ! x-coordinates of full met grid
-      real(kind=sp),dimension(:), allocatable :: y_fullmet_sp    ! y-coordinates of full met grid
-      real(kind=sp),dimension(:), allocatable :: p_fullmet_sp    ! z-coordinates of full met grid for U,V,T,H
-      real(kind=sp),dimension(:), allocatable :: p_fullmet_Vz_sp ! z-coordinates of full met grid for Vz
-      real(kind=sp),dimension(:), allocatable :: p_fullmet_RH_sp ! z-coordinates of full met grid for RH
+      real(kind=sp),dimension(:),  allocatable :: x_fullmet_sp    ! x-coordinates of full met grid
+      real(kind=sp),dimension(:),  allocatable :: y_fullmet_sp    ! y-coordinates of full met grid
+      real(kind=sp),dimension(:),  allocatable :: p_fullmet_sp    ! z-coordinates of full met grid for H
+      real(kind=sp),dimension(:,:),allocatable :: levs_fullmet_sp ! This hold each of the numbered level coordinates:
+                                                                  !    i.e. isobaric, isobaric1, isobaric2, but also
+                                                                  !    height_above_ground, depth_below_surface_layer, etc.
+                                                                  !    p_fullmet_sp,p_fullmet_[Vz,RH]sp are copies of one
+                                                                  !    of the slices
+      integer,dimension(:), allocatable :: nlevs_fullmet
+      integer,dimension(:), allocatable :: levs_code                     ! code indicating how to map to the GPH grid
+                                                                         !   0 = no mapping (not a pressure coordinate)
+                                                                         !   1 = one-to-one mapping (U,V)
+                                                                         !   2 = upper truncation (missing upper levels)
+                                                                         !   3 = interpolation (missing mid-levels)
+                                                                         !   4 = more levels than GPH grid
 #endif
 
       logical       :: IsLatLon_MetGrid
@@ -274,8 +299,10 @@
       integer       :: MR_BaseYear            = 1900    ! This should be reset in calling program
       logical       :: MR_useLeap             = .true.  ! This too
       integer       :: MR_Comp_StartYear
-      real(kind=dp) :: MR_Comp_StartHour
-      real(kind=dp) :: MR_Comp_Time_in_hours
+      integer       :: MR_Comp_StartMonth
+      integer       :: MR_Comp_StartDay
+      real(kind=dp) :: MR_Comp_StartHour      = 0.0_dp
+      real(kind=dp) :: MR_Comp_Time_in_hours  = 0.0_dp
       integer       :: nx_comp
       integer       :: ny_comp
       integer       :: nz_comp
@@ -314,9 +341,8 @@
       real(kind=sp),dimension(:,:),  allocatable :: MR_jacob  ! Jacobian of trans. = MR_ztop-MR_zsurf
 #endif
 
-      logical :: Have_Vz = .false.
       real(kind=sp),dimension(0:100) :: fill_value_sp = -9999.0_sp
-      character(len=30),dimension(9) :: Met_dim_names
+      character(len=30),dimension(9) :: Met_dim_names      ! name of dimension
       logical          ,dimension(9) :: Met_dim_IsAvailable
       real(kind=sp)    ,dimension(9) :: Met_dim_fac  = 1.0_sp
       ! Here is the list of variables that can be read.  Each iwindformat will
@@ -333,7 +359,6 @@
         !  11 = U @ 10m
         !  12 = V @ 10m
         !  13 = Friction velocity
-        !  14 = Displacement Height
         !  15 = Snow cover
         !  16 = Soil moisture
         !  17 = Surface Roughness
@@ -360,19 +385,29 @@
         !  45 = Precipitation rate convective  (liquid)
         !  46 = Precipitation rate large-scale (ice)
         !  47 = Precipitation rate convective  (ice)
-      logical          ,dimension(50)   :: Met_var_IsAvailable      ! true if iwf contains the var
-      character(len=71),dimension(50)   :: Met_var_names            ! name in the file
-      character(len=5) ,dimension(50)   :: Met_var_names_WMO        ! WMO version of the name
-      integer          ,dimension(50)   :: Met_var_ndim             ! 
-      integer          ,dimension(50)   :: Met_var_zdimID           ! 
-      integer          ,dimension(50,4) :: Met_var_GRIB2_DPcPnSt    ! 
+      logical          ,dimension(MR_MAXVARS)   :: Met_var_IsAvailable      ! true if iwf contains the var
+      character(len=71),dimension(MR_MAXVARS)   :: Met_var_NC_names          ! name in the file
+      character(len=71),dimension(MR_MAXVARS)   :: Met_var_GRIB_names        ! name in the file
+      character(len=5) ,dimension(MR_MAXVARS)   :: Met_var_WMO_names        ! WMO version of the name
+      integer          ,dimension(MR_MAXVARS)   :: Met_var_ndim             ! 
+      integer          ,dimension(MR_MAXVARS)   :: Met_var_zdim_idx         ! The index of this coordinate (used in Met_var_nlevs) 
+      integer          ,dimension(MR_MAXVARS)   :: Met_var_zdim_ncid        ! The dimID of the dimension in the nc file
+      integer                                   :: nlev_coords_detected = 0
+      integer          ,dimension(MR_MAXVARS,4) :: Met_var_GRIB2_DPcPnSt    ! Grib2 files have variables identified by
+                                                                            ! discpln,param_cat,param_num,surf_class
+      integer          ,dimension(MR_MAXVARS)   :: Met_var_GRIB1_Param      !   indicatorOfParameter
+      integer          ,dimension(MR_MAXVARS)   :: Met_var_GRIB1_Table      !   table2Version
+      character(len=3) ,dimension(MR_MAXVARS)   :: Met_var_GRIB1_St         ! level type (pl, src, 116 etc)
+      integer                                   :: MR_GRIB_Version  = 0
 
-      !logical          ,dimension(50) :: Met_var_IsFloat  ! true if kind=4 otherwise false
-      real(kind=sp)    ,dimension(50) :: Met_var_conversion_factor
+      !logical          ,dimension(MR_MAXVARS)   :: Met_var_IsFloat  ! true if kind=4 otherwise false
+      real(kind=sp)    ,dimension(MR_MAXVARS)   :: Met_var_conversion_factor
+
+      integer          ,dimension(MR_MAXVARS)   :: Met_var_nlevs
 
         ! Variables needed by netcdf reader
-      real(kind=sp) :: iwf25_scale_facs(50)
-      real(kind=sp) :: iwf25_offsets(50)
+      real(kind=sp) :: iwf25_scale_facs(MR_MAXVARS)
+      real(kind=sp) :: iwf25_offsets(MR_MAXVARS)
       real(kind=sp) :: x_in_iwf25_sp(192)
       real(kind=sp) :: y_in_iwf25_sp(94)
         ! Here is the mapping for bilinear weighting coeffiecients (amap) and
@@ -467,8 +502,6 @@
        if(associated(x_fullmet_sp                  ))deallocate(x_fullmet_sp)
        if(associated(y_fullmet_sp                  ))deallocate(y_fullmet_sp)
        if(associated(p_fullmet_sp                  ))deallocate(p_fullmet_sp)
-       if(associated(p_fullmet_Vz_sp               ))deallocate(p_fullmet_Vz_sp)
-       if(associated(p_fullmet_RH_sp               ))deallocate(p_fullmet_RH_sp)
        if(associated(x_submet_sp                   ))deallocate(x_submet_sp)
        if(associated(y_submet_sp                   ))deallocate(y_submet_sp)
        if(associated(z_approx                      ))deallocate(z_approx)
@@ -510,8 +543,6 @@
        if(allocated(x_fullmet_sp                  ))deallocate(x_fullmet_sp)
        if(allocated(y_fullmet_sp                  ))deallocate(y_fullmet_sp)
        if(allocated(p_fullmet_sp                  ))deallocate(p_fullmet_sp)
-       if(allocated(p_fullmet_Vz_sp               ))deallocate(p_fullmet_Vz_sp)
-       if(allocated(p_fullmet_RH_sp               ))deallocate(p_fullmet_RH_sp)
        if(allocated(x_submet_sp                   ))deallocate(x_submet_sp)
        if(allocated(y_submet_sp                   ))deallocate(y_submet_sp)
        if(allocated(z_approx                      ))deallocate(z_approx)
@@ -584,70 +615,9 @@
 
       integer :: i
 
-      ! Check for igrid and iwf consistancy
-      ! If we are using a known product (i.e. iwf > 0) then overide the provided igrid
-      if (iwf.eq.3) then      ! NARR3D NAM221 32 km North America files
-        MR_iGridCode = 221
-      elseif (iwf.eq.4) then  ! NARR3D NAM221 32 km North America files
-        MR_iGridCode = 221
-      elseif (iwf.eq.5) then  ! NAM216 AK 45km
-        MR_iGridCode = 216
-      elseif (iwf.eq.6) then  ! NAM Regional 90 km grid 104
-        MR_iGridCode = 104
-      elseif (iwf.eq.7) then  ! CONUS 212 40km
-        MR_iGridCode = 212
-      elseif (iwf.eq.8) then  ! CONUS 218 (12km)
-        MR_iGridCode = 218
-      elseif (iwf.eq.9) then  ! CONUS 215 (20km)
-        MR_iGridCode = 215
-      elseif (iwf.eq.10)then  ! NAM 242 11.25 km AK
-        MR_iGridCode = 242
-      elseif (iwf.eq.11)then  ! NAM 196 2.5 km HI
-        MR_iGridCode = 196
-      elseif (iwf.eq.12)then  ! NAM 198 5.953 km AK
-        MR_iGridCode = 198
-      elseif (iwf.eq.13)then  ! NAM 91 2.976 km AK
-        MR_iGridCode = 91
-      elseif (iwf.eq.20)then  ! GFS 0.5
-        MR_iGridCode = 4
-      elseif (iwf.eq.21)then  ! GFS 1.0
-        MR_iGridCode = 4
-      elseif (iwf.eq.22)then  ! GFS 0.25
-        MR_iGridCode = 193
-      elseif (iwf.eq.23)then  ! NCEP / DOE reanalysis 2.5 degree files
-        MR_iGridCode = 2
-      elseif (iwf.eq.24)then  ! NASA-MERRA-2 reanalysis 0.625/0.5 degree files
-        MR_iGridCode = 1024
-      elseif (iwf.eq.25)then  ! NCEP/NCAR reanalysis 2.5 degree files
-        MR_iGridCode = 2
-      elseif (iwf.eq.26)then  ! GFS 0.5 with 47 pressure levels
-        MR_iGridCode = 4
-      elseif (iwf.eq.27)then  ! NOAA-CIRES reanalysis 2.5 degree files
-        MR_iGridCode = 1027
-      elseif (iwf.eq.28)then  ! ECMWF Interim Reanalysis (ERA-Interim)
-        MR_iGridCode = 170
-      elseif (iwf.eq.29)then  ! JMA 25-year reanalysis
-        MR_iGridCode = 2
-      elseif (iwf.eq.31)then  ! Catania forecast
-        MR_iGridCode = 1031
-      elseif (iwf.eq.32)then  ! Air Force Weather Agency subcenter = 0
-        MR_iGridCode = 1032
-      elseif (iwf.eq.33)then  ! CCSM3.0 Community Atmosphere Model (CAM)
-        MR_iGridCode = 1033
-      elseif (iwf.eq.40)then  ! NASA-GEOS Cp
-        MR_iGridCode = 1040
-      elseif (iwf.eq.41)then  ! NASA-GEOS Np
-        MR_iGridCode = 1041
-      elseif (iwf.eq.50)then   ! WRF - output
-        MR_iGridCode = 1050
-      elseif (iwf.eq.51)then   ! SENAMHI - WRF 22km
-        MR_iGridCode = 1051
-      else
-        MR_iGridCode = igrid
-      endif
-
       MR_iwind              = iw
       MR_iwindformat        = iwf
+      MR_iGridCode          = igrid
       MR_idataFormat        = idf
       MR_iwindfiles         = iwfiles
 
@@ -669,132 +639,1445 @@
         stop 1
       endif
 
-      if     (MR_iwindformat.eq.0) then  ! Custom format based on template
+      ! Initialize the dimension and variable arrays.  Select slots in these arrays will be
+      ! overwritten from the calls in the case block below
+      Met_dim_IsAvailable=.false.
+      Met_var_IsAvailable=.false.
+      Met_var_IsAvailable(1:MR_MAXVARS)       = .false.
+      Met_var_zdim_idx(1:MR_MAXVARS)          = 0
+      Met_var_zdim_ncid(1:MR_MAXVARS)         = 0
+      Met_var_GRIB2_DPcPnSt(1:MR_MAXVARS,1:4) = 0
+      Met_var_GRIB1_Param(1:MR_MAXVARS)       = 0
+      Met_var_GRIB1_St(1:MR_MAXVARS)          = ""
+      Met_var_conversion_factor(1:MR_MAXVARS) = 1.0_sp
+      Met_var_nlevs(1:MR_MAXVARS)             = 0
+      isGridRelative = .true.
+
+      !--------------------------------
+      ! Mechanical / State variables
+      !--------------------------------
+      !   Note: All default names are that assigned by netcdf-java in the grib-to-nc conversion
+      !         Command used :: java -Xmx2048m -classpath ~/ncj/netcdfAll-4.5.jar ucar.nc2.dataset.NetcdfDataset \
+      !                          -in ${GribFile} -out ${NCFile} -IsLargeFile
+      ! 
+      !         Alternatively, one could use ncl_convert2nc
+        !  Geopotential Height  (m^2/s^2)
+      Met_var_NC_names(1)          = "Geopotential_height_isobaric"
+      Met_var_GRIB_names(1)        = "gh"
+      Met_var_WMO_names(1)         = "HGT"
+      Met_var_GRIB2_DPcPnSt(1,1:4) = (/0, 3, 5, 100/)
+      Met_var_GRIB1_Param(1)       = 7
+      Met_var_GRIB1_St(1)          = "pl"
+      Met_var_ndim(1)              = 4
+        ! Velocity component in x (or E) direction  (m/s)
+      Met_var_NC_names(2)          = "u-component_of_wind_isobaric"
+      Met_var_GRIB_names(2)        = "u"
+      Met_var_WMO_names(2)         = "UGRD"
+      Met_var_GRIB2_DPcPnSt(2,1:4) = (/0, 2, 2, 100/)
+      Met_var_GRIB1_Param(2)       = 33
+      Met_var_GRIB1_St(2)          = "pl"
+      Met_var_ndim(2)              = 4
+        ! Velocity component in y (or N) direction (m/s)
+      Met_var_NC_names(3)          = "v-component_of_wind_isobaric"
+      Met_var_GRIB_names(3)        = "v"
+      Met_var_WMO_names(3)         = "VGRD"
+      Met_var_GRIB2_DPcPnSt(3,1:4) = (/0, 2, 3, 100/)
+      Met_var_GRIB1_Param(3)       = 34
+      Met_var_GRIB1_St(3)          = "pl"
+      Met_var_ndim(3)              = 4
+        ! Velocity component in z direction  (Pa/s)
+      Met_var_NC_names(4)          = "Vertical_velocity_pressure_isobaric"
+      Met_var_GRIB_names(4)        = "w"
+      Met_var_WMO_names(4)         = "VVEL"
+      Met_var_GRIB2_DPcPnSt(4,1:4) = (/0, 2, 8, 100/)
+      Met_var_GRIB1_Param(4)       = 39
+      Met_var_GRIB1_St(4)          = "pl"
+      Met_var_ndim(4)              = 4
+        ! Temperature  (K)
+      Met_var_NC_names(5)          = "Temperature_isobaric"
+      Met_var_GRIB_names(5)        = "t"
+      Met_var_WMO_names(5)         = "TMP"
+      Met_var_GRIB2_DPcPnSt(5,1:4) = (/0, 0, 0, 100/)
+      Met_var_GRIB1_Param(5)       = 11
+      Met_var_GRIB1_St(5)          = "pl"
+      Met_var_ndim(5)              = 4
+      !--------------------------------
+      ! Surface
+      !--------------------------------
+        ! Height of planetary boundary layer  (m)
+      Met_var_NC_names(10)          = "Planetary_Boundary_Layer_Height_surface"
+      Met_var_GRIB_names(10)        = "hpbl"
+      Met_var_WMO_names(10)         = "HPBL"
+      Met_var_GRIB2_DPcPnSt(10,1:4) = (/0, 3, 196, 1/)
+      Met_var_GRIB1_Param(10)       = 221
+      Met_var_GRIB1_St(10)          = "1"
+      Met_var_ndim(10)              = 3
+        ! Velocity component in x (or E) direction at 10 m above ground surface  (m/s)
+      Met_var_NC_names(11)          = "u-component_of_wind_height_above_ground"
+      Met_var_GRIB_names(11)        = "u"
+      Met_var_WMO_names(11)         = "UGRD"
+      Met_var_GRIB2_DPcPnSt(11,1:4) = (/0, 2, 2, 103/)
+      Met_var_GRIB1_Param(11)       = 33
+      Met_var_GRIB1_St(11)          = "105"
+      Met_var_ndim(11)              = 4
+        ! Velocity component in y (or N) direction at 10 m above ground surface  (m/s)
+      Met_var_NC_names(12)          = "v-component_of_wind_height_above_ground"
+      Met_var_GRIB_names(12)        = "v"
+      Met_var_WMO_names(12)         = "VGRD"
+      Met_var_GRIB2_DPcPnSt(12,1:4) = (/0, 2, 3, 103/)
+      Met_var_GRIB1_Param(12)       = 34
+      Met_var_GRIB1_St(12)          = "105"
+      Met_var_ndim(12)              = 4
+        ! Friction velocity  (m/s)
+      Met_var_NC_names(13)          = "Frictional_Velocity_surface"
+      Met_var_GRIB_names(13)        = "fricv"
+      Met_var_WMO_names(13)         = "FRICV"
+      Met_var_GRIB2_DPcPnSt(13,1:4) = (/0, 2, 197, 1/)
+      Met_var_GRIB1_Param(13)       = 253
+      Met_var_GRIB1_St(13)          = "1"
+      Met_var_ndim(13)              = 3
+        ! Snow depth  (m)
+      Met_var_NC_names(15)          = "Snow_depth_surface"
+      Met_var_GRIB_names(15)        = "sd"
+      Met_var_WMO_names(15)         = "SNOD"
+      Met_var_GRIB2_DPcPnSt(15,1:4) = (/0, 1, 11, 1/)
+      Met_var_GRIB1_Param(15)       = 66
+      Met_var_GRIB1_St(15)          = "1"
+      Met_var_ndim(15)              = 3
+        ! Soil Moisture  (fraction)
+      Met_var_NC_names(16)          = "Volumetric_Soil_Moisture_Content_depth_below_surface_layer"
+      Met_var_GRIB_names(16)        = "soilw"
+      Met_var_WMO_names(16)         = "SOILW"
+      Met_var_GRIB2_DPcPnSt(16,1:4) = (/2, 0, 192, 106/)
+      Met_var_GRIB1_Param(16)       = 0
+      Met_var_GRIB1_St(16)          = ""
+      Met_var_ndim(16)              = 4
+        ! Surface roughness  (m)
+      Met_var_NC_names(17)          = "Surface_roughness_surface"
+      Met_var_GRIB_names(17)        = "sr"
+      Met_var_WMO_names(17)         = "SFCR"
+      Met_var_GRIB2_DPcPnSt(17,1:4) = (/2, 0, 1, 1/)
+      Met_var_GRIB1_Param(17)       = 0
+      Met_var_GRIB1_St(17)          = ""
+      Met_var_ndim(17)              = 3
+        ! Wind gust speed  (m/s)
+      Met_var_NC_names(18)          = "Wind_speed_gust_surface"
+      Met_var_GRIB_names(18)        = "gust"
+      Met_var_WMO_names(18)         = "GUST"
+      Met_var_GRIB2_DPcPnSt(18,1:4) = (/0, 2, 22, 1/)
+      Met_var_GRIB1_Param(18)       = 0
+      Met_var_GRIB1_St(18)          = ""
+      Met_var_ndim(18)              = 3
+        ! Surface temperature  (K)
+      Met_var_NC_names(19)          = "Temperature_surface"
+      Met_var_WMO_names(19)         = ""
+      Met_var_GRIB2_DPcPnSt(19,1:4) = (/0, 0, 0, 0/)
+      Met_var_GRIB1_Param(19)       = 11
+      Met_var_GRIB1_St(19)          = "1"
+      Met_var_ndim(19)              = 3
+      !--------------------------------
+      ! Atmospheric Structure
+      !--------------------------------
+        ! Pressure at base of lower cloud level  (Pa)
+      Met_var_NC_names(20)          = "Pressure_cloud_base"
+      Met_var_GRIB_names(20)        = "pres"
+      Met_var_WMO_names(20)         = "PRES"
+      Met_var_GRIB2_DPcPnSt(20,1:4) = (/0, 3, 0, 2/)
+      Met_var_GRIB1_Param(20)       = 1
+      Met_var_GRIB1_St(20)          = "2"
+      Met_var_ndim(20)              = 3
+        ! Pressure at top of lower cloud level  (Pa)
+      Met_var_NC_names(21)          = "Pressure_cloud_tops"
+      Met_var_GRIB_names(21)        = "pres"
+      Met_var_WMO_names(21)         = "PRES"
+      Met_var_GRIB2_DPcPnSt(21,1:4) = (/0, 3, 0, 3/)
+      Met_var_GRIB1_Param(21)       = 1
+      Met_var_GRIB1_St(21)          = "3"
+      Met_var_ndim(21)              = 3
+        ! Temperature at the top of lower cloud level  (K)
+      Met_var_NC_names(22)          = "Temperature_cloud_tops"
+      Met_var_GRIB_names(22)        = "t"
+      Met_var_WMO_names(22)         = "TMP"
+      Met_var_GRIB2_DPcPnSt(22,1:4) = (/0, 0, 0, 3/)
+      Met_var_GRIB1_Param(22)       = 11
+      Met_var_GRIB1_St(22)          = "3"
+      Met_var_ndim(22)              = 3
+        ! Total cloud cover  (%)
+      Met_var_NC_names(23)          = "Total_cloud_cover_entire_atmosphere"
+      Met_var_GRIB_names(23)        = "tcc"
+      Met_var_WMO_names(23)         = "TCDC"
+      Met_var_GRIB2_DPcPnSt(23,1:4) = (/0, 6, 1, 200/)
+      Met_var_GRIB1_Param(23)       = 71
+      Met_var_GRIB1_St(23)          = "200"
+      Met_var_ndim(23)              = 3
+        ! Cloud cover of lower cloud level  (%)
+      Met_var_NC_names(24)          = "Low_cloud_cover_low_cloud"
+      Met_var_GRIB_names(24)        = "lcc"
+      Met_var_WMO_names(24)         = "LCDC"
+      Met_var_GRIB2_DPcPnSt(24,1:4) = (/0, 6, 3, 214/)
+      Met_var_GRIB1_Param(24)       = 0
+      Met_var_GRIB1_St(24)          = ""
+      Met_var_ndim(24)              = 3
+      !--------------------------------
+      ! Moisture
+      !--------------------------------
+        ! Relative humidity  (%)
+      Met_var_NC_names(30)          = "Relative_humidity_isobaric"
+      Met_var_GRIB_names(30)        = "r"
+      Met_var_WMO_names(30)         = "RH"
+      Met_var_GRIB2_DPcPnSt(30,1:4) = (/0, 1, 1, 100/)
+      Met_var_GRIB1_Param(30)       = 52
+      Met_var_GRIB1_St(30)          = "pl" 
+      Met_var_ndim(30)              = 4
+        ! Specific humidity  (kg/kg)
+      Met_var_NC_names(31)          = "Specific_humidity_isobaric"
+      Met_var_GRIB_names(31)        = "q"
+      Met_var_WMO_names(31)         = "SPFH"
+      Met_var_GRIB2_DPcPnSt(31,1:4) = (/0, 1, 0, 100/)
+      Met_var_GRIB1_Param(31)       = 51
+      Met_var_GRIB1_St(31)          = "pl"
+      Met_var_ndim(31)              = 4
+        ! Cloud water mixing ratio  (kg/kg)
+      Met_var_NC_names(32)          = "Cloud_mixing_ratio_isobaric"
+      Met_var_GRIB_names(32)        = "clwmr"
+      Met_var_WMO_names(32)         = "CLWMR"
+      Met_var_GRIB2_DPcPnSt(32,1:4) = (/0, 1, 22, 100/)
+      Met_var_ndim(32)              = 4
+        ! Snow mixing ratio  (kg/kg)
+      Met_var_NC_names(33)          = "Snow_mixing_ratio_isobaric"
+      Met_var_GRIB_names(33)        = "snmr"
+      Met_var_WMO_names(33)         = "SNMR"
+      Met_var_GRIB2_DPcPnSt(33,1:4) = (/0, 1, 25, 100/)
+      Met_var_GRIB1_Param(33)       = 0
+      Met_var_GRIB1_St(33)          = ""
+      Met_var_ndim(33)              = 4
+      !--------------------------------
+      ! Precipitation
+      !--------------------------------
+        ! Catagorical rain at ground surface  (0/1 no/yes)
+      Met_var_NC_names(40)          = "Categorical_Rain_surface"
+      Met_var_GRIB_names(40)        = "crain"
+      Met_var_WMO_names(40)         = "CRAIN"
+      Met_var_GRIB2_DPcPnSt(40,1:4) = (/0, 1, 192, 1/)
+      Met_var_GRIB1_Param(40)       = 140
+      Met_var_GRIB1_St(40)          = "1"
+      Met_var_ndim(40)              = 3
+        ! Catagorical snow at ground surface  (0/1 no/yes)
+      Met_var_NC_names(41)          = "Categorical_Snow_surface"
+      Met_var_GRIB_names(41)        = "csnow"
+      Met_var_WMO_names(41)         = "CSNOW"
+      Met_var_GRIB2_DPcPnSt(41,1:4) = (/0, 1, 195, 1/)
+      Met_var_GRIB1_Param(41)       = 143
+      Met_var_GRIB1_St(41)          = "1"
+      Met_var_ndim(41)              = 3
+        ! Catagorical freezing rain at ground surface  (0/1 no/yes)
+      Met_var_NC_names(42)          = "Categorical_Freezing_Rain_surface"
+      Met_var_GRIB_names(42)        = "cfrzr"
+      Met_var_WMO_names(42)         = "CFRZR"
+      Met_var_GRIB2_DPcPnSt(42,1:4) = (/0, 1, 193, 1/)
+      Met_var_GRIB1_Param(42)       = 141
+      Met_var_GRIB1_St(42)          = "1"
+      Met_var_ndim(42)              = 3
+        ! Catagorical ice pellets at ground surface  (0/1 no/yes)
+      Met_var_NC_names(43)          = "Categorical_Ice_Pellets_surface"
+      Met_var_GRIB_names(43)        = "cicep"
+      Met_var_WMO_names(43)         = "CICEP"
+      Met_var_GRIB2_DPcPnSt(43,1:4) = (/0, 1, 194, 1/)
+      Met_var_GRIB1_Param(43)       = 142
+      Met_var_GRIB1_St(43)          = "1"
+      Met_var_ndim(43)              = 3
+        ! Precipitation rate at surface  (kg/m2/s)
+      Met_var_NC_names(44)          = "Precipitation_rate_surface"
+      Met_var_GRIB_names(44)        = "prate"
+      Met_var_WMO_names(44)         = "PRATE"
+      Met_var_GRIB2_DPcPnSt(44,1:4) = (/0, 1, 7, 1/)
+      Met_var_GRIB1_Param(44)       = 59
+      Met_var_GRIB1_St(44)          = "pl"
+      Met_var_ndim(44)              = 3
+        ! Convective liquid precipitation rate at surface  (kg/m2/s)
+      Met_var_NC_names(45)          = "Precip.rate convective  (liquid)"
+      Met_var_WMO_names(45)         = "CPRAT"
+      Met_var_GRIB1_Param(45)       = 0
+      Met_var_GRIB1_St(45)          = ""
+      Met_var_ndim(45)              = 3
+        ! Large-scale precipitation rate at surface  (kg/m2/s)
+      Met_var_NC_names(46)          = "Precip.rate large-scale (ice)"
+      Met_var_WMO_names(46)         = ""
+      Met_var_GRIB1_Param(46)       = 0
+      Met_var_GRIB1_St(46)          = ""
+      Met_var_ndim(46)              = 3
+        ! Convective frozen precipitation rate at surface for (kg/m2/s)
+      Met_var_NC_names(47)          = "Precip.rate convective  (ice)"
+      Met_var_WMO_names(47)         = ""
+      Met_var_GRIB1_Param(47)       = 0
+      Met_var_GRIB1_St(47)          = ""
+      Met_var_ndim(47)              = 3
+
+      if (MR_iwindformat.eq.0) then
+          ! Custom format based on template
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "Custom format based on template"
-      elseif (MR_iwindformat.eq.1) then  ! ASCII profile
+
+          ! This expects that MR_iwf_template has been filled by the calling program
+        call MR_Read_Met_Template
+
+      elseif (MR_iwindformat.eq.1) then
+          ! ASCII profile
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "ASCII profile"
-      elseif (MR_iwindformat.eq.2) then  ! Radiosonde data
+      elseif (MR_iwindformat.eq.2) then
+          ! Radiosonde data
         MR_Reannalysis = .false.
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "Radiosonde data"
-      elseif (MR_iwindformat.eq.3) then  ! NARR3D NAM221 32 km North America files
-        MR_Reannalysis = .true.
+      elseif (MR_iwindformat.eq.3) then 
+        ! NARR3D NAM221 32 km North America files
+          ! https://rda.ucar.edu/datasets/ds608.0/
+          !   merged_AWIP32.2018062000(.nc)
+          ! Note that winds are "earth-relative" and must be rotated!
+          !   See  http://www.emc.ncep.noaa.gov/mmb/rreanl/faq.html#eta-winds
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "NARR3D NAM221 32 km North America files"
-      elseif (MR_iwindformat.eq.4) then  ! NARR3D NAM221 32 km North America files
+                  "NARR3D NAM221 32 km North America files with Re=6367.47"
+
+        MR_iGridCode = 1221  ! This is almost NAM221, but uses a diff Re
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode) 
         MR_Reannalysis = .true.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "reftime"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric2"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "y"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "x"
+
+        ! Mechanical / State variables
+        Met_var_IsAvailable(1)=.true.  ! Geopotential Height
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="u_wind_isobaric"
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="v_wind_isobaric"
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="Pressure_vertical_velocity_isobaric"
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="Temp_isobaric"
+        ! Surface
+        Met_var_IsAvailable(10)=.true.; Met_var_NC_names(10)="Planetary_boundary_layer_height_surface"
+        Met_var_IsAvailable(11)=.true.; Met_var_NC_names(11)="u_wind_height_above_ground"
+        Met_var_IsAvailable(12)=.true.; Met_var_NC_names(12)="v_wind_height_above_ground"
+        Met_var_IsAvailable(13)=.true.; Met_var_NC_names(13)="Surface_friction_velocity_surface"
+        Met_var_IsAvailable(15)=.true.
+        ! Atmospheric Structure
+        Met_var_IsAvailable(20)=.true.
+        Met_var_IsAvailable(21)=.true.
+        ! Moisture
+        Met_var_IsAvailable(31)=.true.
+        Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="Cloud_water_isobaric"
+        Met_var_IsAvailable(33)=.true.; Met_var_NC_names(33)="Ice_mixing_ratio_isobaric"
+        ! Precipitation
+        Met_var_IsAvailable(40)=.true.; Met_var_NC_names(40)="Categorical_rain_yes1_no0_surface"
+        Met_var_IsAvailable(41)=.true.; Met_var_NC_names(41)="Categorical_snow_yes1_no0_surface"
+        Met_var_IsAvailable(42)=.true.; Met_var_NC_names(42)="Categorical_freezing_rain_yes1_no0_surface"
+        Met_var_IsAvailable(43)=.true.; Met_var_NC_names(43)="Categorical_ice_pellets_yes1_no0_surface"
+        Met_var_IsAvailable(44)=.true.
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp
+
+      elseif (MR_iwindformat.eq.4) then
+        ! NAM Regional North America 221 32 km North America files
+          ! http://motherlode.ucar.edu/native/conduit/data/nccf/com/nam/prod/
+          !   nam.t00z.awip3200.tm00.grib2
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "NARR3D NAM221 32 km North America files"
-      elseif (MR_iwindformat.eq.5) then  ! NAM216 AK 45km
+                  "NAM221 32 km North America files with Re=6371.229"
+
+        MR_iGridCode = 221
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric3"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "y"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "x"
+
+        ! Mechanical / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Surface
+        Met_var_IsAvailable(10)=.true.
+        Met_var_IsAvailable(11)=.true.
+        Met_var_IsAvailable(12)=.true.
+        Met_var_IsAvailable(13)=.true.
+        Met_var_IsAvailable(16)=.true.
+        ! Atmospheric Structure
+        Met_var_IsAvailable(23)=.true.
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+        Met_var_IsAvailable(31)=.true.
+        Met_var_IsAvailable(32)=.true.
+        ! Precipitation
+        Met_var_IsAvailable(40)=.true.
+        Met_var_IsAvailable(41)=.true.
+        Met_var_IsAvailable(42)=.true.
+        Met_var_IsAvailable(43)=.true.
+        Met_var_IsAvailable(45)=.true.
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+
+      elseif (MR_iwindformat.eq.5) then
+        ! NAM216 AK 45km
+          ! http://motherlode.ucar.edu/native/conduit/data/nccf/com/nam/prod/
+          !  nam.t00z.awipak00.tm00
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NAM216 AK 45km"
-      elseif (MR_iwindformat.eq.6) then  ! NAM Regional 90 km grid 104
+
+        MR_iGridCode = 216
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time1"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric1"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "y"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "x"
+
+        ! Mechanical / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Surface
+        Met_var_IsAvailable(10)=.true.; Met_var_NC_names(10)="Planetary_Boundary_Layer_Height"
+        Met_var_IsAvailable(11)=.true.
+        Met_var_IsAvailable(12)=.true.
+        Met_var_IsAvailable(13)=.true.; Met_var_NC_names(13)="Frictional_Velocity"
+        Met_var_IsAvailable(14)=.true.; Met_var_NC_names(16)="Volumetric_Soil_Moisture_Content"
+        ! Atmospheric Structure
+        Met_var_IsAvailable(23)=.true.; Met_var_NC_names(23)="Total_cloud_cover"
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="Relative_humidity"
+        Met_var_IsAvailable(31)=.true.; Met_var_NC_names(31)="Specific_humidity"
+        Met_var_IsAvailable(32)=.true.
+        ! Precipitation
+        Met_var_IsAvailable(40)=.true.; Met_var_NC_names(40)="Categorical_Rain"
+        Met_var_IsAvailable(41)=.true.; Met_var_NC_names(41)="Categorical_Snow"
+        Met_var_IsAvailable(42)=.true.; Met_var_NC_names(42)="Categorical_Freezing_Rain"
+        Met_var_IsAvailable(43)=.true.; Met_var_NC_names(43)="Categorical_Ice_Pellets"
+        Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="Large_scale_precipitation_non-convective"
+        Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_precipitation"
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+
+      elseif (MR_iwindformat.eq.6) then
+        ! NAM Regional 90 km grid 104
+        !  ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod
+        !    nam.t00z.grbgrd00.tm00
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NAM Regional 90 km grid 104"
-      elseif (MR_iwindformat.eq.7) then  ! CONUS 212 40km
+
+        MR_iGridCode = 104
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "y"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "x"
+
+        ! Mechanical / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Surface
+        Met_var_IsAvailable(11)=.true.
+        Met_var_IsAvailable(12)=.true.
+        Met_var_IsAvailable(13)=.true.
+        Met_var_IsAvailable(16)=.true.
+        ! Atmospheric Structure
+        Met_var_IsAvailable(23)=.true.; Met_var_NC_names(23)="Total_cloud_cover_entire_atmosphere_0_Hour_Average"
+        Met_var_IsAvailable(24)=.true.; Met_var_NC_names(24)="Convective_cloud_cover_entire_atmosphere_0_Hour_Average"
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+        Met_var_IsAvailable(31)=.true.
+        Met_var_IsAvailable(32)=.true.
+        ! Precipitation
+        Met_var_IsAvailable(40)=.true.
+        Met_var_IsAvailable(41)=.true.
+        Met_var_IsAvailable(42)=.true.
+        Met_var_IsAvailable(43)=.true.
+        Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="Large_scale_precipitation_non-convective_surface_0_Hour_Accumulation"
+        Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_precipitation_surface_0_Hour_Accumulation"
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+
+      elseif (MR_iwindformat.eq.7) then
+        ! CONUS 212 40km
+          !  ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/
+          !    nam.t00z.awp21100.tm00
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "CONUS 212 40km"
-      elseif (MR_iwindformat.eq.8) then  ! CONUS 218 (12km)
+
+        MR_iGridCode = 212
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time1"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric3"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "y"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "x"
+
+        ! Mechanical / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Surface
+        Met_var_IsAvailable(10)=.true.
+        Met_var_IsAvailable(11)=.true.
+        Met_var_IsAvailable(12)=.true.
+        Met_var_IsAvailable(13)=.true.
+        Met_var_IsAvailable(15)=.true.
+        Met_var_IsAvailable(16)=.true.
+        ! Atmospheric Structure
+        Met_var_IsAvailable(23)=.true.; Met_var_NC_names(23)="Total_cloud_cover"
+        Met_var_IsAvailable(24)=.true.; Met_var_NC_names(24)="Convective_cloud_cover"
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+        Met_var_IsAvailable(31)=.true.
+        Met_var_IsAvailable(32)=.true.
+        ! Precipitation
+        Met_var_IsAvailable(40)=.true.
+        Met_var_IsAvailable(41)=.true.
+        Met_var_IsAvailable(42)=.true.
+        Met_var_IsAvailable(43)=.true.
+        Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_Precipitation_Rate_surface"
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+
+      elseif (MR_iwindformat.eq.8) then
+        ! CONUS 218 (12km)
+          ! ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/
+          !   nam.t00z.awphys00.grb2.tm00
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "CONUS 218 (12km)"
-      elseif (MR_iwindformat.eq.9) then  ! Unassigned
+
+        MR_iGridCode = 218
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric1"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "y"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "x"
+
+        ! Mechanical / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Surface
+        Met_var_IsAvailable(10)=.true.
+        Met_var_IsAvailable(11)=.true.
+        Met_var_IsAvailable(12)=.true.
+        Met_var_IsAvailable(13)=.true.
+        Met_var_IsAvailable(15)=.true.
+        Met_var_IsAvailable(16)=.true.
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp
+
+      elseif (MR_iwindformat.eq.9) then
+        ! CONUS 227 (5.08 km)
+          !  http://motherlode.ucar.edu/native/conduit/data/nccf/com/nam/prod/
+          !    nam.t00z.conusnest.hiresf00.tm00
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "Unassigned"
-      elseif (MR_iwindformat.eq.10)then  ! NAM 242 11.25 km AK
+                  "CONUS 227 (5.1 km)"
+
+        MR_iGridCode = 227
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time1"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric2"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "y"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "x"
+
+        ! Mechanical / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Surface
+        Met_var_IsAvailable(10)=.true.
+        Met_var_IsAvailable(11)=.true.
+        Met_var_IsAvailable(12)=.true.
+        Met_var_IsAvailable(13)=.true.
+        Met_var_IsAvailable(15)=.true.
+        Met_var_IsAvailable(16)=.true.
+        Met_var_IsAvailable(17)=.true.
+        Met_var_IsAvailable(18)=.true.
+        ! Atmospheric Structure
+        Met_var_IsAvailable(20)=.true.
+        Met_var_IsAvailable(21)=.true.
+        Met_var_IsAvailable(23)=.true.
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+        Met_var_IsAvailable(31)=.true.
+        Met_var_IsAvailable(32)=.true.
+        Met_var_IsAvailable(33)=.true.
+        ! Precipitation
+        Met_var_IsAvailable(40)=.true.
+        Met_var_IsAvailable(41)=.true.
+        Met_var_IsAvailable(42)=.true.
+        Met_var_IsAvailable(43)=.true.
+        Met_var_IsAvailable(44)=.true.
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp
+
+      elseif (MR_iwindformat.eq.10)then
+        ! NAM 242 11.25 km AK
+          !  http://motherlode.ucar.edu/native/conduit/data/nccf/com/nam/prod/
+          !    nam.t00z.awipak00.tm00
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NAM 242 11.25 km AK"
-      elseif (MR_iwindformat.eq.11)then  ! NAM 196 2.5 km HI
+
+        MR_iGridCode = 242
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric2"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "y"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "x"
+
+        ! Mechanical / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Surface
+        Met_var_IsAvailable(10)=.true.
+        Met_var_IsAvailable(11)=.true.
+        Met_var_IsAvailable(12)=.true.
+        ! Atmospheric Structure
+        Met_var_IsAvailable(23)=.true.
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+        ! Precipitation
+        Met_var_IsAvailable(40)=.true.
+        Met_var_IsAvailable(41)=.true.
+        Met_var_IsAvailable(42)=.true.
+        Met_var_IsAvailable(43)=.true.
+        Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="Total_precipitation_surface_0_Hour_Accumulation"
+        Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_precipitation_surface_0_Hour_Accumulation"
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+
+      elseif (MR_iwindformat.eq.11)then
+        ! NAM 196 2.5 km HI
+          !  ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/
+          !    nam.t00z.hawaiinest.hiresf00.tm0
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   " NAM 196 2.5 km HI"
-      elseif (MR_iwindformat.eq.12)then  ! NAM 198 5.953 km AK
+
+        MR_iGridCode = 196
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric2"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "y"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "x"
+
+        ! Mechanical / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+
+        ! Surface
+        Met_var_IsAvailable(10)=.true.
+        Met_var_IsAvailable(11)=.true.
+        Met_var_IsAvailable(12)=.true.
+        Met_var_IsAvailable(13)=.true.
+        Met_var_IsAvailable(15)=.true.; Met_var_NC_names(15)="Snow_Cover_surface"
+        Met_var_IsAvailable(16)=.true.; Met_var_NC_names(16)="Soil_moisture_content_depth_below_surface_layer"
+        Met_var_IsAvailable(17)=.true.
+        ! Atmospheric Structure
+        Met_var_IsAvailable(20)=.true.
+        Met_var_IsAvailable(21)=.true.
+        Met_var_IsAvailable(23)=.true.
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+        Met_var_IsAvailable(31)=.true.
+        Met_var_IsAvailable(32)=.true.
+        Met_var_IsAvailable(33)=.true.
+        ! Precipitation
+        Met_var_IsAvailable(40)=.true.
+        Met_var_IsAvailable(41)=.true.
+        Met_var_IsAvailable(42)=.true.
+        Met_var_IsAvailable(43)=.true.
+        Met_var_IsAvailable(44)=.true.
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+
+      elseif (MR_iwindformat.eq.12)then
+        ! NAM 198 5.953 km AK
+          !  ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/ (this is actually now 91)
+          !    nam.t00z.alaskanest.hiresf00.tm00
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NAM 198 5.953 km AK"
-      elseif (MR_iwindformat.eq.13)then  ! NAM 91 2.976 km AK
+
+        MR_iGridCode = 198
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric2"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "y"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "x"
+
+        ! Mechanical / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Surface
+        Met_var_IsAvailable(10)=.true.
+        Met_var_IsAvailable(11)=.true.
+        Met_var_IsAvailable(12)=.true.
+        Met_var_IsAvailable(13)=.true.
+        Met_var_IsAvailable(15)=.true.
+        Met_var_IsAvailable(16)=.true.; Met_var_NC_names(16)="Soil_moisture_content_depth_below_surface_layer"
+        Met_var_IsAvailable(16)=.true.
+        Met_var_IsAvailable(17)=.true.
+        Met_var_IsAvailable(18)=.true.
+        ! Atmospheric Structure
+        Met_var_IsAvailable(20)=.true.
+        Met_var_IsAvailable(21)=.true.
+        Met_var_IsAvailable(23)=.true.
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+        Met_var_IsAvailable(31)=.true.
+        Met_var_IsAvailable(32)=.true.
+        Met_var_IsAvailable(33)=.true.
+        ! Precipitation
+        Met_var_IsAvailable(40)=.true.
+        Met_var_IsAvailable(41)=.true.
+        Met_var_IsAvailable(42)=.true.
+        Met_var_IsAvailable(43)=.true.
+        Met_var_IsAvailable(44)=.true.
+        Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_precipitation_surface_0_Hour_Accumulation"
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+
+      elseif (MR_iwindformat.eq.13)then  ! NAM 91 2.976 km AK
+        ! NAM 91 2.976 km AK
+          !  ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod/ (this is actually now 91)
+          !    nam.t00z.alaskanest.hiresf00.tm00
+          !
+          ! Note: the dimension names given below are those generated by netcdf-java 4.5
+          !       acting on the truncated grib files generated by get_nam91.sh which 
+          !       uses get_inv.pl to get just the grib layers needed.
+          !       This is relavent because the numbering of the isobaric dimensions
+          !       appears to be in the order they are processed in the grib file
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NAM 91 2.976 km AK"
-      elseif (MR_iwindformat.eq.20)then  ! GFS 0.5
+
+        MR_iGridCode = 91
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "y"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "x"
+
+        ! Mechanical / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Surface
+        Met_var_IsAvailable(10)=.true.
+        Met_var_IsAvailable(11)=.true.
+        Met_var_IsAvailable(12)=.true.
+        Met_var_IsAvailable(13)=.true.
+        Met_var_IsAvailable(15)=.true.
+        Met_var_IsAvailable(16)=.true.
+        Met_var_IsAvailable(17)=.true.
+        Met_var_IsAvailable(18)=.true.
+        ! Atmospheric Structure
+        Met_var_IsAvailable(20)=.true.
+        Met_var_IsAvailable(21)=.true.
+        Met_var_IsAvailable(23)=.true.
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+        Met_var_IsAvailable(31)=.true.
+        Met_var_IsAvailable(32)=.true.
+        Met_var_IsAvailable(33)=.true.
+        ! Precipitation
+        Met_var_IsAvailable(40)=.true.
+        Met_var_IsAvailable(41)=.true.
+        Met_var_IsAvailable(42)=.true.
+        Met_var_IsAvailable(43)=.true.
+        Met_var_IsAvailable(44)=.true.
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+
+      elseif (MR_iwindformat.eq.14) then
+        ! CONUS 1227 (3.0 km)
+          !  
+          !  nam.t00z.conusnest.hiresf00.tm00.grib2.nc
+
+        write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
+                  "CONUS no grid ID (3.0 km)"
+
+        MR_iGridCode = 1227
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
+        MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time1"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric2"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "y"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "x"
+
+        ! Mechanical / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Surface
+        Met_var_IsAvailable(10)=.true.
+        Met_var_IsAvailable(11)=.true.
+        Met_var_IsAvailable(12)=.true.
+        Met_var_IsAvailable(13)=.true.
+        Met_var_IsAvailable(15)=.true.
+        Met_var_IsAvailable(16)=.true.
+        Met_var_IsAvailable(17)=.true.
+        Met_var_IsAvailable(18)=.true.
+        ! Atmospheric Structure
+        Met_var_IsAvailable(20)=.true.
+        Met_var_IsAvailable(21)=.true.
+        Met_var_IsAvailable(23)=.true.
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+        Met_var_IsAvailable(31)=.true.
+        Met_var_IsAvailable(32)=.true.
+        Met_var_IsAvailable(33)=.true.
+        ! Precipitation
+        Met_var_IsAvailable(40)=.true.
+        Met_var_IsAvailable(41)=.true.
+        Met_var_IsAvailable(42)=.true.
+        Met_var_IsAvailable(43)=.true.
+        Met_var_IsAvailable(44)=.true.
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp
+
+      elseif (MR_iwindformat.eq.20)then
+        ! GFS 0.5 deg
+          !  http://www.nco.ncep.noaa.gov/pmb/products/gfs/
+          !  http://motherlode.ucar.edu/native/conduit/data/nccf/com/gfs/prod/
+          !    
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "GFS 0.5"
-      elseif (MR_iwindformat.eq.21)then  ! GFS 1.0
+
+        MR_iGridCode = 4
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric3"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Surface
+        Met_var_IsAvailable(10)=.true.; Met_var_GRIB2_DPcPnSt(10,1:4)=(/0, 3, 18, 1/)
+        Met_var_IsAvailable(11)=.true.
+        Met_var_IsAvailable(12)=.true.
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+        Met_var_IsAvailable(32)=.true.
+        ! Precipitation
+        Met_var_IsAvailable(40)=.true.; Met_var_NC_names(40)="Categorical_Rain"
+        Met_var_IsAvailable(41)=.true.; Met_var_NC_names(41)="Categorical_Snow"
+        Met_var_IsAvailable(42)=.true.; Met_var_NC_names(42)="Categorical_Freezing_Rain"
+        Met_var_IsAvailable(43)=.true.; Met_var_NC_names(43)="Categorical_Ice_Pellets"
+        Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="Precipitation_rate"
+        Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_Precipitation_Rate"
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp
+
+      elseif (MR_iwindformat.eq.21)then
+        ! GFS 1.0 deg
+          ! http://www.nco.ncep.noaa.gov/pmb/products/gfs/
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "GFS 0.5-degree"
-      elseif (MR_iwindformat.eq.22)then  ! GFS 0.25
+
+        MR_iGridCode = 3
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric3"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Surface
+        Met_var_IsAvailable(10)=.true.; Met_var_GRIB2_DPcPnSt(10,1:4)=(/0, 3, 18, 1/)
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+        Met_var_IsAvailable(32)=.true.
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp
+
+      elseif (MR_iwindformat.eq.22)then
+        ! GFS 0.25 deg
+          ! http://www.nco.ncep.noaa.gov/pmb/products/gfs/
+          ! http://motherlode.ucar.edu/native/conduit/data/nccf/com/gfs/prod/
+          !  
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "GFS 0.25"
-      elseif (MR_iwindformat.eq.23)then  ! NCEP / DOE reanalysis 2.5 degree files
-        MR_Reannalysis = .true.
+
+        MR_iGridCode = 193
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
+        MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric3"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Surface
+        Met_var_IsAvailable(10)=.true.; Met_var_GRIB2_DPcPnSt(10,1:4)=(/0, 3, 18, 1/)
+        Met_var_IsAvailable(11)=.true.
+        Met_var_IsAvailable(12)=.true.
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+        Met_var_IsAvailable(32)=.true.
+        ! Precipitation
+        Met_var_IsAvailable(40)=.true.; Met_var_NC_names(40)="Categorical_Rain"
+        Met_var_IsAvailable(41)=.true.; Met_var_NC_names(41)="Categorical_Snow"
+        Met_var_IsAvailable(42)=.true.; Met_var_NC_names(42)="Categorical_Freezing_Rain"
+        Met_var_IsAvailable(43)=.true.; Met_var_NC_names(43)="Categorical_Ice_Pellets"
+        Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="Precipitation_rate"
+        Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_Precipitation_Rate"
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp
+
+      elseif (MR_iwindformat.eq.23)then
+         ! NCEP / DOE reanalysis 2.5 degree files 
+         ! https://rda.ucar.edu/datasets/ds091.0
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NCEP / DOE reanalysis 2.5 degree files"
-      elseif (MR_iwindformat.eq.24)then  ! NASA-MERRA-2 reanalysis 0.625/0.5 degree files
+
+        MR_iGridCode = 2
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
+
+        Met_var_GRIB1_Table(1:MR_MAXVARS) = 132
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="Vertical_velocity_isobaric"
+        Met_var_IsAvailable(5)=.true.
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+        ! Precipitation
+        Met_var_IsAvailable(44)=.true.
+
+        fill_value_sp(MR_iwindformat) = 9.999_sp
+
+      elseif (MR_iwindformat.eq.24)then
+         ! NASA-MERRA-2 reanalysis 0.625 x 0.5 degree files 
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NASA-MERRA-2 reanalysis 0.625/0.5 degree files"
-      elseif (MR_iwindformat.eq.25)then  ! NCEP/NCAR reanalysis 2.5 degree files
+
+        MR_iGridCode = 1024
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "lev"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+
+        Met_dim_fac(1) = 1.0_sp/60.0_sp
+
+        ! Momentum / State variables
+        !   Available in MERRA2_400.inst3_3d_asm_Np.YYYYMMDD.nc4
+        !    from https://goldsmr5.gesdisc.eosdis.nasa.gov/data/MERRA2/M2I3NPASM.5.12.4
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="H"
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U"
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V"
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="OMEGA"
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T"
+        ! Moisture
+        !   Available in MERRA2_400.inst3_3d_asm_Np.YYYYMMDD.nc4
+        !    from https://goldsmr5.gesdisc.eosdis.nasa.gov/data/MERRA2/M2I3NPASM.5.12.4
+        Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="RH"          ! float percent
+        Met_var_IsAvailable(31)=.true.; Met_var_NC_names(31)="QV"          ! float cloud liquid water mixing ratio kg/kg
+        Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="QL"          ! float cloud liquid water mixing ratio kg/kg
+        Met_var_IsAvailable(33)=.true.; Met_var_NC_names(33)="QI"          ! float cloud ice mixing ratio kg/kg
+
+        fill_value_sp(MR_iwindformat) = 1.0e15_sp
+
+      elseif (MR_iwindformat.eq.25)then
+         ! NCEP/NCAR reanalysis 2.5 degree files 
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NCEP/NCAR reanalysis 2.5 degree files"
-      elseif (MR_iwindformat.eq.26)then  ! GFS 0.5 with 47 pressure levels
-        MR_Reannalysis = .false.
-        write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "GFS 0.5 with 47 pressure levels"
-      elseif (MR_iwindformat.eq.27)then  ! NOAA-CIRES reanalysis 2.5 degree files
+
+        MR_iGridCode = 2
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
+
+        if(MR_iwind.eq.4)then
+           ! https://rda.ucar.edu/datasets/ds090.0
+
+          Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+          Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric"
+          Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+          Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+  
+          ! Momentum / State variables
+          Met_var_IsAvailable(1)=.true.
+          Met_var_IsAvailable(2)=.true.
+          Met_var_IsAvailable(3)=.true.
+          Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="Pressure_vertical_velocity_isobaric"
+          Met_var_IsAvailable(5)=.true.
+          ! Moisture
+          !Met_var_IsAvailable(30)=.true.
+  
+          fill_value_sp(MR_iwindformat) = -9999.0_sp
+
+        elseif(MR_iwind.eq.5)then
+
+          Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+          Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "level"
+          Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+          Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+  
+          ! Momentum / State variables
+          Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="hgt"        ! short m^2/s^2 (32066.f,1.f)
+          Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="uwnd"       ! short m/s (202.66f,0.01f)
+          Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="vwnd"       ! short m/s (202.66f,0.01f)
+          Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="omega"      ! short Pa/s (29.765f,0.001f)
+          Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="air"        ! short K (477.66f,0.01f)
+          ! Atmospheric Structure
+          !Met_var_IsAvailable(20)=.true.
+          !Met_var_IsAvailable(21)=.true.
+          ! Moisture
+          !Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="rhum"      ! short  (302.66f,0.01f)
+          !Met_var_IsAvailable(31)=.true.; Met_var_NC_names(31)="shum"      ! short SpecHum ~ mixing ratio kg/kg(0.032666f,1.e-06f)
+          !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="shum"      ! short should really be QL (liquid)
+          ! Precipitation
+          !Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="prate"     ! short surface precipitation rate (kg/m2/s) (0.0032765f,1.e-07f)
+          !Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="cprat"     ! short surface convective precip kg/m2/s (0.0031765f,1.e-07f)
+  
+          fill_value_sp(MR_iwindformat) = -9999.0_sp
+
+        else
+          write(MR_global_error,*)"MR ERROR : NCEP Reannalysis provided only as iwind 4 or iwind 5"
+          stop 1
+        endif
+
+      elseif (MR_iwindformat.eq.26)then
+         ! JRA-55 reanalysis 1.25 degree files 
+         ! https://rda.ucar.edu/datasets/ds628.0/
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "NOAA-CIRES reanalysis 2.5 degree files"
-      elseif (MR_iwindformat.eq.28)then  ! ECMWF Interim Reanalysis (ERA-Interim)
+                  "JRA-55 reanalysis 1.25 degree files"
+
+        MR_iGridCode = 45
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
+
+        Met_var_GRIB1_Table(1:MR_MAXVARS) = 200
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "initial_time0_hours"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "lv_ISBL1"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "g0_lat_2"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "g0_lon_3"
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="HGT_GDS0_ISBL"
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="UGRD_GDS0_ISBL"
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="VGRD_GDS0_ISBL"
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="VVEL_GDS0_ISBL"
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="TMP_GDS0_ISBL"
+        ! Moisture
+        Met_var_IsAvailable(31)=.true.; Met_var_GRIB_names(31)= "SPFH_GDS0_ISBL"
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp
+
+      elseif (MR_iwindformat.eq.27)then
+         ! NOAA-CIRES reanalysis 2.0 degree files 
+         ! https://rda.ucar.edu/datasets/ds131.2/
+         ! https://www.esrl.noaa.gov/psd/data/gridded/data.20thC_ReanV2c.pressure.html
+
+        write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
+                  "NOAA-CIRES reanalysis 2.0 degree files"
+
+        MR_iGridCode = 1027
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
+        MR_Reannalysis = .true.
+
+        Met_var_GRIB1_Table(1:MR_MAXVARS) = 2
+
+        if(MR_Use_RDA)then
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          ! Version 2c (https://rda.ucar.edu/datasets/ds131.2/)
+          ! Note: these must be converted from grib using
+          !   ncl_convert2nc pgrbanl_mean_1912_VVEL_pres.grib -L
+          ! netcdf-java does not seem to work on these
+          Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "initial_time0_hours"
+          Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "lv_ISBL1"
+          Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "g0_lat_2"
+          Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "g0_lon_3"
+  
+          ! Momentum / State variables
+          Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="HGT_GDS0_ISBL"
+          Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U_GRD_GDS0_ISBL"
+          Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_GRD_GDS0_ISBL"
+          Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="V_VEL_GDS0_ISBL"
+          Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="TMP_GDS0_ISBL"
+        else 
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          ! Version 2c (https://www.esrl.noaa.gov/psd/data/gridded/data.20thC_ReanV2c.pressure.html)
+          Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+          Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "level"
+          Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+          Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+  
+          ! Momentum / State variables
+          Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="hgt"
+          Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="uwnd"
+          Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="vwnd"
+          Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="omega"
+          Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="air"
+        endif
+
+
+        fill_value_sp(MR_iwindformat) = 1.e+20_sp
+
+      elseif (MR_iwindformat.eq.28)then
+         ! ECMWF Interim Reanalysis (ERA-Interim)
+         ! https://rda.ucar.edu/datasets/ds627.0
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "ECMWF Interim Reanalysis (ERA-Interim)"
-      elseif (MR_iwindformat.eq.31)then  ! Catania forecast
-        MR_Reannalysis = .false.
+
+        MR_iGridCode = 170
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
+        MR_Reannalysis = .true.
+
+        Met_var_GRIB1_Table(1:MR_MAXVARS) = 128
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="Geopotential_isobaric"
+                                       Met_var_GRIB1_Param(1)=129
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U_component_of_wind_isobaric"
+                                       Met_var_GRIB1_Param(2)=131
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_component_of_wind_isobaric"
+                                       Met_var_GRIB1_Param(3)=132
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="Vertical_velocity_isobaric"
+                                       Met_var_GRIB1_Param(4)=135
+        Met_var_IsAvailable(5)=.true.
+                                       Met_var_GRIB1_Param(5)=130
+        Met_var_IsAvailable(30)=.true.
+                                       Met_var_GRIB1_Param(30)=157
+        Met_var_IsAvailable(31)=.true.
+                                       Met_var_GRIB1_Param(31)=133
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+        Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
+
+      elseif (MR_iwindformat.eq.29)then
+         ! ECMWF ERA5
+         ! https://rda.ucar.edu/datasets/ds630.0
+         ! Note: files are provided as one variable per file
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "Catania forecast"
-      elseif (MR_iwindformat.eq.32)then  ! Air Force Weather Agency subcenter = 0
-        MR_Reannalysis = .false.
+                  "ECMWF ERA5 reanalysis"
+
+        MR_iGridCode = 1029
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
+        MR_Reannalysis = .true.
+
+        Met_var_GRIB1_Table(1:MR_MAXVARS) = 128
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "level"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "latitude"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "longitude"
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="Z" ! e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U" ! e5.oper.an.pl.128_131_u.regn320uv.2018062000_2018062023.nc
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V" ! e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W" ! e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T" ! e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
+        ! Atmospheric Structure
+        !Met_var_IsAvailable(23)=.true.; Met_var_NC_names(23)="CC" ! e5.oper.an.pl.128_248_cc.regn320sc.2018062000_2018062023.nc
+        ! Moisture
+        !Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="R"   ! e5.oper.an.pl.128_157_r.regn320sc.2018062000_2018062023.nc
+        !Met_var_IsAvailable(31)=.true.; Met_var_NC_names(31)="Q"   ! e5.oper.an.pl.128_133_q.regn320sc.2018062000_2018062023.nc
+        !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="CLWC"! e5.oper.an.pl.128_246_clwc.regn320sc.2018062000_2018062023.nc
+        !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="CIWC"! e5.oper.an.pl.128_247_ciwc.regn320sc.2018062000_2018062023.nc
+        ! Precipitation
+        !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="CRWC"! e5.oper.an.pl.128_075_crwc.regn320sc.2018062000_2018062023.nc
+        !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="CSWC"! e5.oper.an.pl.128_076_cswc.regn320sc.2018062000_2018062023.nc
+
+        Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
+
+      elseif (MR_iwindformat.eq.30)then
+         ! ECMWF ERA 20C
+         ! https://rda.ucar.edu/datasets/ds626.0
+         ! Note: files are provided as one variable per file
+
+        write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
+                  "ECMWF ERA20C reanalysis"
+
+        MR_iGridCode = 1030
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
+        MR_Reannalysis = .true.
+
+        Met_var_GRIB1_Table(1:MR_MAXVARS) = 128
+
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "initial_time0_hours"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "lv_ISBL1"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "g4_lat_2"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "g4_lon_3"
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="Z_GDS4_ISBL" ! e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U_GDS4_ISBL" ! e5.oper.an.pl.128_131_u.regn320uv.2018062000_2018062023.nc
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_GDS4_ISBL" ! e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W_GDS4_ISBL" ! e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T_GDS4_ISBL" ! e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
+
+        Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
+
+      elseif (MR_iwindformat.eq.32)then
+         ! Air Force Weather Agency subcenter = 0
+         ! GALWEM
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "Air Force Weather Agency subcenter = 0"
-      elseif (MR_iwindformat.eq.33)then  ! CCSM3.0 Community Atmosphere Model (CAM)
-        MR_Reannalysis = .true.
+
+        MR_iGridCode = 1032
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
+        MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "isobaric"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.
+        Met_var_IsAvailable(2)=.true.
+        Met_var_IsAvailable(3)=.true.
+        Met_var_IsAvailable(4)=.true.
+        Met_var_IsAvailable(5)=.true.
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.
+
+        fill_value_sp(MR_iwindformat) = -9999._sp ! actually NaNf
+
+      elseif (MR_iwindformat.eq.33)then
+         ! CCSM3.0 Community Atmosphere Model (CAM)
+         ! http://www.cesm.ucar.edu/models/atm-cam/
+         ! peleoclimate monthly averages
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "CCSM3.0 Community Atmosphere Model (CAM)"
-      elseif (MR_iwindformat.eq.40)then  ! NASA-GEOS Cp
-        MR_Reannalysis = .false.
+
+        MR_iGridCode = 1033
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
+        MR_Reannalysis = .true.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "lev"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+
+        Met_dim_fac(1) = 24.0
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="Z3"      ! float m
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U"
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V"
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="OMEGA"
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T"
+        ! Moisture
+        Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="RELHUM"
+        Met_var_IsAvailable(31)=.true.; Met_var_NC_names(31)="Q"
+
+        fill_value_sp(MR_iwindformat) = -9999.0_sp
+
+      elseif (MR_iwindformat.eq.40)then
+         ! NASA-GEOS Cp
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NASA-GEOS Cp"
-      elseif (MR_iwindformat.eq.41)then  ! NASA-GEOS Np
+
+        MR_iGridCode = 1040
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "lev"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+
+        Met_dim_fac(1) = 1.0_sp/60.0_sp
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="H"
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U"
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V"
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="OMEGA"
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T"
+
+        fill_value_sp(MR_iwindformat) = 1.0e15_sp
+
+      elseif (MR_iwindformat.eq.41)then
+         ! NASA-GEOS Np
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "NASA-GEOS Np"
-      elseif (MR_iwindformat.eq.50)then   ! WRF - output
-        MR_Reannalysis = .true.
+
+        MR_iGridCode = 1041
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
+        MR_Reannalysis = .false.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "lev"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "lat"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "lon"
+
+        Met_dim_fac(1) = 1.0_sp/60.0_sp
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="H"
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U"
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V"
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="OMEGA"
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T"
+
+        fill_value_sp(MR_iwindformat) = 1.0e15_sp
+
+      elseif (MR_iwindformat.eq.50)then
+         ! WRF - output
+
         write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
                   "WRF"
-      elseif (MR_iwindformat.eq.51)then   ! SENAMHI - WRF 22km
-        MR_Reannalysis = .false.
-        write(MR_global_info,*)"  NWP format to be used = ",MR_iwindformat,&
-                  "SENAMHI 22km"
+
+        MR_iGridCode = 1050
+        call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
+        MR_Reannalysis = .true.
+
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "Time"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "bottom_top"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "south_north"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "west_east"
+        ! for pressure, read "P"  :: perturbation pressure
+        !               and  "PB" :: base pressure
+
+        ! for geopotential, read "PH"  :: perturbation geopotential
+        !                   and  "PHB" :: base-state geopotential
+
+        ! Momentum / State variables
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="PHB"
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U"
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V"
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W"
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T"      ! float K perturbation potential temperature (theta-t0)
+        Met_var_IsAvailable(6)=.true.; Met_var_NC_names(6)="PB"
+
+        ! Surface
+        Met_var_IsAvailable(10)=.true.; Met_var_NC_names(10)="PBLH"
+        Met_var_IsAvailable(11)=.true.; Met_var_NC_names(11)="U10"
+                                        Met_var_ndim(11)=3
+        Met_var_IsAvailable(12)=.true.; Met_var_NC_names(12)="V10"
+                                        Met_var_ndim(12)=3
+        Met_var_IsAvailable(13)=.true.; Met_var_NC_names(13)="UST"
+        Met_var_IsAvailable(15)=.true.; Met_var_NC_names(15)="SNOWH"
+        Met_var_IsAvailable(16)=.true.; Met_var_NC_names(16)="SMOIS" !Soil moisture m3 m-3
+        ! Moisture
+        Met_var_IsAvailable(31)=.true.; Met_var_NC_names(31)="QVAPOR" !QV (specific humidity)
+        ! Precipitation
+        Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="RAINC"   ! ACCUMULATED TOTAL CUMULUS PRECIPITATION in mm
+        Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="RAINNC"  ! ACCUMULATED TOTAL GRID SCALE PRECIPITATION in mm
+
+        fill_value_sp(MR_iwindformat) = 1.e+20_sp
+
+        Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
+
       else
         write(MR_global_error,*)'MR ERROR : MR_iwindformat not supported'
         write(MR_global_error,*)'           MR_iwindformat=',MR_iwindformat,&
                                      '. Program stopped in MetReader.f90'
         stop 1
       endif
+
       write(MR_global_info,*)"                grid ID = ",MR_iGridCode
       select case (MR_idataFormat)
       case(1)
@@ -808,19 +2091,11 @@
         stop 1
 #endif
       case(3)
-        write(MR_global_info,*)"            data format = ",MR_idataFormat,"GRIB2"
-#ifndef USEGRIB2
-        write(MR_global_error,*)"MR ERROR: Met files are grib2, but MetReader was not"
-        write(MR_global_error,*)"          compiled with grib2 support."
-        write(MR_global_error,*)"          Please recompile MetReader with grib2 support"
-        stop 1
-#endif
-      case(4)
-        write(MR_global_info,*)"            data format = ",MR_idataFormat,"GRIB1"
-#ifndef USEGRIB1
-        write(MR_global_error,*)"MR ERROR: Met files are grib1, but MetReader was not"
-        write(MR_global_error,*)"          compiled with grib1 support."
-        write(MR_global_error,*)"          Please recompile MetReader with grib1 support"
+        write(MR_global_info,*)"            data format = ",MR_idataFormat,"GRIB"
+#ifndef USEGRIB
+        write(MR_global_error,*)"MR ERROR: Met files are grib, but MetReader was not"
+        write(MR_global_error,*)"          compiled with grib support."
+        write(MR_global_error,*)"          Please recompile MetReader with grib support"
         stop 1
 #endif
       case default
@@ -831,11 +2106,28 @@
 
       write(MR_global_info,*)"     Allocating space for ",MR_iwindfiles,"files."
 
-      if (MR_iwindformat.eq.25.or.MR_iwindformat.eq.27)then
-        write(MR_global_info,*)"For NCEP1 or NOAA, only the directory should be listed."
+      if (MR_iwind.eq.5)then
+        write(MR_global_info,*)"For iwf=5:: one variable per file,"
+        write(MR_global_info,*)"Only the directory should be listed. The remaining"
+        write(MR_global_info,*)"path is hard-coded."
         ! Reset MR_iwindfiles to 2: only one "file" will be read,
-        ! but we need this to be 2 to accommodate runs that might span two years
-        MR_iwindfiles = 2
+        ! but we need this to be 2 to accommodate runs that might span two years/months
+        ! For ERA5 files, data is provided in daily files so MR_iwindfiles might be > 2
+        if(MR_Comp_Time_in_hours.gt.0.0)then
+          if(MR_iwindformat.eq.25)then
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/8760.0_dp) + 1 ! These are yearly files
+          elseif(MR_iwindformat.eq.26)then
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/627.0_dp) + 1  ! Monthly files
+          elseif(MR_iwindformat.eq.27)then
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/8760.0_dp) + 1 ! yearly files
+          elseif(MR_iwindformat.eq.29)then
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/24.0_dp) + 1   ! daily files
+          elseif(MR_iwindformat.eq.30)then
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/672.0_dp) + 1  ! monthly
+          endif
+        else
+          MR_iwindfiles = 2
+        endif
       endif
 
       allocate (MR_windfiles(MR_iwindfiles))
@@ -911,7 +2203,6 @@
 !
 !     After this subroutine completes, the following variables will be set:
 !       All the projection parameters of NWP grid
-!       Met_dim_names, Met_var_names, Met_var_conversion_factor, Met_var_IsAvailable
 !       The lengths of all the dimensions of the file
 !       p_fullmet_sp (converted to Pa)
 !       x_fullmet_sp, y_fullmet_sp
@@ -926,7 +2217,7 @@
 
       implicit none
 
-      integer, optional,intent(in) :: iy  ! Note: this is only needed for iwf=25 or 27
+      integer, optional,intent(in) :: iy  ! Note: this is only needed for iw=5
                                           !       since we need to know how many
                                           !       metsteps to allocate
 
@@ -957,8 +2248,8 @@
       endif
 #endif
 
-      if(MR_iwindformat.eq.25.or.MR_iwindformat.eq.27)then
-        ! For NCEP 2.5 degree reanalysis and the NOAA product, only the directory
+      if(MR_iwind.eq.5)then
+        ! For iwind=5 files (NCEP 2.5 degree reanalysis, NOAA, etc. ), only the directory
         ! was read into slot 1 of MR_windfiles(:).  We need to copy to slot 2
         ! to make sure we don't throw an error
         MR_windfiles(2)   = MR_windfiles(1)
@@ -969,8 +2260,8 @@
           ! is given
           MR_Comp_StartYear = iy
         else
-          write(MR_global_info,*)"MR WARNING: If the iwf=25 (NCEP Reannalysis) or iwf=27 (NOAA"
-          write(MR_global_info,*)"            Reannalysis) are used, then MR_Read_Met_DimVars"
+          write(MR_global_info,*)"MR WARNING: If the iw=5 (NCEP Reannalysis, NOAA Reannalysis, "
+          write(MR_global_info,*)"            etc.) are used, then MR_Read_Met_DimVars"
           write(MR_global_info,*)"            should be called with a start year.  This is needed"
           write(MR_global_info,*)"            to allocate the correct number of time steps per file."
           write(MR_global_info,*)"            Setting MR_Comp_StartYear to 2018 for a non-leap year."
@@ -984,7 +2275,7 @@
 
       endif
 
-      ! Verify that the first windfile has been changed from it's initiallized value
+      ! Verify that the first windfile has been changed from its initiallized value
       tmp_str = MR_windfiles(1)
       if(tmp_str(1:15).eq.'              ')then
         write(MR_global_error,*)"MR ERROR: The array MR_windfiles appears to not be set."
@@ -1000,10 +2291,10 @@
       write(MR_global_info,*)"  Verifying existance of windfiles:"
       do i=1,MR_iwindfiles
         inquire( file=adjustl(trim(MR_windfiles(i))), exist=IsThere )
-        write(MR_global_info,*)"     ",adjustl(trim(MR_windfiles(i))),IsThere
+        write(MR_global_info,*)"     ",i,adjustl(trim(MR_windfiles(i))),IsThere
         if(.not.IsThere)then
           write(MR_global_error,*)"MR ERROR: Could not find windfile ",i
-          write(MR_global_error,*)"          adjustl(trim(MR_windfiles(i)))"
+          write(MR_global_error,*)"          ",adjustl(trim(MR_windfiles(i)))
           stop 1
         endif
       enddo
@@ -1019,18 +2310,13 @@
          ! MR_iwindformat; also do a bit of error checking by reading netcdf files
         if(MR_idataFormat.eq.2)then
 #ifdef USENETCDF
-          call MR_Read_Met_DimVars_netcdf
           call MR_Read_Met_Times_netcdf
+          call MR_Read_Met_DimVars_netcdf
 #endif
         elseif(MR_idataFormat.eq.3)then
-#ifdef USEGRIB2
-          call MR_Read_Met_DimVars_GRIB2
-          call MR_Read_Met_Times_GRIB2
-#endif
-        elseif(MR_idataFormat.eq.4)then
-#ifdef USEGRIB1
-          !call MR_Read_Met_DimVars_GRIB1
-          !call MR_Read_Met_Times_GRIB1
+#ifdef USEGRIB
+          call MR_Read_Met_Times_GRIB
+          call MR_Read_Met_DimVars_GRIB
 #endif
         else
           write(MR_global_error,*)"MR ERROR: Unknown MR_idataFormat:",MR_idataFormat
@@ -1083,12 +2369,12 @@
 
       isLatLon_CompGrid = LL_flag
 
-      Comp_lam0 = 0.0
-      Comp_phi0 = 0.0
-      Comp_phi1 = 0.0
-      Comp_phi2 = 0.0
-      Comp_k0   = 0.0
-      Comp_Re   = 0.0
+      Comp_lam0 = 0.0_8
+      Comp_phi0 = 0.0_8
+      Comp_phi1 = 0.0_8
+      Comp_phi2 = 0.0_8
+      Comp_k0   = 0.0_8
+      Comp_Re   = 0.0_8
 
       if(.not.isLatLon_CompGrid)then
         Comp_iprojflag = ipf 
@@ -1221,6 +2507,7 @@
       select case (MR_iwind)
       case(1)   ! if we're using a 1-D wind sounding
         call MR_Set_MetComp_Grids_ASCII_1d
+        call MR_Set_Comp2Met_Map
       case(2)
         !call MR_Set_MetComp_Grids_ASCII_3d
       case (3:5)
@@ -1342,6 +2629,8 @@
       integer, parameter :: sp        = 4 ! single precision
       integer, parameter :: dp        = 8 ! double precision
 
+      integer, parameter :: NT_MAXOUT = 40
+
       real(kind=8),intent(in) :: eStartHour
       real(kind=8),intent(in) :: Duration
 
@@ -1355,9 +2644,9 @@
       integer            :: iwstep
       integer            :: istep
       real(kind=8)       :: stephour
-      logical :: Found_First_Step
-      logical :: Found_Last_Step
-      integer :: nMetSteps_Comp
+      logical :: Found_First_Step = .false.
+      logical :: Found_Last_Step  = .false.
+      integer :: nMetSteps_Comp   = 0
       real(kind=8) :: StepInterval
       real(kind=8) :: met_t1,met_t2,met_dt1
       logical      :: prestep, poststep
@@ -1385,6 +2674,8 @@
         MR_Comp_Time_in_hours    = Duration
       endif
       MR_Comp_StartYear        = HS_YearOfEvent(MR_Comp_StartHour,MR_BaseYear,MR_useLeap)
+      MR_Comp_StartMonth       = HS_MonthOfEvent(MR_Comp_StartHour,MR_BaseYear,MR_useLeap)
+      MR_Comp_StartDay         = HS_DayOfEvent(MR_Comp_StartHour,MR_BaseYear,MR_useLeap)
 
       ! Now we want to loop through all the steps of each windfile and find the
       ! file/step that immediately preceeds the time needed (MR_Comp_StartHour)
@@ -1485,7 +2776,6 @@
           write(MR_global_error,*)"  MR_Comp_Time_in_hours= ",MR_Comp_Time_in_hours
           write(MR_global_error,*)"  met_t1               = ",met_t1
           write(MR_global_error,*)"  met_dt1              = ",met_dt1
-
           stop 1
         endif
       else
@@ -1517,7 +2807,7 @@
           if(stephour.lt.MR_Comp_StartHour)then
             Found_First_Step = .false.
             istep = 1
-            if(MR_windfiles_nt_fullmet(iw).lt.36)then
+            if(MR_windfiles_nt_fullmet(iw).lt.NT_MAXOUT)then
               ! This suppresses outputing the windfile step info for the files that contain a year's
               ! worth of data (NCEP 2.5, etc)
               write(MR_global_info,150)                    &
@@ -1529,9 +2819,11 @@
             if(.not.Found_Last_Step)then
               Found_First_Step = .true.
               istep = istep + 1
-              write(MR_global_info,150)                    &
-                iw,iwstep,stephour,MR_Comp_StartHour,istep,&
-                "After MR_Comp_StartHour "
+              if(MR_windfiles_nt_fullmet(iw).lt.NT_MAXOUT)then
+                write(MR_global_info,150)                    &
+                  iw,iwstep,stephour,MR_Comp_StartHour,istep,&
+                  "After MR_Comp_StartHour "
+              endif
             endif
           endif
 
@@ -1541,13 +2833,14 @@
             Found_Last_Step = .true.
           endif
           if(Found_Last_Step &
-             .and.MR_windfiles_nt_fullmet(iw).lt.36)then ! This condition suppressess output for NCEP 2.5
+             .and.MR_windfiles_nt_fullmet(iw).lt.NT_MAXOUT)then ! This condition suppressess output for NCEP 2.5
               write(MR_global_info,150)                    &
                 iw,iwstep,stephour,MR_Comp_StartHour,istep,&
                 "At or after END OF SIM  "
           endif
         enddo
       enddo
+
       ! If we went through all the steps and didn't find the last step, and if poststep=T, then
       ! increment istep and set nMetSteps_Comp
       if(.not.Found_Last_Step)then
@@ -1564,7 +2857,7 @@
           stop 1
         endif
       endif
- 150  format(8x,i3,9x,i4,4x,f15.2,2x,f13.2,10x,i3,8x,a25)
+ 150  format(8x,i3,9x,i4,4x,f15.2,2x,f13.2,10x,i4,8x,a25)
 
       ! We now have the number of steps needed for the computation
       ! Allocate the lists
@@ -1637,7 +2930,6 @@
             MR_iwind5_year(istep)             = MR_MetStep_year(istep)
           endif
 
-
           ! Check if the current step hour is exclusively after the end of the simulation
           if(stephour.gt.MR_Comp_StartHour+MR_Comp_Time_in_hours)then
             if(.not.Found_Last_Step)nMetSteps_Comp=istep
@@ -1674,12 +2966,11 @@
 
       write(MR_global_info,*)"Comp start = ",real(MR_Comp_StartHour,kind=4)
       write(MR_global_info,*)"Comp end   = ",real(MR_Comp_StartHour+MR_Comp_Time_in_hours,kind=4)
+
       do istep = 1,MR_MetSteps_Total
         iw       = MR_MetStep_findex(istep)
         iwstep   = MR_MetStep_tindex(istep)
         stephour = MR_MetStep_Hour_since_baseyear(istep)
-        write(MR_global_info,*)istep,trim(adjustl(MR_MetStep_File(istep))),iw,iwstep,real(stephour,kind=4),&
-                               real(MR_MetStep_Interval(istep),kind=4)
       enddo
 
  !     MAKE SURE THE WIND MODEL TIME WINDOW COVERS THE ENTIRE SUMULATION TIME
@@ -1711,7 +3002,6 @@
         stop 1
       endif
       write(MR_global_info,103)
-      !write(MR_global_log ,103)
 103   format(4x,'Good.  It does.',/)
 
       CALLED_MR_Set_Met_Times = .true.
@@ -1777,12 +3067,8 @@
           call MR_Read_MetP_Variable_netcdf(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.3)then
-#ifdef USEGRIB2
-          call MR_Read_MetP_Variable_GRIB2(ivar,istep)
-#endif
-        elseif(MR_idataFormat.eq.4)then
-#ifdef USEGRIB1
-          !call MR_Read_MetP_Variable_GRIB1(ivar,istep)
+#ifdef USEGRIB
+          call MR_Read_MetP_Variable_GRIB(ivar,istep)
 #endif
         endif
         MR_geoH_metP_last(:,:,:) = MR_dum3d_metP(:,:,:)
@@ -1800,14 +3086,11 @@
         call MR_Read_MetP_Variable_netcdf(ivar,istep+1)
 #endif
       elseif(MR_idataFormat.eq.3)then
-#ifdef USEGRIB2
-        call MR_Read_MetP_Variable_GRIB2(ivar,istep+1)
-#endif
-      elseif(MR_idataFormat.eq.4)then
-#ifdef USEGRIB1
-        !call MR_Read_MetP_Variable_GRIB1(ivar,istep+1)
+#ifdef USEGRIB
+        call MR_Read_MetP_Variable_GRIB(ivar,istep+1)
 #endif
       endif
+
       MR_geoH_metP_next(:,:,:) = MR_dum3d_metP(:,:,:)
 
       Max_geoH_metP_next = maxval(MR_geoH_metP_next(:,:,np_fullmet))
@@ -1839,7 +3122,7 @@
 !
 !     MR_Read_3d_MetP_Variable
 !
-!     This subroutine extracts the variable Met_var_names(ivar) from the
+!     This subroutine extracts the variable Met_var_NC_names(ivar) from the
 !     windfile/timestep given by MetStep_File(istep),MetStep_tindex(istep).
 !     The values extracted are just on the needed subgrid of the full met
 !     grid on pressure coordinates.
@@ -1879,12 +3162,8 @@
           call MR_Read_MetP_Variable_netcdf(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.3)then
-#ifdef USEGRIB2
-          call MR_Read_MetP_Variable_GRIB2(ivar,istep)
-#endif
-        elseif(MR_idataFormat.eq.4)then
-#ifdef USEGRIB1
-          !call MR_Read_MetP_Variable_GRIB1(ivar,istep)
+#ifdef USEGRIB
+          call MR_Read_MetP_Variable_GRIB(ivar,istep)
 #endif
         endif
 
@@ -1900,7 +3179,7 @@
 !
 !     MR_Read_3d_MetH_Variable
 !
-!     This subroutine extracts the variable Met_var_names(ivar) from the
+!     This subroutine extracts the variable Met_var_NC_names(ivar) from the
 !     windfile/timestep given by MetStep_File(istep),MetStep_tindex(istep).
 !     The values extracted are just on the needed subgrid of the full met
 !     grid remapped on height coordinates.
@@ -1993,7 +3272,7 @@
             endif
           enddo
           if(np_fullmet_pad.gt.0)then
-            ! Assign top node (Should these indicies be +1?)
+            ! Assign top node
             if(MR_iHeightHandler.eq.1)then
               z_col_metP(np_fullmet+2) = z_col_metP(np_fullmet+1) + 10.0_sp
               write(MR_global_info,*)z_col_metP(np_fullmet+1:np_fullmet+2)
@@ -2009,7 +3288,6 @@
               endif
             endif
           endif
-
 
           if (MR_use_SigmaAlt)then
               ! this recovers the real-world z coordinate from the sigma level and topography
@@ -2040,7 +3318,7 @@
 !
 !     MR_Read_3d_Met_Variable_to_CompGrid
 !
-!     This subroutine extracts the variable Met_var_names(ivar) from the
+!     This subroutine extracts the variable Met_var_NC_names(ivar) from the
 !     windfile/timestep given by MetStep_File(istep),MetStep_tindex(istep).
 !     The values extracted are just on the needed subgrid of the full met
 !     grid remapped on to the computational grid.  This is done by calling:
@@ -2155,7 +3433,7 @@
 !
 !     MR_Read_2d_Met_Variable
 !
-!     This subroutine extracts the variable Met_var_names(ivar) from the
+!     This subroutine extracts the variable Met_var_NC_names(ivar) from the
 !     windfile/timestep given by MetStep_File(istep),MetStep_tindex(istep).
 !     The values extracted are just on the needed subgrid of the full met
 !     grid remapped on height coordinates.
@@ -2197,12 +3475,8 @@
           call MR_Read_MetP_Variable_netcdf(ivar,istep)
 #endif
         elseif(MR_idataFormat.eq.3)then
-#ifdef USEGRIB2
-          call MR_Read_MetP_Variable_GRIB2(ivar,istep)
-#endif
-        elseif(MR_idataFormat.eq.4)then
-#ifdef USEGRIB1
-          !call MR_Read_MetP_Variable_GRIB1(ivar,istep)
+#ifdef USEGRIB
+          call MR_Read_MetP_Variable_GRIB(ivar,istep)
 #endif
         endif
       case default
@@ -2217,7 +3491,7 @@
 !
 !     MR_Read_2d_Met_Variable_to_CompGrid
 !
-!     This subroutine extracts the variable Met_var_names(ivar) from the
+!     This subroutine extracts the variable Met_var_NC_names(ivar) from the
 !     windfile/timestep given by MetStep_File(istep),MetStep_tindex(istep).
 !     The values extracted are just on the needed subgrid of the full met
 !     grid remapped on to the computational grid.  This is done by calling:
@@ -2282,7 +3556,7 @@
 !
 !     MR_Rotate_UV_GR2ER_Met
 !
-!     This subroutine reads U and V on the metP grid, rotates to GridRelative
+!     This subroutine reads U and V on the metP grid, rotates to EarthRelative
 !
 !     Takes as input :: istep :: specified the met step
 !
@@ -2291,11 +3565,12 @@
 !
 !##############################################################################
 
-      subroutine MR_Rotate_UV_GR2ER_Met(istep)
+      subroutine MR_Rotate_UV_GR2ER_Met(istep,SetComp)
 
       implicit none
 
       integer,intent(in)  :: istep
+      logical,optional,intent(in) :: SetComp
 
       integer             :: i,j,k
 
@@ -2317,12 +3592,12 @@
 
       ! Rotate wind vectors on the MetP grid for NARR cases with Map_Case = 2 (both projected)
       ! or rotate to LL on MetP grid for Map_Case = 4 (Met=proj, Comp=LL)
-      write(MR_global_info,*)" Rotating Earth-relative projected Met winds to grid-relative"
-      write(MR_global_info,*)"  or rotating projected grid-relative Met winds to Earth-relative"
+      !write(MR_global_info,*)" Rotating Earth-relative projected Met winds to grid-relative"
+      !write(MR_global_info,*)"  or rotating projected grid-relative Met winds to Earth-relative"
 
-      if(.not.MR_Save_Velocities)then
-        write(MR_global_info,*)"MR WARNING: Velocities not saved"
-      endif
+      !if(.not.MR_Save_Velocities)then
+      !  write(MR_global_info,*)"MR WARNING: Velocities not saved"
+      !endif
 
       call MR_Read_3d_MetP_Variable(2,istep)
         MR_u_ER_metP = MR_dum3d_metP
@@ -2349,11 +3624,19 @@
           enddo
         enddo
       enddo
-      !MR_dum3d_metP = MR_v_ER_metP
-      !call MR_Regrid_MetP_to_CompGrid(istep)
-      !MR_dum3d_compH_2 = MR_dum3d_compH
-      !MR_dum3d_metP = MR_u_ER_metP
-      !call MR_Regrid_MetP_to_CompGrid(istep)
+
+      if(present(SetComp)) then
+        if(SetComp)then
+          MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_fullmet) = &
+            MR_v_ER_metP(1:nx_submet,1:ny_submet,1:np_fullmet)
+          call MR_Regrid_MetP_to_CompGrid(istep)
+          MR_dum3d_compH_2(1:nx_comp,1:ny_comp,1:nz_comp) = &
+            MR_dum3d_compH(1:nx_comp,1:ny_comp,1:nz_comp)
+          MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_fullmet) = &
+            MR_u_ER_metP(1:nx_submet,1:ny_submet,1:np_fullmet)
+          call MR_Regrid_MetP_to_CompGrid(istep)
+        endif
+      endif
 
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
@@ -2404,8 +3687,10 @@
                                  .true.,  &  ! CALLED_MR_Initialize_Met_Grids        (this check is needed)
                                  .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
 
-      if(Map_Case.eq.3)then
+      if(Map_Case.eq.3.or.Map_Case.eq.4)then
         ! Met grid is natively LL and Comp grid is projected
+        !  - or -
+        ! Met grid is projected and comp grid is LL
         ! Fill the y velocities to spare array (comp_2)
         call MR_Read_3d_MetP_Variable(3,istep) ! This fills MR_dum3d_metP
         call MR_Regrid_MetP_to_CompGrid(istep) ! Takes MR_dum3d_metP and fills MR_dum3d_compH
@@ -2415,12 +3700,12 @@
         call MR_Regrid_MetP_to_CompGrid(istep)
         ! Now compH and compH_2 have vx and vy
       elseif(Map_Case.eq.5)then
-        ! Assume MR_u_ER_metP and MR_v_ER_metP have already been set by
+        ! If the velocity components are grid relative, then
+        ! assume MR_u_ER_metP and MR_v_ER_metP have already been set by
         ! MR_Rotate_UV_GR2ER_Met
         MR_dum3d_metP = MR_v_ER_metP
         call MR_Regrid_MetP_to_CompGrid(istep)
           MR_dum3d_compH_2 = MR_dum3d_compH
-
         MR_dum3d_metP = MR_u_ER_metP
         call MR_Regrid_MetP_to_CompGrid(istep)
         ! Now compH and compH_2 have vx and vy
@@ -2501,7 +3786,6 @@
           MR_dum3d_compH(:,:,k) = MR_dum3d_metH(1,1,k)
           cycle
         endif
-
         call MR_Regrid_Met2Comp(nx_submet,ny_submet, MR_dum3d_metH(1:nx_submet,1:ny_submet,k),       &
                                 nx_comp,  ny_comp,   tmp_regrid2d_sp(1:nx_comp,1:ny_comp))
 
@@ -2584,7 +3868,6 @@
             ! negative.  If so, reassign to just above boundary.
           if (z_col_metP(2).le.2.0e-4_sp) z_col_metP(2) = 2.0e-4_sp
           if (z_col_metP(3).le.3.0e-4_sp) z_col_metP(3) = 3.0e-4_sp
-
           var_col_metP(1)              = 0.0_sp
           var_col_metP(2:np_fullmet+1) = MR_dum3d_metP(i,j,1:np_fullmet)
           ! Fix occasional erroneous pressure levels that are non-increasing by
@@ -2593,6 +3876,7 @@
           ! increase linearly with k
           do k=2,np_fullmet
             if (z_col_metP(k)<z_col_metP(k-1))then
+              write(MR_global_info,*)"MR_WARNING: Need to fix value in MR_Regrid_MetP_to_MetH"
               knext=k       !find the first value of z_col_metP that's above z_col_metP(k-1)
               do while (z_col_metP(knext)<z_col_metP(k-1))
                  knext=knext+1
@@ -2610,10 +3894,8 @@
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           !   Interpolate these values to a regular grid with
           !   spacing equal to the simulation grid
-
           call MR_Regrid_P2H_linear(np_fullmet+2, z_col_metP,  var_col_metP, & !vx
                                     nz_comp,       z_comp_sp,  var_col_metH)
-
           MR_dum3d_metH(i,j,:) = var_col_metH
         enddo ! j
       enddo  ! i
@@ -2956,7 +4238,7 @@
       real(kind=sp),dimension(7) :: US_StdAtm_pnodes
 
       real(kind=sp) :: pres0 = 1013.25_sp
-      real(kind=sp) :: skinz   = 7.0
+      real(kind=sp) :: skinz   = 7.0_sp
 
       US_StdAtm_znodes = (/ 0.0_sp, 11.0_sp, 20.0_sp, 32.0_sp, &
                            47.0_sp, 51.0_sp, 71.0_sp/)
@@ -2979,9 +4261,10 @@
 !##############################################################################
 
       subroutine MR_QC_3dvar(              &
-                 nx_max,ny_max,nz1_max, &
+                 ivar,                     &
+                 nx_max,ny_max,nz1_max,    &
                  z_array_sp,               &
-                 nz2_max,               &
+                 nz2_max,                  &
                  dum_array_sp,             &
                  fill_val_sp,              &
                  bc_low_sp, bc_high_sp)
@@ -2992,17 +4275,87 @@
       integer, parameter :: sp        = 4 ! single precision
       integer, parameter :: dp        = 8 ! double precision
 
+      integer               ,intent(in)    :: ivar
       integer               ,intent(in)    :: nx_max,ny_max,nz1_max
       real(kind=sp)         ,intent(in)    :: z_array_sp(nx_max,ny_max,nz1_max)
       integer               ,intent(in)    :: nz2_max
-      real(kind=sp)         ,intent(inout) :: dum_array_sp(nx_max,ny_max,nz2_max)
+      real(kind=sp)         ,intent(inout) :: dum_array_sp(nx_max,ny_max,nz1_max)
       real(kind=sp)         ,intent(in)    :: fill_val_sp
       real(kind=sp),optional,intent(in)    :: bc_low_sp
       real(kind=sp),optional,intent(in)    :: bc_high_sp
 
       logical,dimension(nz1_max) :: IsFillValue
+      logical,dimension(nz1_max) :: InterpolateLev
 
       integer ::  i,j,k,kk,kkk,klow,khigh
+      integer :: idx
+      real(kind=sp) :: pp,pv,p1,p2,fac
+
+      InterpolateLev = .false.
+
+      ! First check if this variable is on the same pressure grid as GPH
+      idx = Met_var_zdim_idx(ivar)  ! index of pressure level for this variable
+      if(levs_code(idx).eq.1)then
+        ! one-to-one mapping: no special action needed
+      else if (levs_code(idx).eq.2)then
+        ! truncated grid: this will be addressed at the end of this subroutine
+      else if (levs_code(idx).eq.3)then
+        ! interpolated:
+        ! We need the result to live on the same pressure levels as the GPH array, so
+        ! for each level of the primary pressure coordinate, we need to find if a level
+        ! of the variable can be copied or must be interpolated
+        !
+        ! Loop from the top of the variable array (because nz2_max<nz1_max)
+        InterpolateLev = .true.
+        do k=nz2_max,1,-1
+          pv = levs_fullmet_sp(idx,k)  ! Pressure level in question
+          do kk=nz1_max,1,-1           ! Looping over destination pressure levels
+            pp = levs_fullmet_sp(1,kk) 
+            if(abs(pv-pp).lt.MR_EPS_SMALL)then
+              ! pv matched with pp
+              InterpolateLev(kk) = .false.
+              ! if the slices are at the same index, do nothing
+              if (k.ne.kk)then
+                ! Move the slice to the needed position and flag original slice with NaN/Fill_Value
+                dum_array_sp(1:nx_max,1:ny_max,kk) = dum_array_sp(1:nx_max,1:ny_max,k)
+                dum_array_sp(1:nx_max,1:ny_max,k)  = fill_val_sp
+              endif
+            endif
+          enddo
+        enddo
+        ! Now go to each of the layers we need to calculate, assuming we have the end layers
+        do k=2,nz1_max-1
+          if (InterpolateLev(k))then
+            klow = 1
+            do kk = k,1,-1
+              if (.not.InterpolateLev(kk))then
+                klow = kk
+                exit
+              endif
+            enddo
+            do kk = k,nz1_max
+              if (.not.InterpolateLev(kk))then
+                khigh = kk
+                exit
+              endif
+            enddo
+            pp = levs_fullmet_sp(1,k)     ! This is the pressure level we need to populate
+            p1 = levs_fullmet_sp(1,klow)  ! pressure at low-altitude end of bracket
+            p2 = levs_fullmet_sp(1,khigh) ! pressure at high-altitude end of bracket
+
+            fac = (log(pp/p1))/(log(p2/p1))
+            dum_array_sp(1:nx_max,1:ny_max,k) = dum_array_sp(1:nx_max,1:ny_max,klow) + &
+                                                fac * (dum_array_sp(1:nx_max,1:ny_max,khigh) - &
+                                                       dum_array_sp(1:nx_max,1:ny_max,klow))
+          endif
+        enddo
+      else
+        ! Should not be here!
+        ! We assume that the varaible lives on the GPH grid or a subset
+        write(MR_global_error,*)'MR ERROR: Variable has more levels than GPH'
+        write(MR_global_log  ,*)'MR ERROR: Variable has more levels than GPH'
+        stop 1
+      endif
 
       do i=1,nx_max
         do j=1,ny_max
@@ -3061,9 +4414,6 @@
                  do kkk = max(k-1,1),klow,-1
                    if(.not.IsFillValue(kkk))exit
                  enddo
-                 ! Note:  this assumes that nz2_max.le.nz1_max and that the
-                 ! pressure values for dum_array_sp(1:nz2_max) are the same as
-                 ! the pressure for z_array_sp(nz1_max)
                  dum_array_sp(i,j,k) = dum_array_sp(i,j,kk) + &
                        (dum_array_sp(i,j,kk)-dum_array_sp(i,j,kkk)) * &
                        (z_array_sp(i,j,kk)-z_array_sp(i,j,kkk))/ &
@@ -3074,6 +4424,20 @@
           endif
         enddo
       enddo
+
+      if(levs_code(idx).eq.2)then
+        ! For truncated grids, assign truncated (high altitude) values to the top bc, if
+        ! present, or copy the upper-most valid value if not
+        if(present(bc_high_sp))then
+          do k=nz2_max+1,nz1_max
+            dum_array_sp(1:nx_max,1:ny_max,k) = bc_high_sp
+          enddo
+        else
+          do k=nz2_max+1,nz1_max
+            dum_array_sp(1:nx_max,1:ny_max,k) = dum_array_sp(1:nx_max,1:ny_max,nz2_max)
+          enddo
+        endif
+      endif
 
       end subroutine MR_QC_3dvar
 

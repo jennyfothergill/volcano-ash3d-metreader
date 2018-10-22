@@ -17,7 +17,7 @@
 
 \title{MetReader: Documentation and User's Guide}   % type title between braces
 \author{Hans F. Schwaiger}
-\date{June 26, 2018}    % type date between braces
+\date{October 22, 2018}    % type date between braces
 \maketitle
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -33,7 +33,7 @@ as a separate repository that can either be compiled as a library or simply
 compiled directly with other source code.
 
 NWP data are generally made available by agencies (NCEP, NOAA, NASA, etc.)
-in a variety of formats (NetCDF, GRIB1, GRIB2, ASCII); each product having
+in a variety of formats (NetCDF, GRIB, ASCII); each product having
 its own data structure, naming convention, units, etc.  This library
 isolates the calling program from the peculiarities of interfacing with
 a particular NWP product.  Data can be returned to the calling program on
@@ -58,7 +58,7 @@ This is a library that calculates commonly-used projected coordinates.\\
 These libraries are installed by default into \texttt{/opt/USGS}.  If they are
 installed elsewhere, then you will need to edit the makefile to point to your
 installation.
-Additionally, the default makefile will build MetReader with both NetCDF and GRIB2
+Additionally, the default makefile will build MetReader with both NetCDF and GRIB
 enabled.  If either of these libraries are unavailable on your system, you can
 deactivate those options by setting the corresponding flags to \texttt{F} in the makefile.
 On a RHEL/CentOS system, you can install the data format libraries by typing
@@ -69,12 +69,17 @@ or for Ubuntu
 \begin{verbatim}
      sudo apt-get install libnetcdf* libgrib-api*
 \end{verbatim}
+The library grib-api will be replaced by ecCodes (\texttt{https://confluence.ecmwf.int/display/ECC/ecCodes+Home})
+in 2018.  To use this interface to the grib files, the makefile can be edited to point to
+\begin{verbatim}
+grbLIBS = -leccodes -leccodes_f90
+\end{verbatim}
 To compile MetReader as a library, simple type:
 \begin{verbatim}
      make all
 \end{verbatim}
-This will build the requested components of the library.  If GRIB2 is enabled,
-this will also build the GRIB2 indexer, \texttt{gen\_GRIB2\_index}.
+This will build the requested components of the library.  If GRIB is enabled,
+this will also build the GRIB indexer, \texttt{gen\_GRIB\_index}.
 This is a tool that generates an index file of the GRIB records which speeds
 access time to individual records substantially.
 
@@ -100,7 +105,7 @@ directory structure:
 |   |   |-- get_gfs0.5deg.sh
 |   |   |-- get_NCEP_50YearReanalysis.sh
 |   |   `-- grib2nc.sh
-|   |-- gen_GRIB2_index
+|   |-- gen_GRIB_index
 |   |-- HoursSince1900
 |   |-- ncMet_check
 |   |-- ncMetSonde
@@ -119,7 +124,7 @@ directory structure:
 \clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Usage}
-MetReader can read a variety of input data formats (1-D, 3-D, ASCII, NetCDF, GRIB2) and
+MetReader can read a variety of input data formats (1-D, 3-D, ASCII, NetCDF, GRIB) and
 provide access to the meteorological data on either the native grid of the NWP data, or interpolated
 onto a finer regular grid.  Before the meterological data can be accessible, several preliminary steps
 must first be completed.
@@ -134,7 +139,14 @@ data to be read.
  \item 2 : 3-D grid is read from a ASCII file
  \item 3 : single, multistep 3-D datafile
  \item 4 : multiple 3-D datafiles
- \item 5 : special case for NCEP 50-year reanalysis and NOAA reanalysis
+ \item 5 : special case for products with one variable per file
+   \begin{itemize}
+     \item NCEP 50-year reanalysis
+     \item JRA-55
+     \item NOAA-CIRES 20th Century Reanalysis
+     \item ERA-5
+     \item ERA 20th Century Reanalysis
+   \end{itemize}
  \end{itemize}
 \item \texttt{iwf} :: windfile format number (linked to specific product in Table
   \ref{Tabiwf} of Appendix \ref{Apiwf})
@@ -143,8 +155,7 @@ data to be read.
  \begin{itemize}
  \item   1 : ASCII
  \item   2 : NetCDF
- \item   3 : GRIB Edition 2
- \item   4 : GRIB Edition 1 (Not yet implemented; used by NARR and NOAA-CIRES)
+ \item   3 : GRIB Edition 1 or 2
  \end{itemize}
 \item \texttt{iwfiles} :: number of windfiles to be read
 %\item iy      ::   year of start time needed (integer)
@@ -182,8 +193,10 @@ set of NWP files is needed, this subroutine can be called to free all allocated 
 This allocates the variable \texttt{MR\_windfiles(1:MR\_iwindfiles)}.
 
 \paragraph{Step 2:} The calling program must now fill the list of file names \texttt{MR\_windfiles()}
-with each name not exceeding 130 characters in length.  For the special cases for the NCEP/NCAR
-Reanalysis 1 or the NOAA-CIRES 20th Century Reanalysis (\texttt{iwf=}25 or 27), MetReader expects
+with each name not exceeding 130 characters in length.  For the special cases of one-variable files (\texttt{iwf}=5),
+%for the NCEP/NCAR
+%Reanalysis 1 or the NOAA-CIRES 20th Century Reanalysis (\texttt{iwf=}25 or 27),
+MetReader expects
 a specific structure to the directory holding the NWP files.  For these reanalysis product,
 the list of files is only one string (\texttt{iwfiles}=1)
 with the `file' given as the root directory to the NWP files.  For example, for the
@@ -199,14 +212,12 @@ where the files are stored as follows:
 |   |-- air.2016.nc
 |   |-- hgt.2016.nc
 |   |-- omega.2016.nc
-|   |-- shum.2016.nc
 |   |-- uwnd.2016.nc
 |   `-- vwnd.2016.nc
 |-- 2017
     |-- air.2017.nc
     |-- hgt.2017.nc
     |-- omega.2017.nc
-    |-- shum.2017.nc
     |-- uwnd.2017.nc
     `-- vwnd.2017.nc
 \end{verbatim}
@@ -219,15 +230,7 @@ where the files are stored as follows:
 \begin{verbatim}
 /data/WindFiles/NOAA
 |-- 2008
-|   |-- GRIB
-|   |   |-- pgrbanl_mean_2008_HGT_pres.grib
-|   |   |-- pgrbanl_mean_2008_RH_pres.grib
-|   |   |-- pgrbanl_mean_2008_TMP_pres.grib
-|   |   |-- pgrbanl_mean_2008_UGRD_pres.grib
-|   |   |-- pgrbanl_mean_2008_VGRD_pres.grib
-|   |   `-- pgrbanl_mean_2008_VVEL_pres.grib
 |   |-- pgrbanl_mean_2008_HGT_pres.nc
-|   |-- pgrbanl_mean_2008_RH_pres.nc
 |   |-- pgrbanl_mean_2008_TMP_pres.nc
 |   |-- pgrbanl_mean_2008_UGRD_pres.nc
 |   |-- pgrbanl_mean_2008_VGRD_pres.nc
@@ -235,8 +238,17 @@ where the files are stored as follows:
 |-- 2009
     | -- ...
 \end{verbatim}
-Note that the GRIB files are in version 1 format and cannot yet be directly read by
-MetReader.  They must first be converted to NetCDF and placed as described above.
+if the files are retrieved from \texttt{https://rda.ucar.edu/datasets/ds131.2/}.  This product is
+provided in GRIB format and must be converted to NetCDF using \texttt{ncl\_convert2nc -L}.
+%Alternatively, this product is also available from
+%\texttt{https://www.esrl.noaa.gov/psd/data/gridded/data.20thC\_ReanV2c.pressure.html}
+%with the variables \texttt{air.2017.nc,hgt.2017.nc,omega.2017.nc,uwnd.2017.nc,vwnd.2017.nc}.
+%If these files are used, the logical variable must be set: \texttt{MR\_Use\_RDA = .false.} in
+%\texttt{MetReader.F90}.
+Other compatible products include:
+JRA-55 reanalysis (\texttt{https://rda.ucar.edu/datasets/ds628.0}),
+ECMWF ERA5 (\texttt{https://rda.ucar.edu/datasets/ds630.0}), and
+ECMWF ERA 20th Century Reanalysis (\texttt{https://rda.ucar.edu/datasets/ds626.0})
 
 \paragraph{Step 3:} Once the names of the NWP files are specified, the files must
 be queried to determine the scope of the available data.
@@ -269,7 +281,7 @@ mapping across the poles is not yet implemented).
 \end{itemize}
 
 \paragraph{Step 4:} Next, the calling program needs to define the type of grid onto which MetReader 
-will interpolate values.  Namely, whether or not the computational grid is projectected, and if so,
+will interpolate values.  Namely, whether or not the computational grid is projected, and if so,
 which projection and associated values.  This grid used by the calling program can be independent
 of the grid used by the NWP files.  The parameters in the list for the subroutine below are the values
 needed by the \texttt{libprojection.a} library.  Below is an example call from Ash3d.
@@ -347,7 +359,7 @@ where \texttt{ivar} is the code for the variable of interests
 (see Table \ref{TabVar}) and
 \texttt{istep} is the index of the sequence of time steps set up based on
 \texttt{SimStartHour} and \texttt{SimDuration} in Step 5 above.  This subroutine provides
-a common interface regardless of the data format (ASCII, NetCDF, GRIB2, etc.), data
+a common interface regardless of the data format (ASCII, NetCDF, GRIB, etc.), data
 structure (latitude might be top-to-bottom or bottom-to-top, pressure might be surface-to-top
 or top-down, grid might be staggered, longitude might be $-180 \rightarrow 180$ or $0 \rightarrow 360$).
 In all cases for 3-D variables, what is returned is the public work array
@@ -602,11 +614,14 @@ requires a bit of translation.
 Appendix F of\\
 \texttt{https://www.ofcm.gov/publications/fmh/FMH3/00-entire-FMH3.pdf}
 gives the full specification.
+% The better document is from the Iowa State class notes for Introduction to Synoptic Meteorology
+%   http://www.meteor.iastate.edu/classes/mt311/extras/Codul-TEMP.pdf
+% But this is likely an ephemeral link.
 If the string "TTAA`` is found
 in the ASCII file, this format is attemped first, otherwise the "Text:List" is
 assumed.  This WMO/GTS format is intended for the Rapid Update Cycle data and
 does not contain the year or month (only the day-of-month and hour) of the data.
-If this format is detected, the year and month of the at
+If this format is detected, the year and month at
 execution time is assumed unless otherwise
 specified by the calling program.
 
@@ -632,8 +647,8 @@ versions of this library.
 MetReader's preferred format for 3-D forecast and reanalysis files is NetCDF.  Many
 products are available directly in NetCDF. format such as NCEP/NCAR Reanalysis 1 or
 NASA GEOS-5.  These products generally require NetCDF version 4.  Most of the NCEP
-forecast products are provided in GRIB2 format.  To convert these forecast products
-to NetCDF format, MetReader relies on the NetCDF. java package\\
+forecast products are provided in GRIB format.  To convert these forecast products
+to NetCDF format, MetReader relies on the NetCDF java package\\
 (\texttt{https://www.unidata.ucar.edu/software/thredds/current/netcdf-java/}).  The
 conversion script in the \texttt{autorun\_scripts} folder are linked to \texttt{netcdfAll-4.5}
 however any recent version should work.  Older versions create NetCDF files with
@@ -646,18 +661,18 @@ products change such that the pressure levels differ or if variable names change
 then the source code will need to be modified to account for the changes.
 Alternatively, a template file could be used as described in section \ref{SecCust} below.
 
-MetReader can also read GRIB2 files directly for certain forecast products, including the
+MetReader can also read GRIB files directly for certain forecast products, including the
 NAM 196 grid over HI (\texttt{iwf=11}), the NAM 91 grid over AK
 (\texttt{iwf=13}) and the GFS $0.25 \, ^{\circ}$ and $0.5 \, ^{\circ}$
-products (\texttt{iwf=22,20}).  To read these GRIB2 files, an index
+products (\texttt{iwf=22,20}).  To read these GRIB files, an index
 file containing the locations of all the records must be created.
 This index file can be created 
-by the utility \texttt{gen\_GRIB2\_index}, or if the file does not exist at
+by the utility \texttt{gen\_GRIB\_index}, or if the file does not exist at
 run-time, can be generated through the subroutine call
 \texttt{MR\_Set\_Gen\_Index\_GRIB(filename)}.  In practice, if windfiles will be used
 more than a few times, it is generally worthwhile to convert them to NetCDF prior
 to usage by MetReader.  The current
-implementation of the GRIB2 reader will read each of the required GRIB2 records into
+implementation of the GRIB reader will read each of the required GRIB records into
 memory, decompress the full gridded data, then extract the needed sub-grid; whereas the 
 NetCDF interface allows a more natural direct access to sub-grids.  For high resolution,
 global grids where only a small sub-grid is needed, the impact of reading and uncompressing
@@ -792,7 +807,7 @@ Usage:\\
 \verb|  MetTraj_F lon lat YYYY MM DD HH [FC_hours nlev lev1 lev2 ...]|
 
 
-\section{Windfile managment scripts}
+\section{Windfile management scripts}
 Scripts used to manage GFS and NCEP Reanalysis files are provided in the
 folder \texttt{autorun\_scripts}.
 The script \texttt{autorun\_gfs0.5deg\_00} (and the dependent scripts
@@ -822,7 +837,7 @@ crontab to download the files once they are available.
 \normalsize
 
 Also included in \texttt{autorun\_scripts} is a simple stand-alone script (\texttt{grib2nc.sh})
-for converting GRIB2 files to NetCDF using \texttt{netcdf-java}.
+for converting GRIB files to NetCDF using \texttt{netcdf-java}.
 
 \clearpage
 
@@ -835,7 +850,7 @@ for converting GRIB2 files to NetCDF using \texttt{netcdf-java}.
 \hline
 Variable type & ID & Name & dimensions \\
 \hline
-\multirow{7}{*}{3d Mechanical} 
+\multirow{7}{*}{3-D Mechanical} 
  &  1 & Geopotential Height & $\mathrm{gmp}$ or $\mathrm{m^2/s^2}$ \\
  &  2 & Vx & $\mathrm{m/s}$ \\
  &  3 & Vy & $\mathrm{m/s}$ \\
@@ -850,7 +865,7 @@ Variable type & ID & Name & dimensions \\
  &  12 & V @ 10m & $\mathrm{m/s}$ \\
  &  13 & Friction velocity & $\mathrm{m/s}$ \\
  &  14 & Displacement Height & $\mathrm{m}$ \\
- &  15 & Snow cover & \% \\
+ &  15 & Snow depth & \% \\
  &  16 & Soil moisture & $\mathrm{kg/m2}$ \\
  &  17 & Surface Roughness & $\mathrm{m}$ \\
  &  18 & Wind gust speed & $\mathrm{m/s}$ \\
@@ -904,16 +919,18 @@ iwf & Product & NCEP Grid & resolution \\
   1 & ASCII profile & & \\
   2 & Radiosonde data & & \\
 \hline
-  3 & North American Regional Reanalysis NARR-A & 221 & 32 km \\
-  4 & North American Regional Reanalysis NARR-A+B &221 & 32 km \\
+  3 & North American Regional Reanalysis NARR & 221 & 32 km \\
+  4 & NAM Regional North America & 221 & 32 km \\
   5 & NAM Regional Alaska & 216 & 45 km \\
   6 & NAM N. Hemisphere & 104 & 90 km \\
   7 & NAM Regional CONUS & 212 & 40 km \\
   8 & NAM Regional CONUS & 218 & 12 km \\
+  9 & NAM Regional CONUS & 227 & 5.08 km \\
  10 & NAM Regional Alaska & 242 & 11.25 km \\
  11 & NAM Regional Hawaii & 196 & 2.5 km \\
  12 & NAM Regional Alaska & 198 & 5.953 km \\
  13 & NAM Regional Alaska & 91 & 2.976 km \\
+ 14 & NAM Regional CONUS & None & 3.0 km \\
 \hline
  20 & GFS & 4   & $ 0.5 \, ^{\circ}$ \\
  21 & GFS & 3   & $ 1.0 \, ^{\circ}$ \\
@@ -921,8 +938,11 @@ iwf & Product & NCEP Grid & resolution \\
  23 & NCEP-DOE Reanalysis 2 & 2  & $2.5 \, ^{\circ}$ \\
  24 & NASA-MERRA-2 Reanalysis & None & $0.625 \, \times \,0.5^{\circ}$ \\
  25 & NCEP/NCAR Reanalysis 1 & 2 & $2.5 \, ^{\circ}$ \\
+ 26 & JRA-55 & 45 & $1.25 \, ^{\circ}$ \\
  27 & NOAA-CIRES 20th Century Reanalysis & 2 & $2.5^{\circ}$ \\
  28 & ECMWF ERA-Interim Reanalysis & 170 & $\sim 0.7^{\circ}$-Gaussian \\
+ 29 & ECMWF ERA5 Reanalysis & None & $0.281$ \\
+ 30 & ECMWF ERA-20C Reanalysis & None & $1.125 \, \times \, \sim 1.121^{\circ}$-Gaussian\\
 \hline
  32 & Air Force Weather Agency subcenter = 0 & None & $0.25^{\circ}$ \\
  33 & CCSM3.0 Community Atmosphere Model &None & $3.75 \, \times \,3.7^{\circ}$\\
