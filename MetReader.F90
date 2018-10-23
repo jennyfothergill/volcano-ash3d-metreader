@@ -504,6 +504,9 @@
        if(associated(p_fullmet_sp                  ))deallocate(p_fullmet_sp)
        if(associated(x_submet_sp                   ))deallocate(x_submet_sp)
        if(associated(y_submet_sp                   ))deallocate(y_submet_sp)
+       if(associated(levs_fullmet_sp               ))deallocate(levs_fullmet_sp)
+       if(associated(nlevs_fullmet                 ))deallocate(nlevs_fullmet)
+       if(associated(levs_code                     ))deallocate(levs_code)
        if(associated(z_approx                      ))deallocate(z_approx)
        if(associated(rdphi_MetP_sp                 ))deallocate(rdphi_MetP_sp)
        if(associated(rdlambda_MetP_sp              ))deallocate(rdlambda_MetP_sp)
@@ -545,6 +548,9 @@
        if(allocated(p_fullmet_sp                  ))deallocate(p_fullmet_sp)
        if(allocated(x_submet_sp                   ))deallocate(x_submet_sp)
        if(allocated(y_submet_sp                   ))deallocate(y_submet_sp)
+       if(allocated(levs_fullmet_sp               ))deallocate(levs_fullmet_sp)
+       if(allocated(nlevs_fullmet                 ))deallocate(nlevs_fullmet)
+       if(allocated(levs_code                     ))deallocate(levs_code)
        if(allocated(z_approx                      ))deallocate(z_approx)
        if(allocated(rdphi_MetP_sp                 ))deallocate(rdphi_MetP_sp)
        if(allocated(rdlambda_MetP_sp              ))deallocate(rdlambda_MetP_sp)
@@ -578,6 +584,8 @@
        if(allocated(temp3d_short                  ))deallocate(temp3d_short)
        if(allocated(Met_Proj_lat                  ))deallocate(Met_Proj_lat)
        if(allocated(Met_Proj_lon                  ))deallocate(Met_Proj_lon)
+
+       nlev_coords_detected = 0
 
       end subroutine MR_Reset_Memory
 
@@ -1518,19 +1526,19 @@
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
         ! Surface
-        Met_var_IsAvailable(10)=.true.; Met_var_GRIB2_DPcPnSt(10,1:4)=(/0, 3, 18, 1/)
-        Met_var_IsAvailable(11)=.true.
-        Met_var_IsAvailable(12)=.true.
+        !Met_var_IsAvailable(10)=.true.; Met_var_GRIB2_DPcPnSt(10,1:4)=(/0, 3, 18, 1/)
+        !Met_var_IsAvailable(11)=.true.
+        !Met_var_IsAvailable(12)=.true.
         ! Moisture
-        Met_var_IsAvailable(30)=.true.
-        Met_var_IsAvailable(32)=.true.
+        !Met_var_IsAvailable(30)=.true.
+        !Met_var_IsAvailable(32)=.true.
         ! Precipitation
-        Met_var_IsAvailable(40)=.true.; Met_var_NC_names(40)="Categorical_Rain"
-        Met_var_IsAvailable(41)=.true.; Met_var_NC_names(41)="Categorical_Snow"
-        Met_var_IsAvailable(42)=.true.; Met_var_NC_names(42)="Categorical_Freezing_Rain"
-        Met_var_IsAvailable(43)=.true.; Met_var_NC_names(43)="Categorical_Ice_Pellets"
-        Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="Precipitation_rate"
-        Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_Precipitation_Rate"
+        !Met_var_IsAvailable(40)=.true.; Met_var_NC_names(40)="Categorical_Rain"
+        !Met_var_IsAvailable(41)=.true.; Met_var_NC_names(41)="Categorical_Snow"
+        !Met_var_IsAvailable(42)=.true.; Met_var_NC_names(42)="Categorical_Freezing_Rain"
+        !Met_var_IsAvailable(43)=.true.; Met_var_NC_names(43)="Categorical_Ice_Pellets"
+        !Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="Precipitation_rate"
+        !Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_Precipitation_Rate"
 
         fill_value_sp(MR_iwindformat) = -9999.0_sp
 
