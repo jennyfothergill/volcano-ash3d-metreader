@@ -694,7 +694,7 @@
 
       real(kind=dp) :: xout,yout
       logical       :: cond1, cond2
-
+      integer       :: nx_tmp
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                 MR_Set_MetComp_Grids                       ----------"
@@ -1070,66 +1070,59 @@
             if((py.lt.y_start_sub           .and..not.y_pad_South).or.&
                (py.gt.y_submet_sp(ny_submet).and..not.y_pad_North))then
               write(MR_global_info,*)"MR ERROR: Comp point maps out of sub_Met in y."
-              write(MR_global_info,*)"Comp i,j, y      :",i,j,py
+              write(MR_global_info,*)"Comp i,j, y      :",i,j,px,py
               write(MR_global_info,*)"sub_Met ymin,ymax:",y_start_sub,y_submet_sp(ny_submet)
               stop 1
             endif
           endif
 
           ! Get the sub_Met index of LL corner of cell containing px,py
-          !If(IsRegular_MetGrid)then
-          !  isubmet = int((px-x_start_sub)/dx_met_const) + 1
-          !else
-            isubmet = 1
-            do ii = 1,nx_submet-1
-                ! Set interval inclusive of lower node
-              cond1 = px.ge.x_submet_sp(ii  )
-              cond2 = px.lt.x_submet_sp(ii+1)
-              if(cond1.and.cond2)then
-                isubmet = ii
-                exit
-              endif
-            enddo
-          !endif
+          isubmet = 1
+          if(IsPeriodic_CompGrid)then
+            nx_tmp = nx_submet
+          else
+            nx_tmp = nx_submet-1
+          endif
+          do ii = 1,nx_tmp
+              ! Set interval inclusive of lower node
+            cond1 = px.ge.x_submet_sp(ii  )
+            cond2 = px.lt.x_submet_sp(ii+1)
+            if(cond1.and.cond2)then
+              isubmet = ii
+              exit
+            endif
+          enddo
           CompPoint_on_subMet_idx(i,j,1) = isubmet
 
             ! Check if the point is within the upper and lower bounds
           if(py.lt.y_submet_sp(ny_submet).and.py.ge.y_submet_sp(1))then
-            !if(IsRegular_MetGrid)then
-            !  jsubmet = int((py-y_start_sub)/dy_met_const) + 1
-            !else
-              jsubmet = 1
-              do jj = 1,ny_submet-1
-                ! Set interval inclusive of lower node
-                cond1 = py.ge.y_submet_sp(jj  )
-                cond2 = py.lt.y_submet_sp(jj+1)
-                if(cond1.and.cond2)then
-                  jsubmet = jj
-                  exit
-                endif
-              enddo
-            !endif
+            jsubmet = 1
+            do jj = 1,ny_submet-1
+              ! Set interval inclusive of lower node
+              cond1 = py.ge.y_submet_sp(jj  )
+              cond2 = py.lt.y_submet_sp(jj+1)
+              if(cond1.and.cond2)then
+                jsubmet = jj
+                exit
+              endif
+            enddo
           elseif(abs(py-y_submet_sp(ny_submet)).lt.1.0e-7_sp)then
               ! This is to fix the occasional instances where the top comp point
               ! maps almost right on the top submet point
-            !if(IsRegular_MetGrid)then
-            !  jsubmet = int((py-y_start_sub)/dy_met_const)
-            !else
-              jsubmet = 1
-              do jj = 1,ny_submet-1
-                ! Set interval inclusive of lower node
-                cond1 = py.ge.y_submet_sp(jj  )
-                cond2 = py.lt.y_submet_sp(jj+1)
-                if(cond1.and.cond2)then
-                  jsubmet = jj
-                  exit
-                endif
-              enddo
-            !endif
+            jsubmet = 1
+            do jj = 1,ny_submet-1
+              ! Set interval inclusive of lower node
+              cond1 = py.ge.y_submet_sp(jj  )
+              cond2 = py.le.y_submet_sp(jj+1)
+              if(cond1.and.cond2)then
+                jsubmet = jj
+                exit
+              endif
+            enddo
           elseif(py.gt.y_submet_sp(ny_submet).and.IsGlobal_MetGrid.and.y_pad_North)then
             jsubmet = ny_submet
           elseif(py.lt.y_submet_sp(1)        .and.IsGlobal_MetGrid.and.y_pad_South)then
-            jsubmet = 0
+            jsubmet = 1
           endif
           CompPoint_on_subMet_idx(i,j,2) = jsubmet
 
@@ -1147,6 +1140,17 @@
           endif
           xc = 1.0_sp-xfrac
           yc = 1.0_sp-yfrac
+
+          if(xfrac.gt.1.0_sp.or.xfrac.lt.0.0_sp.or.&
+             yfrac.gt.1.0_sp.or.yfrac.lt.0.0_sp)then
+            ! The point is mapping outside the expected cell
+            write(MR_global_error,*)"MR ERROR : Error calculating Met to Comp mapping."
+            write(MR_global_error,*)"Comp point : ",i,j,x_comp_sp(i),y_comp_sp(j)
+            write(MR_global_error,*)"Coord on Met: ",CompPoint_X_on_Met_sp(i,j),CompPoint_Y_on_Met_sp(i,j)
+            write(MR_global_error,*)"Index on subMet: ",isubmet,jsubmet
+            write(MR_global_error,*)"fractional pos.: ",xfrac,yfrac
+            stop 1
+          endif
 
           bilin_map_wgt(i,j,1)=xc*yc
           bilin_map_wgt(i,j,2)=xfrac*yc
@@ -1644,10 +1648,8 @@
                           a2*wrk_loc(ii+1,jj  ) + &
                           a3*wrk_loc(ii+1,jj+1) + &
                           a4*wrk_loc(ii  ,jj+1)
-
         enddo
       enddo
-
 
       end subroutine MR_Regrid_Met2Comp
 
