@@ -615,6 +615,7 @@
               do i = 1,ny_fullmet-1
                 MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
               enddo
+              MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
               ! We need to check if this is a regular grid
               IsRegular_MetGrid = .true.
