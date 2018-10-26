@@ -1130,10 +1130,10 @@
           xfrac=(px-x_submet_sp(isubmet))/MR_dx_submet(isubmet)
           if(py.gt.y_submet_sp(ny_submet).and.IsGlobal_MetGrid.and.y_pad_North)then
               ! If comp point is above all met points
-            yfrac=(py-y_submet_sp(ny_submet)+MR_dy_submet(ny_submet))/MR_dy_submet(ny_submet)
+            yfrac=(py- y_submet_sp(ny_submet) ) /  MR_dy_submet(ny_submet)
           elseif(py.lt.y_submet_sp(1).and.IsGlobal_MetGrid.and.y_pad_South)then
               ! If comp point is below all met points
-            yfrac=(py-y_submet_sp(1)-MR_dy_submet(1))/MR_dy_submet(1)
+            yfrac=(py- (y_submet_sp(1)-abs(MR_dy_submet(1))) ) / abs(MR_dy_submet(1))
           else
               ! Normal case where comp point is strictly within the met grid
             yfrac=(py-y_submet_sp(jsubmet))/MR_dy_submet(jsubmet)
@@ -1620,6 +1620,12 @@
           wrk_loc(1:nx1,ny1+1) = tmp
         else
           wrk_loc(1:nx1,ny1+1) = 0.0_sp
+        endif
+        if(y_pad_South)then
+          tmp = sum(wrk_met(1:nx1,1))/real(nx1,kind=sp)
+          wrk_loc(1:nx1,0) = tmp
+        else
+          wrk_loc(1:nx1,0) = 0.0_sp
         endif
         wrk_loc(1:nx1,1:ny1) = wrk_met(1:nx1,1:ny1)
       endif
