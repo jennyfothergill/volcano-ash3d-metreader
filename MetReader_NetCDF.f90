@@ -549,7 +549,7 @@
                 write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
                 stop 1
               endif
-              allocate(y_fullmet_sp(1:ny_fullmet))
+              allocate(y_fullmet_sp(ny_fullmet))
               if(var_xtype.eq.NF90_FLOAT)then
                 allocate(dum1d_sp(dimlen))
                 nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
@@ -616,7 +616,6 @@
                 MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
               enddo
               MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-
               ! We need to check if this is a regular grid
               IsRegular_MetGrid = .true.
               do i = 1,nx_fullmet-1

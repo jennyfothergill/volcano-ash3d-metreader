@@ -331,6 +331,7 @@
           enddo
           MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
+
           ! We need to check if this is a regular grid
           IsRegular_MetGrid = .true.
           do i = 1,nx_fullmet-1
