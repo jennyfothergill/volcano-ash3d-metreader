@@ -2811,7 +2811,7 @@
         endif !MR_iwindformat.eq.50, MR_iwindformat.eq.25, else
 
         if(MR_iwind.eq.5.and.MR_iwindformat.eq.25)then
-          deallocate(temp3d_short)
+          if(allocated(temp3d_short)) deallocate(temp3d_short)
         endif
         if(MR_iwindformat.eq.50)then
           deallocate(dum3d_metP_aux)
