@@ -2,7 +2,7 @@
 !#!/bin/bash
 !
 !StationNum=("70414" "70316" "70326" "70350" "70273")
-!StaTionCode=("PASY" "PACD" "PAKN" "PADQ" "PANC")
+!StationCode=("PASY" "PACD" "PAKN" "PADQ" "PANC")
 !StationName=("Shemya Afb" "Cold Bay" "King Salmon" "Kodiak" "Anchorage")
 !#yearmonthday=`date -u +%Y%m%d`                        #current year, month &
 !day (e.g. 20110119)
@@ -23,18 +23,18 @@
 !"http://weather.uwyo.edu/cgi-bin/sounding?region=naconf&TYPE=TEXT%3ALIST&YEAR=${Y}&MONTH=${M}&FROM=${DD}${HH[$1]}&TO=${DD}${HH[$1]}&STNM=${StationNum[si]}"
 !> tmp.lnk
 ! wget -i tmp.lnk -O out.html
-! cp out.html RAW/${StaTionCode[si]}_${Y}${M}${DD}${HH[$1]}_raw.dat
+! cp out.html RAW/${StationCode[si]}_${Y}${M}${DD}${HH[$1]}_raw.dat
 !
 ! sed '1,10d' out.html > headless.dat
-! sed '/PRE/,$d' headless.dat > ${StaTionCode[si]}_${Y}${M}${DD}${HH[$1]}.dat
+! sed '/PRE/,$d' headless.dat > ${StationCode[si]}_${Y}${M}${DD}${HH[$1]}.dat
 ! rm tmp.lnk headless.dat out.html
 !
 !done
 !
 !PRES:   Atmospheric Pressure    [hPa]
 !HGHT:   Geopotential Height     [meter]
-!TEMP:   Temperature     [celsius]
-!DWPT:   Dewpoint Temperature    [celsius]
+!TEMP:   Temperature     [Celsius]
+!DWPT:   Dewpoint Temperature    [Celsius]
 !RELH:   Relative Humidity       [%]
 !MIXR:   Mixing Ratio    [gram/kilogram]
 !DRCT:   Wind Direction  [degrees true]
@@ -53,7 +53,7 @@
 !     This subroutine needs to determine the full Met grid (i.e. determine the
 !     pressure grid and the spatial grid).  It also needs to determine which
 !     variables are available.  Generally, the actual region used (e.g. the submet)
-!     is determinined through MR_Initialize_Met_Grids after the comp grid is
+!     is determined through MR_Initialize_Met_Grids after the comp grid is
 !     defined.  Values are normally only read on this submet grid.  For 1d
 !     ASCII cases, all sonde data are loaded into memory in this subroutine.
 !     MR_Initialize_Met_Grids will be used to define the mapping of sonde data
@@ -305,7 +305,7 @@
             ! Reading L2: time(hr) nlev [ncol] [ivar(ncol)]
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             read(fid,'(a80)')linebuffer
-            ! Assume we can read at least two values (a real and an interger)
+            ! Assume we can read at least two values (a real and an integer)
             read(linebuffer,*) rvalue1, ivalue1
             WindTime = rvalue1
             MR_windfile_starthour(iw_idx) = WindTime
@@ -924,7 +924,7 @@
               endif
               ! The heights are adjusted with a multiplicative and additive factor.  If the
               ! three-digit value is less then the previous, then we are in the next scaling
-              ! braket
+              ! bracket
               scl_idx = 1
               scl_m(1:7) = (/1.0_sp,     1.0_sp,   1.0_sp,   10.0_sp, &
                             10.0_sp,    10.0_sp,   10.0_sp/)
@@ -932,7 +932,7 @@
                          10000.0_sp, 20000.0_sp, 30000.0_sp/)
               do il = 2,ulev
                 if (H_tmp(il).lt.H_tmp(il-1))then
-                  ! check if we need to increment the scaling braket
+                  ! check if we need to increment the scaling bracket
                   scl_idx = scl_idx + 1
                 endif
                 if (il.eq.5)scl_idx=4 ! for the 500 mb level, make sure we are using decimeters
@@ -1073,7 +1073,7 @@
               do while (il.ne.MAX_ROWS.and. &  ! Assume there are no more than MAX_ROWS of data
                         iil.le.16)             ! Do not bother reading past 10 hPa
                 if (abs(pres_Snd_tmp(iil)-rvalue1).lt.0.1_sp) then
-                  ! found the next manditory level
+                  ! found the next mandatory level
                   MR_SndVars_metP(iloc,itime,1,iil) = rvalue1 * 100.0_sp
                   MR_SndVars_metP(iloc,itime,2,iil) = real(ivalue2,kind=4)*1.0e-3_sp  ! convert to km
                   MR_SndVars_metP(iloc,itime,5,iil) = rvalue3 + 273.0_sp   ! convert to K
@@ -1094,7 +1094,7 @@
                                                        ! successful read
                   iil = iil + 1
                 else
-                  ! this is not a manditory level; read the next line
+                  ! this is not a mandatory level; read the next line
                   read(fid,'(a80)')linebuffer
                   read(linebuffer,150,iostat=ioerr)rvalue1, ivalue2, rvalue3, ivalue4, ivalue5
                 endif
@@ -1411,7 +1411,7 @@
         enddo
       else
         ! W is typically not provided
-        write(*,*)"Atempting to read unavaialble variable: ",ivar
+        write(*,*)"Attempting to read unavailalble variable: ",ivar
         MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_fullmet) = 0.0_sp
       endif
 

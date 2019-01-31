@@ -106,7 +106,7 @@
 
       !    Native grid of Met file using Pressure as vertical coordinate
 #ifdef USEPOINTERS
-      integer      ,dimension(:,:)  ,pointer, public :: MR_dum2d_met_int   => null() ! Used for catagorical variables
+      integer      ,dimension(:,:)  ,pointer, public :: MR_dum2d_met_int   => null() ! Used for categorical variables
       real(kind=sp),dimension(:,:)  ,pointer, public :: MR_dum2d_met       => null() ! Used for surface variables
       real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d_metP      => null() 
       real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d2_metP     => null() 
@@ -118,7 +118,7 @@
       real(kind=sp),dimension(:,:,:),pointer, public :: MR_vy_metP_last  => null() 
       real(kind=sp),dimension(:,:,:),pointer, public :: MR_vy_metP_next  => null() 
 #else
-      integer      ,dimension(:,:)  ,allocatable, public :: MR_dum2d_met_int   ! Used for catagorical variables
+      integer      ,dimension(:,:)  ,allocatable, public :: MR_dum2d_met_int   ! Used for categorical variables
       real(kind=sp),dimension(:,:)  ,allocatable, public :: MR_dum2d_met       ! Used for surface variables
       real(kind=sp),dimension(:,:,:),allocatable, public :: MR_dum3d_metP
       real(kind=sp),dimension(:,:,:),allocatable, public :: MR_dum3d2_metP
@@ -174,13 +174,13 @@
 
       !    Computations grid
 #ifdef USEPOINTERS
-      integer      ,dimension(:,:)  ,pointer, public :: MR_dum2d_comp_int => null() ! Used for catagorical variables
+      integer      ,dimension(:,:)  ,pointer, public :: MR_dum2d_comp_int => null() ! Used for categorical variables
       real(kind=sp),dimension(:,:)  ,pointer, public :: MR_dum2d_comp     => null() ! Used for surface variables
       real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d_compH    => null() 
       real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d_compH_2  => null() ! Used only when a vector field
                                                                                ! rotation is needed
 #else
-      integer      ,dimension(:,:)  ,allocatable, public :: MR_dum2d_comp_int  ! Used for catagorical variables
+      integer      ,dimension(:,:)  ,allocatable, public :: MR_dum2d_comp_int  ! Used for categorical variables
       real(kind=sp),dimension(:,:)  ,allocatable, public :: MR_dum2d_comp      ! Used for surface variables
       real(kind=sp),dimension(:,:,:),allocatable, public :: MR_dum3d_compH
       real(kind=sp),dimension(:,:,:),allocatable, public :: MR_dum3d_compH_2   ! Used only when a vector field
@@ -862,7 +862,7 @@
       !--------------------------------
       ! Precipitation
       !--------------------------------
-        ! Catagorical rain at ground surface  (0/1 no/yes)
+        ! Categorical rain at ground surface  (0/1 no/yes)
       Met_var_NC_names(40)          = "Categorical_Rain_surface"
       Met_var_GRIB_names(40)        = "crain"
       Met_var_WMO_names(40)         = "CRAIN"
@@ -870,7 +870,7 @@
       Met_var_GRIB1_Param(40)       = 140
       Met_var_GRIB1_St(40)          = "1"
       Met_var_ndim(40)              = 3
-        ! Catagorical snow at ground surface  (0/1 no/yes)
+        ! Categorical snow at ground surface  (0/1 no/yes)
       Met_var_NC_names(41)          = "Categorical_Snow_surface"
       Met_var_GRIB_names(41)        = "csnow"
       Met_var_WMO_names(41)         = "CSNOW"
@@ -878,7 +878,7 @@
       Met_var_GRIB1_Param(41)       = 143
       Met_var_GRIB1_St(41)          = "1"
       Met_var_ndim(41)              = 3
-        ! Catagorical freezing rain at ground surface  (0/1 no/yes)
+        ! Categorical freezing rain at ground surface  (0/1 no/yes)
       Met_var_NC_names(42)          = "Categorical_Freezing_Rain_surface"
       Met_var_GRIB_names(42)        = "cfrzr"
       Met_var_WMO_names(42)         = "CFRZR"
@@ -886,7 +886,7 @@
       Met_var_GRIB1_Param(42)       = 141
       Met_var_GRIB1_St(42)          = "1"
       Met_var_ndim(42)              = 3
-        ! Catagorical ice pellets at ground surface  (0/1 no/yes)
+        ! Categorical ice pellets at ground surface  (0/1 no/yes)
       Met_var_NC_names(43)          = "Categorical_Ice_Pellets_surface"
       Met_var_GRIB_names(43)        = "cicep"
       Met_var_WMO_names(43)         = "CICEP"
