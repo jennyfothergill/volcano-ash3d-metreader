@@ -110,20 +110,20 @@
           dy_met_const = 2.5_sp
           x_start =   0.0_dp
           y_start =  90.0_dp
-          DO i = 0,nx_fullmet+1
+          do i = 0,nx_fullmet+1
             x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-          ENDDO
+          enddo
           x_inverted = .false.
-          DO i = 1,ny_fullmet
+          do i = 1,ny_fullmet
             y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
-          ENDDO
+          enddo
           y_inverted = .true.
-          DO i = 1,nx_fullmet
+          do i = 1,nx_fullmet
             MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-          ENDDO
-          DO i = 1,ny_fullmet-1
+          enddo
+          do i = 1,ny_fullmet-1
             MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-          ENDDO
+          enddo
           MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
           iwf25_scale_facs = 0.0_sp
@@ -191,20 +191,20 @@
           dy_met_const = 1.25_sp
           x_start =   0.0_dp
           y_start =  90.0_dp
-          DO i = 0,nx_fullmet+1
+          do i = 0,nx_fullmet+1
             x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-          ENDDO
+          enddo
           x_inverted = .false.
-          DO i = 1,ny_fullmet
+          do i = 1,ny_fullmet
             y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
-          ENDDO
+          enddo
           y_inverted = .true.
-          DO i = 1,nx_fullmet
+          do i = 1,nx_fullmet
             MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-          ENDDO
-          DO i = 1,ny_fullmet-1
+          enddo
+          do i = 1,ny_fullmet-1
             MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-          ENDDO
+          enddo
           MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
         elseif(MR_iwindformat.eq.27)then
@@ -256,20 +256,20 @@
           dy_met_const = 2.0_sp
           x_start =   0.0_dp
           y_start =  90.0_dp
-          DO i = 0,nx_fullmet+1
+          do i = 0,nx_fullmet+1
             x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=sp)
-          ENDDO
+          enddo
           x_inverted = .false.
-          DO i = 1,ny_fullmet
+          do i = 1,ny_fullmet
             y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
-          ENDDO
+          enddo
           y_inverted = .true.
-          DO i = 1,nx_fullmet
+          do i = 1,nx_fullmet
             MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-          ENDDO
-          DO i = 1,ny_fullmet-1
+          enddo
+          do i = 1,ny_fullmet-1
             MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-          ENDDO
+          enddo
           MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
         elseif(MR_iwindformat.eq.29)then
@@ -307,12 +307,12 @@
 
           allocate(MR_dx_met(nx_fullmet))
           allocate(MR_dy_met(ny_fullmet))
-          DO i = 1,nx_fullmet
+          do i = 1,nx_fullmet
             MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-          ENDDO
-          DO i = 1,ny_fullmet-1
+          enddo
+          do i = 1,ny_fullmet-1
             MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-          ENDDO
+          enddo
           MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
         elseif(MR_iwindformat.eq.30)then
@@ -350,12 +350,12 @@
 
           allocate(MR_dx_met(nx_fullmet))
           allocate(MR_dy_met(ny_fullmet))
-          DO i = 1,nx_fullmet
+          do i = 1,nx_fullmet
             MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
-          ENDDO
-          DO i = 1,ny_fullmet-1
+          enddo
+          do i = 1,ny_fullmet-1
             MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
-          ENDDO
+          enddo
           MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
         else
@@ -840,7 +840,7 @@
               ! This coordinate has more values than the GPH pressure coordinate
               levs_code(idx) = 4
             elseif (nlevs_fullmet(idx).lt.nlevs_fullmet(1))then
-              ! It there are fewer levels, check if this is a truncated coordiante (code = 2)
+              ! It there are fewer levels, check if this is a truncated coordinate (code = 2)
               ! or one with missing levels that requires interpolation (code = 3)
               IsTruncatedDim = .true.
               do i=1,nlevs_fullmet(idx)
@@ -2369,7 +2369,7 @@
       integer :: iistart(2),iicount(2)     !if (wrapgrid), iistart(1)=istart, iistart(2)=1
 
       integer :: Dimension_of_Variable
-      logical :: IsCatagorical
+      logical :: IsCategorical
 
       integer :: var_xtype
       integer :: NC_version
@@ -2452,11 +2452,11 @@
          ivar.eq.41.or.&
          ivar.eq.42.or.&
          ivar.eq.43)then
-          ! Catagorical variables are integers and need special interpolation
-        IsCatagorical = .true.
+          ! Categorical variables are integers and need special interpolation
+        IsCategorical = .true.
       else
           ! The default is to read floating point values
-        IsCatagorical = .false.
+        IsCategorical = .false.
       endif
 
       if(MR_iwind.eq.5)then
@@ -2686,7 +2686,7 @@
                 write(MR_global_log  ,*)'MR ERROR: get_var: PB',nf90_strerror(nSTAT)
                 stop 1
               endif
-                ! Now get P (pertubation pressure)
+                ! Now get P (perturbation pressure)
               write(MR_global_info,*)istep,"Reading ","P"," from file : ",trim(adjustl(infile))
               nSTAT = nf90_inq_varid(ncid,"P",in_var_id2)
               if(nSTAT.ne.NF90_NOERR)then
@@ -2735,7 +2735,7 @@
                 write(MR_global_log  ,*)'MR ERROR: get_var: PB',nf90_strerror(nSTAT)
                 stop 1
               endif
-                ! Get P (pertubation pressure)
+                ! Get P (perturbation pressure)
               nSTAT = nf90_inq_varid(ncid,"P",in_var_id2)
               if(nSTAT.ne.NF90_NOERR)then
                 write(MR_global_error,*)'MR ERROR: inq_var: P',nf90_strerror(nSTAT)
@@ -2760,7 +2760,7 @@
 
           else ! end of MR_iwind=5 and iwf=50 (WRF) sections
 
-            ! for any other 3d variable (non-WRF, non-NCEP/2.5 reannalysis)
+            ! for any other 3d variable (non-WRF, non-NCEP/2.5 reanalysis)
             nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
                      start = (/iistart(i),jstart,1,iwstep/),       &
                      count = (/iicount(i),ny_submet,np_met_loc,1/))
@@ -2811,7 +2811,7 @@
         endif !MR_iwindformat.eq.50, MR_iwindformat.eq.25, else
 
         if(MR_iwind.eq.5.and.MR_iwindformat.eq.25)then
-          deallocate(temp3d_short)
+          if(allocated(temp3d_short)) deallocate(temp3d_short)
         endif
         if(MR_iwindformat.eq.50)then
           deallocate(dum3d_metP_aux)
@@ -2819,11 +2819,11 @@
         deallocate(temp3d_sp)
 
       elseif(Dimension_of_Variable.eq.2)then
-        if(IsCatagorical)then
+        if(IsCategorical)then
           allocate(temp2d_int(nx_submet,ny_submet,1))
           do i=1,ict        !read subgrid at current time step
             if(MR_iwindformat.eq.25)then
-              ! No catagorical variables for MR_iwindformat = 25
+              ! No categorical variables for MR_iwindformat = 25
             else
               nSTAT = nf90_get_var(ncid,in_var_id,temp2d_int(ileft(i):iright(i),:,:), &
                          start = (/iistart(i),jstart,iwstep/),       &
@@ -2924,7 +2924,7 @@
           deallocate(temp2d_sp)
           if(ivar.eq.11.or.ivar.eq.12) deallocate(temp3d_sp)
           if(MR_iwindformat.eq.25) deallocate(tmpsurf2d_short)
-        endif ! IsCatagorical
+        endif ! IsCategorical
       endif ! Dimension_of_Variable.eq.2
 
 

@@ -146,7 +146,7 @@
       real(kind=8)      :: Probe_StartHour
       real(kind=8)      :: FC_Package_StartHour
 
-      real(kind=8) :: GFS_Avail_Delay = 6.0
+      real(kind=8) :: GFS_Avail_Delay = 10.0
       integer      :: GFS_Archive_Days = 14
 
       integer      :: RunStartYear

@@ -12,7 +12,7 @@ as a separate repository that can either be compiled as a library or simply
 compiled directly with other source code.
 
 NWP data are generally made available by agencies (NCEP, NOAA, NASA, etc.)
-in a variety of formats (netcdf, grib1, grib2, hdf, ascii); each product having
+in a variety of formats (NetCDF, GRIB, ASCII); each product having
 its own data structure, naming convention, units, etc.  This library 
 isolates the calling program from the peculiarities of interfacing with
 a particular NWP product.  Data can be returned to the calling program on
@@ -29,7 +29,7 @@ This library requires two additional libraries made available on GitHub and USGS
 - [HoursSince](https://github.com/usgs/volcano-ash3d-hourssince)
 - [projection](https://github.com/usgs/volcano-ash3d-projection)
 
-Additionally, the default makefile will build MetReader with both netcdf and grib2
+Additionally, the default makefile will build MetReader with both NetCDF and GRIB2
 enabled.  If either of these libraries are unavailable on your system, you can
 deactivate those options by setting the corresponding flags to 'F' in the makefile.
 
@@ -37,12 +37,12 @@ To compile as a library, simple type:
 
   `make all`
 
-This will build the requested components of the library.  If grib2 is enabled, 
-it is recommended to also build the grib2 indexer:
+This will build the requested components of the library.  If GRIB2 is enabled, 
+it is recommended to also build the GRIB2 indexer:
 
   `make gen_GRIB2_index`
 
-This is a tool that generates an index file of the grib records which speeds
+This is a tool that generates an index file of the GRIB records which speeds
 access time to individual records substantially.
 
 To install the library, module files and tools, edit the `INSTALLDIR` variable of

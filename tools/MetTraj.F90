@@ -279,7 +279,7 @@
       real(kind=8)      :: FC_Package_StartHour
       real(kind=8)      :: Met_needed_StartHour
 
-      real(kind=8) :: GFS_Avail_Delay = 6.0
+      real(kind=8) :: GFS_Avail_Delay = 10.0
       integer      :: GFS_Archive_Days = 14
 
       integer      :: RunStartYear
@@ -529,8 +529,8 @@
       do i = 1,ny_submet-1
         if(inlat.ge.y_submet_sp(i).and.inlat.lt.y_submet_sp(i+1))iy=i
       enddo
-      xfrac=(inlon - x_submet_sp(ix))/dx_met_const
-      yfrac=(inlat - y_submet_sp(iy))/dy_met_const
+      xfrac=(inlon - x_submet_sp(ix))/abs(dx_met_const)
+      yfrac=(inlat - y_submet_sp(iy))/abs(dy_met_const)
       xc = 1.0_4-xfrac
       yc = 1.0_4-yfrac
       a1 = real(xc*yc,kind=4)
@@ -704,6 +704,7 @@
       endif
 
       ! integrate out Simtime_in_hours hours
+      write(*,*)"Now integrating out ",abs(int(Simtime_in_hours/dt))," steps"
       it = 0
       do ti = 1,abs(int(Simtime_in_hours/dt))
         if(TrajFlag.gt.0)then
@@ -725,8 +726,8 @@
 
         do kk = 1,ntraj
           ! Get current time and position indecies
-          ix = floor((x1(kk)-x_submet_sp(1))/dx_met_const) + 1
-          iy = floor((y1(kk)-y_submet_sp(1))/dy_met_const) + 1
+          ix = floor((x1(kk)-x_submet_sp(1))/abs(dx_met_const)) + 1
+          iy = floor((y1(kk)-y_submet_sp(1))/abs(dy_met_const)) + 1
             ! Skip over points that leave the domain
           if(ix.le.0.or.ix.ge.nx_comp)cycle
           if(iy.le.0.or.iy.ge.ny_comp)cycle

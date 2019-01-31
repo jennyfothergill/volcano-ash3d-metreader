@@ -743,7 +743,7 @@
 
       if(IsLatLon_MetGrid)then
         if(xLL.gt.x_fullmet_sp(nx_fullmet).and.x_fullmet_sp(nx_fullmet).le.180.0_sp)then
-          ! If the comp grid starts in the western himisphere (xLL>180) and if
+          ! If the comp grid starts in the western hemisphere (xLL>180) and if
           ! the global Met grid only extends to 180, then shift the comp grid
           ! into the domain of the met grid
           xLL=xLL-360.0_sp  ! This should only be true western hemisphere (xLL>180)
@@ -964,7 +964,7 @@
         endif
       endif
 
-      ! Calculate size of arrays that will hold the relavent section of
+      ! Calculate size of arrays that will hold the relevant section of
       ! the mesoscale model
       ny_submet = jend-jstart+1
       write(MR_global_info,*)"-------------"
@@ -1184,7 +1184,7 @@
             call PJ_proj_inv(xin,yin, Met_iprojflag, &
                           Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re, &
                            ptlon,ptlat)
-              ! Get projected coordinate of de at the currrent point
+              ! Get projected coordinate of de at the current point
             call PJ_proj_for(ptlon+1.0_dp/60.0_dp,ptlat, Met_iprojflag, &
                        Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re, &
                        xout,yout)
@@ -1218,7 +1218,7 @@
               call PJ_proj_inv(xin,yin, Comp_iprojflag, &
                             Comp_lam0,Comp_phi0,Comp_phi1,Comp_phi2,Comp_k0,Comp_Re, &
                              ptlon,ptlat)
-                ! Get projected coordinate of de at the currrent point
+                ! Get projected coordinate of de at the current point
               call PJ_proj_for(ptlon+1.0_dp/60.0_dp,ptlat, Comp_iprojflag, &
                          Comp_lam0,Comp_phi0,Comp_phi1,Comp_phi2,Comp_k0,Comp_Re, &
                          xout,yout)
@@ -1240,7 +1240,7 @@
       allocate(MR_dum2d_comp(nx_comp,ny_comp))
       allocate(MR_dum3d_compH(nx_comp,ny_comp,nz_comp))
       !  The only 3d met data that persists locally is Geopotential Height.
-      !  This is needed for interpolating the other variables onto a catersian
+      !  This is needed for interpolating the other variables onto a Cartesian
       !  grid.
       allocate(MR_geoH_metP_last(nx_submet,ny_submet,np_fullmet))
       allocate(MR_geoH_metP_next(nx_submet,ny_submet,np_fullmet))
@@ -1252,7 +1252,7 @@
         allocate(amap_iwf25(nx_submet,ny_submet,4))
         amap_iwf25 = 0.0_sp
         !Tot_Bytes_on_Heap = Tot_Bytes_on_Heap + sp*(as_nxmax*as_nymax*4)
-          ! Here is the x1,x2,y1,y2 indicies
+          ! Here is the x1,x2,y1,y2 indices
         allocate(imap_iwf25(nx_submet,ny_submet,4))
         imap_iwf25 = 0
         !Tot_Bytes_on_Heap = Tot_Bytes_on_Heap + sp*(as_nxmax*as_nymax*4)

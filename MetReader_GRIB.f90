@@ -93,7 +93,7 @@
         !   Assume all files have the same format
 
       if(MR_iwind.eq.5)then
-        write(MR_global_error,*)"MR ERROR : GRIB reader not implemeted for multi-timestep files."
+        write(MR_global_error,*)"MR ERROR : GRIB reader not implemented for multi-timestep files."
         write(MR_global_error,*)"         iwind=5 files are all multi-step"
         stop 1
       else
@@ -481,7 +481,7 @@
         endif
       enddo
 
-      ! Now log all pressure coordinates as one-to-one, truncated, or interupted
+      ! Now log all pressure coordinates as one-to-one, truncated, or interrupted
       levs_code(1:nlev_coords_detected) = 0
       levs_code(1) = 1                       ! The first var checked (GPH) should have a one-to-one mapping
       ! Check how each of the pressure coordinates map onto the GPH grid
@@ -492,7 +492,7 @@
             ! This coordinate has more values than the GPH pressure coordinate
             levs_code(idx) = 4
           elseif (nlevs_fullmet(idx).lt.nlevs_fullmet(1))then
-            ! It there are fewer levels, check if this is a truncated coordiante (code = 2)
+            ! It there are fewer levels, check if this is a truncated coordinate (code = 2)
             ! or one with missing levels that requires interpolation (code = 3)
             IsTruncatedDim = .true.
             do i=1,nlevs_fullmet(idx)
@@ -784,7 +784,7 @@
       integer :: iistart(2),iicount(2)     !if (wrapgrid), iistart(1)=istart, iistart(2)=1
 
       integer :: Dimension_of_Variable
-      logical :: IsCatagorical
+      logical :: IsCategorical
 
       integer,dimension(np_fullmet) :: p_met_loc
 
@@ -862,7 +862,7 @@
         iv_Table   = Met_var_GRIB1_Table(ivar)
         iv_typeSfc = Met_var_GRIB1_St(ivar)
       elseif(MR_GRIB_Version.eq.2)then
-        ! Get the variable discipline, Parameter Catagory, Parameter Number, and
+        ! Get the variable discipline, Parameter Category, Parameter Number, and
         ! level type for this variable
         iv_discpl = Met_var_GRIB2_DPcPnSt(ivar,1)
         iv_paramC = Met_var_GRIB2_DPcPnSt(ivar,2)
@@ -925,11 +925,11 @@
          ivar.eq.41.or.&
          ivar.eq.42.or.&
          ivar.eq.43)then
-          ! Catagorical variables are integers and need special interpolation
-        IsCatagorical = .true.
+          ! Categorical variables are integers and need special interpolation
+        IsCategorical = .true.
       else
           ! The default is to read floating point values
-        IsCatagorical = .false.
+        IsCategorical = .false.
       endif
 
       if(MR_iwindformat.eq.27)then
@@ -1162,7 +1162,7 @@
                   enddo
                   deallocate(values)
 
-                  ! There is no guarentee that grib levels are in order so...
+                  ! There is no guarantee that grib levels are in order so...
                   ! Now loop through the pressure values for this variable and put
                   ! this slice at the correct level.
                   call grib_get(igrib,'level',grb_level)
@@ -1234,7 +1234,7 @@
               enddo
               deallocate(values)
 
-               ! There is no guarentee that grib levels are in order so...
+               ! There is no guarantee that grib levels are in order so...
                ! Now loop through the pressure values for this variable and put
                ! this slice at the correct level.
                call grib_get(igrib,'level',grb_level)
@@ -1336,7 +1336,7 @@
                 enddo
                 deallocate(values)
         
-               ! There is no guarentee that grib levels are in order so...
+               ! There is no guarantee that grib levels are in order so...
                ! Now loop through the pressure values for this variable and put this
                ! slice at the correct level.
                do kk = 1,np_met_loc
@@ -1412,7 +1412,7 @@
               enddo
               deallocate(values)
   
-               ! There is no guarentee that grib levels are in order so...
+               ! There is no guarantee that grib levels are in order so...
                ! Now loop through the pressure values for this variable and put
                ! this slice at the correct level.
                if(ivar.eq.16)grb_level = grb_scaledValueOfFirstFixedSurface
@@ -1454,7 +1454,7 @@
         deallocate(temp3d_sp)
 
       elseif(Dimension_of_Variable.eq.2)then
-!        if(IsCatagorical)then
+!        if(IsCategorical)then
 !        else
           allocate(temp2d_sp(nx_submet,ny_submet,1))
           if(ivar.eq.11.or.ivar.eq.12)then
@@ -1510,7 +1510,7 @@
           enddo
           deallocate(temp2d_sp)
           if(ivar.eq.11.or.ivar.eq.12) deallocate(temp3d_sp)
-!        endif ! IsCatagorical
+!        endif ! IsCategorical
       endif ! Dimension_of_Variable.eq.2
 
       if(ivar.eq.1)then

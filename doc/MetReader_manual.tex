@@ -17,7 +17,7 @@
 
 \title{MetReader: Documentation and User's Guide}   % type title between braces
 \author{Hans F. Schwaiger}
-\date{October 22, 2018}    % type date between braces
+\date{January 28, 2019}    % type date between braces
 \maketitle
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -48,11 +48,11 @@ This library requires two additional libraries made available on GitHub and USGS
 \begin{itemize}
 \item HoursSince \\
 This is a library that takes a date and time, and calculates the number of hours
-since January 1, 1900 (or any artibrary base year).\\
-(https://github.com/hschwaiger-usgs/HoursSince)
+since January 1, 1900 (or any arbitrary base year).\\
+(https://github.com/usgs/volcano-ash3d-hourssince)
 \item projection \\
 This is a library that calculates commonly-used projected coordinates.\\
-(https://github.com/hschwaiger-usgs/projection)
+(https://github.com/usgs/volcano-ash3d-projection)
 \end{itemize}
 
 These libraries are installed by default into \texttt{/opt/USGS}.  If they are
@@ -89,7 +89,7 @@ the makefile (the default is \texttt{/opt/USGS}) and type:
      make install
 \end{verbatim}
 This will also install scripts that can be used to download the 0.5 degree GFS
-forecast files and the NCEP 2.5-degree Reannalysis files.
+forecast files and the NCEP 2.5-degree Reanalysis files.
 
 You will need to have write permission in \texttt{\$\{INSTALLDIR\}}
 or install as root.  Assuming the libraries \texttt{projection} and \texttt{hourssince} are
@@ -126,14 +126,14 @@ directory structure:
 \section{Usage}
 MetReader can read a variety of input data formats (1-D, 3-D, ASCII, NetCDF, GRIB) and
 provide access to the meteorological data on either the native grid of the NWP data, or interpolated
-onto a finer regular grid.  Before the meterological data can be accessible, several preliminary steps
+onto a finer regular grid.  Before the meteorological data can be accessible, several preliminary steps
 must first be completed.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Preliminary meta-data}\label{SSecPrelimMetaData}
 The calling program needs to prepare several parameters that define the type of meteorological
 data to be read.  
 \begin{itemize}
-\item \texttt{iw} :: windfile class (the distinction between 3 adn 4 will be obselete soon)
+\item \texttt{iw} :: windfile class (the distinction between 3 and 4 will be obsolete soon)
  \begin{itemize}
  \item 1 : 1-D wind sounding
  \item 2 : 3-D grid is read from a ASCII file
@@ -266,7 +266,7 @@ pressure1, y, x, pressure2 (for Vz), pressure3 (for RH)
 \item \texttt{Met\_var\_names()} :: The names of the variables in the file according to the
 Table \ref{TabVar} of Appendix \ref{ApVar}:
 \item \texttt{Met\_var\_conversion\_factor()} :: For each of the variables, if the units
-is not as listed above, then the correpsonding factor is set that converts to the
+is not as listed above, then the corresponding factor is set that converts to the
 expected units.  For example, if precipitation rate is given in $\mathrm{mm/hr}$, then
 the conversion factor to the expected units ($\mathrm{kg/m^2s}$) is $1/3600$ or
 $2.778 \times 10^{-4}$.
@@ -299,7 +299,7 @@ UTM (\texttt{iprojflag=3}),
 Lambert conformal conic (\texttt{iprojflag=4}),
 and Mercator (\texttt{iprojflag=5}).
 
-\paragraph{Step 5:} The final prepatory step is to evaluate the windfiles provided
+\paragraph{Step 5:} The final preparatory step is to evaluate the windfiles provided
 with the spatial and temporal requirements of the calling program.
 \begin{verbatim}
      call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,                &
@@ -364,7 +364,7 @@ structure (latitude might be top-to-bottom or bottom-to-top, pressure might be s
 or top-down, grid might be staggered, longitude might be $-180 \rightarrow 180$ or $0 \rightarrow 360$).
 In all cases for 3-D variables, what is returned is the public work array
 \texttt{MR\_dum3d\_metP}.
-This array is consistantly ordered such that \texttt{x}
+This array is consistently ordered such that \texttt{x}
 and \texttt{y} (or \texttt{lon} and \texttt{lat}) increase with index (North to South NWP grids
 are flipped) and with \texttt{p} ordered from the surface to top (pressure is high to low).
 
@@ -460,7 +460,7 @@ will read both U and V components and decompose the vector into earth-relative E
 and Northerly wind components with values at the \texttt{metP} grid nodes.  These
 components are put in the variables \texttt{MR\_u\_ER\_metP} and \texttt{MR\_v\_ER\_metP}.
 Once we have Earth-relative velocity components (either from direct read of lon/lat data,
-from the subrouting \texttt{MR\_Rotate\_UV\_GR2ER\_Met} or fron direct read of NARR data),
+from the subroutine \texttt{MR\_Rotate\_UV\_GR2ER\_Met} or from direct read of NARR data),
 if the computational grid is not Earth-relative, then these Earth-relative components can be
 subsequently decomposed into grid-relative components on the computational grid with
 \begin{verbatim}
@@ -545,7 +545,7 @@ Line 1 is a header line that is ignored
 
 Line 2 contains at least the time of the profiles and the number of lines of data
 to read.  Optionally, the number of columns of data can be specified followed by 
-a sequence of integers specifiying the variable ID's (see Table \ref{ApVar}) for the corresponding
+a sequence of integers specifying the variable ID's (see Table \ref{ApVar}) for the corresponding
 columns.  If neither of these optional arguments \texttt{ncol ivar(ncol)} are given,
 then MetReader tests for the number of columns present.  If there are 3, then
 the data are read in as altitude (in $\mathrm{m}$), wind speed (in $\mathrm{m/s}$), and 
@@ -585,7 +585,7 @@ Radiosonde Database (\texttt{https://ruc.noaa.gov/raobs/}).  These data
 are also archived at the University of Wyoming\\
 (\texttt{http://weather.uwyo.edu/upperair/sounding.html}).
 To use data in this format, set \texttt{iwf = 2}.
-From both these sites, radiosonde data are availalbe in a variety of formats.
+From both these sites, radiosonde data are available in a variety of formats.
 The default format for the UW site is "Text: List``
 
 \small \verbatiminput{windfiles/SLE_20180620_00Z_TextList.dat} \normalsize
@@ -618,7 +618,7 @@ gives the full specification.
 %   http://www.meteor.iastate.edu/classes/mt311/extras/Codul-TEMP.pdf
 % But this is likely an ephemeral link.
 If the string "TTAA`` is found
-in the ASCII file, this format is attemped first, otherwise the "Text:List" is
+in the ASCII file, this format is attempted first, otherwise the "Text:List" is
 assumed.  This WMO/GTS format is intended for the Rapid Update Cycle data and
 does not contain the year or month (only the day-of-month and hour) of the data.
 If this format is detected, the year and month at
@@ -626,7 +626,7 @@ execution time is assumed unless otherwise
 specified by the calling program.
 
 \subsection{Network of 1-D radiosonde profiles}
-In most of the world, the radiosonde launch sites are too dispers to form
+In most of the world, the radiosonde launch sites are too disperse to form
 a meaningful network across which we can interpolate values.  The radiosonde
 data is most useful for the regions of interest proximal to launch sites.
 Currently, the use of multiple sonde locations is not implemented, but simple
@@ -676,7 +676,7 @@ implementation of the GRIB reader will read each of the required GRIB records in
 memory, decompress the full gridded data, then extract the needed sub-grid; whereas the 
 NetCDF interface allows a more natural direct access to sub-grids.  For high resolution,
 global grids where only a small sub-grid is needed, the impact of reading and uncompressing
-full grids will be noticable.
+full grids will be noticeable.
 
 \section{Custom meteorological file specification}\label{SecCust}
 As an alternative to using a particular forecast or reanalysis product with
@@ -755,14 +755,14 @@ the time variable is checked for the \texttt{GRIB\_orgReferenceTime} attribute. 
 is not found, then the variable \texttt{reftime} is checked, if it exists.
 
 Several examples of these template files used with NAM and GFS
-forecast products are shown in Apendix \ref{ApTemplate}.
+forecast products are shown in Appendix \ref{ApTemplate}.
 
 \section{Additional tools/Examples}
 In the \texttt{tools} folder, three programs are included the illustrate the
 use of the library.
 \subsection{\texttt{MetCheck}}
 This utility is used for checking the validity of the NWP files.  In some
-cases, the downloading of files might be interupted or the files on the
+cases, the downloading of files might be interrupted or the files on the
 NCEP server might be incomplete or corrupt.  This utility opens each of the files
 and reads the full grid for the variables: geopotential height, Vx, Vy, Vz, and
 temperature.  If any values are outside of expected ranges, then the program
@@ -771,14 +771,14 @@ Usage:\\
 \verb|  MetCheck iwf idf filename [year]|
 
 \subsection{\texttt{MetSonde}}
-This utility is used for probing the NWP files and returing the temperature as a function
+This utility is used for probing the NWP files and returning the temperature as a function
 of height.  
 Usage:\\
 \verb|  MetSonde lon lat YYYY MM DD HH [WIND_ROOT]|
 
 The program assumes that the GFS and NCEP files are placed in the default directory, or
 at least in default subdirectories off of \texttt{WIND\_ROOT}.  Values are interpolated
-onto the requested point and time and are writen to a file (\texttt{GFS\_prof.dat}) in
+onto the requested point and time and are written to a file (\texttt{GFS\_prof.dat}) in
 the current working directory.  This 3-column file contains the height (in $\mathrm{km}$),
 pressure (in $\mathrm{Pa}$) and temperature (in $^{\circ}\mathrm{C}$).
 
@@ -794,7 +794,7 @@ start time is used unless the start time is greater than two weeks from present.
 so, the NCEP files are used.  For the backward trajectories, the forecast package
 chosen is that which can accommodate the default 24-hours of backward integration.
 
-For each of the trajectory calculations, files are writen to the current working directory
+For each of the trajectory calculations, files are written to the current working directory
 with the longitude and latitude of the trajectory in 1-hour increments at various
 elevations.  The default elevations are 5000, 10000, 20000, 30000, 40000, and
 50000 $\mathrm{ft}$.  Files for forward trajectories are named \texttt{ftraj[1-6].dat}
