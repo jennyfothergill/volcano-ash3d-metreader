@@ -2498,8 +2498,8 @@
         x_comp_sp(nx) = x_fullmet_sp(nx_fullmet)
         y_comp_sp(1)  = min(y_fullmet_sp(1),y_fullmet_sp(ny_fullmet))
         y_comp_sp(ny) = max(y_fullmet_sp(1),y_fullmet_sp(ny_fullmet))
-        z_comp_sp(1)  = 0.0_4
-        z_comp_sp(nz) = 1.1_4*MR_Max_geoH_metP_predicted
+        z_comp_sp(1)  = 0.0_sp
+        z_comp_sp(nz) = 1.1_sp*MR_Max_geoH_metP_predicted
       else
         x_comp_sp = dumx_sp
         y_comp_sp = dumy_sp
@@ -4139,29 +4139,34 @@
       real(kind=sp) :: MR_Temp_US_StdAtm
       real(kind=sp) :: zin
 
-      real(kind=sp),dimension(7) :: US_StdAtm_znodes
-      real(kind=sp),dimension(7) :: US_StdAtm_Tnodes
+      integer,parameter :: MAXATMOSNODES = 16
+      real(kind=sp),dimension(MAXATMOSNODES) :: US_StdAtm_znodes
+      real(kind=sp),dimension(MAXATMOSNODES) :: US_StdAtm_Tnodes
 
       real(kind=sp) :: frac
       real(kind=sp) :: Delta_temp
       integer :: k,kk
 
       US_StdAtm_znodes = (/ 0.0_sp, 11.0_sp, 20.0_sp, 32.0_sp, &
-                           47.0_sp, 51.0_sp, 71.0_sp/)
+                           47.0_sp, 51.0_sp, 71.0_sp, 84.852_sp, &
+                           90.0_sp,  95.0_sp, 100.0_sp, 105.0_sp,   &   ! These are extensions
+                          110.0_sp, 115.0_sp, 120.0_sp, 125.0_sp/)      ! using mean CIRA ref atmos.
       US_StdAtm_Tnodes = (/288.15_sp, 216.65_sp, 216.65_sp, 228.65_sp, &
-                           270.65_sp, 270.65_sp, 214.65_sp/)
+                           270.65_sp, 270.65_sp, 214.65_sp, 186.946_sp, &
+                           183.80_sp, 190.30_sp, 203.50_sp, 228.00_sp,  &
+                           265.50_sp, 317.10_sp, 380.60_sp, 452.30_sp/)
 
       if(zin.le.US_StdAtm_znodes(1))then
         MR_Temp_US_StdAtm = US_StdAtm_Tnodes(1)
-      elseif(zin.ge.US_StdAtm_znodes(7))then
-        MR_Temp_US_StdAtm = US_StdAtm_Tnodes(7)
+      elseif(zin.ge.US_StdAtm_znodes(MAXATMOSNODES))then
+        MR_Temp_US_StdAtm = US_StdAtm_Tnodes(MAXATMOSNODES)
         write(MR_global_error,*)"Stopping in Temp_US_StdAtm"
         stop 1
       else
         ! interpolate
         ! Start from the top since we assume the requested point is near the top
         kk = 1
-        do k = 6,1,-1
+        do k = MAXATMOSNODES-1,1,-1
           if(zin.ge.US_StdAtm_znodes(k).and.zin.lt.US_StdAtm_znodes(k+1)) kk = k
         enddo
         frac = (zin-US_StdAtm_znodes(kk)) / &
@@ -4179,6 +4184,7 @@
 !  Returns the height in km given the pressure in hPa
 !
 !  From http://en.wikipedia.org/wiki/U.S._Standard_Atmosphere
+!       supplemented by doi=10.1.1.455.9475
 !
 !##############################################################################
 
@@ -4189,30 +4195,35 @@
       real(kind=sp) :: MR_Z_US_StdAtm  ! in km
       real(kind=sp) :: pin          ! in mb
 
-      real(kind=sp),dimension(7) :: US_StdAtm_znodes
-      real(kind=sp),dimension(7) :: US_StdAtm_pnodes
+      integer,parameter :: MAXATMOSNODES = 16
+      real(kind=sp),dimension(MAXATMOSNODES) :: US_StdAtm_znodes
+      real(kind=sp),dimension(MAXATMOSNODES) :: US_StdAtm_pnodes
 
       real(kind=sp) :: frac
       real(kind=sp) :: Delta_z
       integer :: k,kk
 
-      US_StdAtm_znodes = (/ 0.0_sp, 11.0_sp, 20.0_sp, 32.0_sp, &
-                           47.0_sp, 51.0_sp, 71.0_sp/)
+      US_StdAtm_znodes = (/ 0.0_sp,  11.0_sp,  20.0_sp,  32.0_sp,   &
+                           47.0_sp,  51.0_sp,  71.0_sp,  84.852_sp, &
+                           90.0_sp,  95.0_sp, 100.0_sp, 105.0_sp,   &   ! These are extensions
+                          110.0_sp, 115.0_sp, 120.0_sp, 125.0_sp/)      ! using mean CIRA ref atmos.
       US_StdAtm_pnodes = (/1013.25_sp, 226.321_sp, 54.7489_sp, 8.68019_sp, &
-                           1.10906_sp, 0.669389_sp, 0.0395642_sp/)
+                           1.10906_sp, 6.69389e-1_sp, 3.95642e-2_sp, 3.68501e-3_sp, &
+                           1.795e-3_sp,7.345e-4_sp,3.090e-4_sp,1.422e-4_sp, &
+                           7.362e-5_sp,4.236e-5_sp,2.667e-5_sp,2.666e-5_sp/)
 
       if(pin.ge.US_StdAtm_pnodes(1))then
         MR_Z_US_StdAtm = US_StdAtm_pnodes(1)
-      elseif(pin.le.US_StdAtm_pnodes(7))then
-        MR_Z_US_StdAtm = US_StdAtm_pnodes(7)
+      elseif(pin.le.US_StdAtm_pnodes(MAXATMOSNODES))then
+        MR_Z_US_StdAtm = US_StdAtm_pnodes(MAXATMOSNODES)
         write(MR_global_error,*)"MR ERROR: Pressure provided is below lowest value of US StdAtm."
-        write(MR_global_error,*)"Stopping in Z_US_StdAtm"
+        write(MR_global_error,*)"Stopping in MR_Z_US_StdAtm"
         stop 1
       else
         ! interpolate
         ! Start from the top since we assume the requested point is near the top
         kk = 1
-        do k = 6,1,-1
+        do k = MAXATMOSNODES-1,1,-1
           if(pin.le.US_StdAtm_pnodes(k).and.pin.gt.US_StdAtm_pnodes(k+1)) kk = k
         enddo
         frac = (pin-US_StdAtm_pnodes(kk)) / &
@@ -4232,6 +4243,7 @@
 !  Returns the pressure in hPa given the height in km
 !
 !  From http://en.wikipedia.org/wiki/U.S._Standard_Atmosphere
+!       supplemented by doi=10.1.1.455.9475
 !
 !##############################################################################
 
@@ -4242,18 +4254,25 @@
       real(kind=sp) :: MR_Pres_US_StdAtm
       real(kind=sp) :: zin
 
-      real(kind=sp),dimension(7) :: US_StdAtm_znodes
-      real(kind=sp),dimension(7) :: US_StdAtm_pnodes
+      integer,parameter :: MAXATMOSNODES = 16
+      real(kind=sp),dimension(MAXATMOSNODES) :: US_StdAtm_znodes
+      real(kind=sp),dimension(MAXATMOSNODES) :: US_StdAtm_pnodes
 
       real(kind=sp) :: pres0 = 1013.25_sp
       real(kind=sp) :: skinz   = 7.0_sp
 
-      US_StdAtm_znodes = (/ 0.0_sp, 11.0_sp, 20.0_sp, 32.0_sp, &
-                           47.0_sp, 51.0_sp, 71.0_sp/)
+      US_StdAtm_znodes = (/ 0.0_sp,  11.0_sp,  20.0_sp,  32.0_sp,   &
+                           47.0_sp,  51.0_sp,  71.0_sp,  84.852_sp, &
+                           90.0_sp,  95.0_sp, 100.0_sp, 105.0_sp,   &   ! These are extensions
+                          110.0_sp, 115.0_sp, 120.0_sp, 125.0_sp/)      ! using mean CIRA ref atmos.
+
       US_StdAtm_pnodes = (/1013.25_sp, 226.321_sp, 54.7489_sp, 8.68019_sp, &
-                           1.10906_sp, 0.669389_sp, 0.0395642_sp/)
+                           1.10906_sp, 6.69389e-1_sp, 3.95642e-2_sp, 3.68501e-3_sp, &
+                           1.795e-3_sp,7.345e-4_sp,3.090e-4_sp,1.422e-4_sp, &
+                           7.362e-5_sp,4.236e-5_sp,2.667e-5_sp,2.666e-5_sp/)
 
         ! Eq 1.8 of Wallace and Hobbs
+        !  This starts to fall apart around 90 km or so
       MR_Pres_US_StdAtm = pres0 * exp(-zin/skinz)
 
       return

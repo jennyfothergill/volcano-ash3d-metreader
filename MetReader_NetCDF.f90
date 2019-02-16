@@ -420,6 +420,7 @@
             endif
     
             ! 3-d transient variables should be in the COORDS convention (time, level, y, x)
+            !                                                                4      3  2  1
             ! if ivar = 1 (Geopotential Height), then get the info on x,y and t too
             if(ivar.eq.1)then
               i_dim = 1  ! get x info
@@ -689,6 +690,10 @@
               endif
             else
               write(MR_global_error,*)'MR ERROR: level coordinate is not in pos. 3 for ',invar
+              write(MR_global_error,*)'          Expected one of: lev, isobaric, pressure,'
+              write(MR_global_error,*)'            height, depth, lv_ISBL1, bottom_top,'
+              write(MR_global_error,*)'            bottom_top_stag, soil_layers_stag'
+              write(MR_global_error,*)'          Instead, found: ',Met_dim_names(2)
               write(MR_global_log  ,*)'MR ERROR: level coordinate is not in pos. 3 for ',invar
               stop 1
             endif
@@ -869,7 +874,6 @@
         if(.not.allocated(p_fullmet_sp))  allocate(p_fullmet_sp(np_fullmet))
         idx = Met_var_zdim_idx(1)
         p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
-        MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
   
       endif ! MR_iwind.eq.5
       !---------------------------------------------------------------------------------
@@ -886,6 +890,7 @@
         ! or hPa
         z_approx(k) = MR_Z_US_StdAtm(p_fullmet_sp(k))
       enddo
+      MR_Max_geoH_metP_predicted = z_approx(np_fullmet)
 
       write(MR_global_info,*)"Dimension info:"
       write(MR_global_info,*)"  record (time): ",nt_fullmet
@@ -1390,7 +1395,7 @@
         stop 1
       endif
       p_fullmet_sp(:) = p_fullmet_sp(:) + dum4d_sp(1,1,:,1)
-      MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)*0.01_sp) 
+      MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp) 
       !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
 
        x_inverted = .false.
