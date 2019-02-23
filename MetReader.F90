@@ -10,6 +10,7 @@
 
       real(kind=sp), parameter :: RAD_EARTH_MET = 6371.229_sp ! Radius of Earth in km
       real(kind=sp), parameter :: DEG2RAD_MET   = 1.7453292519943295e-2_sp
+      real(kind=sp), parameter :: MR_MIN_DZ     = 1.0e-4_sp   ! used in reassiging z for low-level negative GPH
 
       integer,public :: MR_global_essential    = 6
       integer,public :: MR_global_production   = 6
@@ -301,8 +302,8 @@
       integer       :: MR_Comp_StartYear
       integer       :: MR_Comp_StartMonth
       integer       :: MR_Comp_StartDay
-      real(kind=dp) :: MR_Comp_StartHour      = 0.0_dp
-      real(kind=dp) :: MR_Comp_Time_in_hours  = 0.0_dp
+      real(kind=dp) :: MR_Comp_StartHour      = 0.0_dp  ! Note that these must be double-precision to
+      real(kind=dp) :: MR_Comp_Time_in_hours  = 0.0_dp  ! be passed correctly to HoursSince
       integer       :: nx_comp
       integer       :: ny_comp
       integer       :: nz_comp
@@ -341,7 +342,8 @@
       real(kind=sp),dimension(:,:),  allocatable :: MR_jacob  ! Jacobian of trans. = MR_ztop-MR_zsurf
 #endif
 
-      real(kind=sp),dimension(0:100) :: fill_value_sp = -9999.0_sp
+      logical                        :: FoundFillVAttr = .false.
+      real(kind=sp)                  :: fill_value_sp  = -9999.0_sp  ! Initialize to the commonly used fill value
       character(len=30),dimension(9) :: Met_dim_names      ! name of dimension
       logical          ,dimension(9) :: Met_dim_IsAvailable
       real(kind=sp)    ,dimension(9) :: Met_dim_fac  = 1.0_sp
@@ -985,8 +987,7 @@
         Met_var_IsAvailable(43)=.true.; Met_var_NC_names(43)="Categorical_ice_pellets_yes1_no0_surface"
         Met_var_IsAvailable(44)=.true.
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-
+        fill_value_sp = -9999.0_sp
       elseif (MR_iwindformat.eq.4) then
         ! NAM Regional North America 221 32 km North America files
           ! http://motherlode.ucar.edu/native/conduit/data/nccf/com/nam/prod/
@@ -1029,7 +1030,7 @@
         Met_var_IsAvailable(43)=.true.
         Met_var_IsAvailable(45)=.true.
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.5) then
         ! NAM216 AK 45km
@@ -1063,8 +1064,8 @@
         ! Atmospheric Structure
         Met_var_IsAvailable(23)=.true.; Met_var_NC_names(23)="Total_cloud_cover"
         ! Moisture
-        Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="Relative_humidity"
-        Met_var_IsAvailable(31)=.true.; Met_var_NC_names(31)="Specific_humidity"
+        Met_var_IsAvailable(30)=.true.;
+        Met_var_IsAvailable(31)=.true.;
         Met_var_IsAvailable(32)=.true.
         ! Precipitation
         Met_var_IsAvailable(40)=.true.; Met_var_NC_names(40)="Categorical_Rain"
@@ -1074,7 +1075,7 @@
         Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="Large_scale_precipitation_non-convective"
         Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_precipitation"
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.6) then
         ! NAM Regional 90 km grid 104
@@ -1119,7 +1120,7 @@
         Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="Large_scale_precipitation_non-convective_surface_0_Hour_Accumulation"
         Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_precipitation_surface_0_Hour_Accumulation"
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.7) then
         ! CONUS 212 40km
@@ -1165,7 +1166,7 @@
         Met_var_IsAvailable(43)=.true.
         Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_Precipitation_Rate_surface"
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.8) then
         ! CONUS 218 (12km)
@@ -1200,7 +1201,7 @@
         ! Moisture
         Met_var_IsAvailable(30)=.true.
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.9) then
         ! CONUS 227 (5.08 km)
@@ -1250,7 +1251,7 @@
         Met_var_IsAvailable(43)=.true.
         Met_var_IsAvailable(44)=.true.
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.10)then
         ! NAM 242 11.25 km AK
@@ -1291,7 +1292,7 @@
         Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="Total_precipitation_surface_0_Hour_Accumulation"
         Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_precipitation_surface_0_Hour_Accumulation"
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.11)then
         ! NAM 196 2.5 km HI
@@ -1341,7 +1342,7 @@
         Met_var_IsAvailable(43)=.true.
         Met_var_IsAvailable(44)=.true.
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.12)then
         ! NAM 198 5.953 km AK
@@ -1393,7 +1394,7 @@
         Met_var_IsAvailable(44)=.true.
         Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_precipitation_surface_0_Hour_Accumulation"
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.13)then  ! NAM 91 2.976 km AK
         ! NAM 91 2.976 km AK
@@ -1449,7 +1450,7 @@
         Met_var_IsAvailable(43)=.true.
         Met_var_IsAvailable(44)=.true.
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.14) then
         ! CONUS 1227 (3.0 km)
@@ -1499,7 +1500,7 @@
         Met_var_IsAvailable(43)=.true.
         Met_var_IsAvailable(44)=.true.
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.20)then
         ! GFS 0.5 deg
@@ -1540,7 +1541,7 @@
         !Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="Precipitation_rate"
         !Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_Precipitation_Rate"
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.21)then
         ! GFS 1.0 deg
@@ -1570,7 +1571,7 @@
         Met_var_IsAvailable(30)=.true.
         Met_var_IsAvailable(32)=.true.
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.22)then
         ! GFS 0.25 deg
@@ -1611,7 +1612,7 @@
         Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="Precipitation_rate"
         Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="Convective_Precipitation_Rate"
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.23)then
          ! NCEP / DOE reanalysis 2.5 degree files 
@@ -1642,7 +1643,7 @@
         ! Precipitation
         Met_var_IsAvailable(44)=.true.
 
-        fill_value_sp(MR_iwindformat) = 9.999_sp
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.24)then
          ! NASA-MERRA-2 reanalysis 0.625 x 0.5 degree files 
@@ -1677,7 +1678,7 @@
         Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="QL"          ! float cloud liquid water mixing ratio kg/kg
         Met_var_IsAvailable(33)=.true.; Met_var_NC_names(33)="QI"          ! float cloud ice mixing ratio kg/kg
 
-        fill_value_sp(MR_iwindformat) = 1.0e15_sp
+        fill_value_sp = 1.0e15_sp
 
       elseif (MR_iwindformat.eq.25)then
          ! NCEP/NCAR reanalysis 2.5 degree files 
@@ -1706,7 +1707,7 @@
           ! Moisture
           !Met_var_IsAvailable(30)=.true.
   
-          fill_value_sp(MR_iwindformat) = -9999.0_sp
+          fill_value_sp = -9999.0_sp
 
         elseif(MR_iwind.eq.5)then
 
@@ -1732,7 +1733,7 @@
           !Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="prate"     ! short surface precipitation rate (kg/m2/s) (0.0032765f,1.e-07f)
           !Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="cprat"     ! short surface convective precip kg/m2/s (0.0031765f,1.e-07f)
   
-          fill_value_sp(MR_iwindformat) = -9999.0_sp
+          fill_value_sp = -9999.0_sp
 
         else
           write(MR_global_error,*)"MR ERROR : NCEP Reannalysis provided only as iwind 4 or iwind 5"
@@ -1766,7 +1767,7 @@
         ! Moisture
         Met_var_IsAvailable(31)=.true.; Met_var_GRIB_names(31)= "SPFH_GDS0_ISBL"
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.27)then
          ! NOAA-CIRES reanalysis 2.0 degree files 
@@ -1816,7 +1817,7 @@
         endif
 
 
-        fill_value_sp(MR_iwindformat) = 1.e+20_sp
+        fill_value_sp = 1.0e+20_sp
 
       elseif (MR_iwindformat.eq.28)then
          ! ECMWF Interim Reanalysis (ERA-Interim)
@@ -1852,7 +1853,7 @@
         Met_var_IsAvailable(31)=.true.
                                        Met_var_GRIB1_Param(31)=133
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp ! actually NaNf
+        fill_value_sp = -9999.0_sp
         Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
 
       elseif (MR_iwindformat.eq.29)then
@@ -1891,6 +1892,7 @@
         !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="CRWC"! e5.oper.an.pl.128_075_crwc.regn320sc.2018062000_2018062023.nc
         !Met_var_IsAvailable(32)=.true.; Met_var_NC_names(32)="CSWC"! e5.oper.an.pl.128_076_cswc.regn320sc.2018062000_2018062023.nc
 
+        fill_value_sp = -9999.0_sp
         Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
 
       elseif (MR_iwindformat.eq.30)then
@@ -1920,6 +1922,8 @@
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W_GDS4_ISBL" ! e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T_GDS4_ISBL" ! e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
 
+        fill_value_sp = -9999.0_sp
+
         Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
 
       elseif (MR_iwindformat.eq.32)then
@@ -1947,7 +1951,7 @@
         ! Moisture
         Met_var_IsAvailable(30)=.true.
 
-        fill_value_sp(MR_iwindformat) = -9999._sp ! actually NaNf
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.33)then
          ! CCSM3.0 Community Atmosphere Model (CAM)
@@ -1978,7 +1982,7 @@
         Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="RELHUM"
         Met_var_IsAvailable(31)=.true.; Met_var_NC_names(31)="Q"
 
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
+        fill_value_sp = -9999.0_sp
 
       elseif (MR_iwindformat.eq.40)then
          ! NASA-GEOS Cp
@@ -2004,7 +2008,7 @@
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="OMEGA"
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T"
 
-        fill_value_sp(MR_iwindformat) = 1.0e15_sp
+        fill_value_sp = 1.0e15_sp
 
       elseif (MR_iwindformat.eq.41)then
          ! NASA-GEOS Np
@@ -2030,7 +2034,7 @@
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="OMEGA"
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T"
 
-        fill_value_sp(MR_iwindformat) = 1.0e15_sp
+        fill_value_sp = 1.0e15_sp
 
       elseif (MR_iwindformat.eq.50)then
          ! WRF - output
@@ -2075,7 +2079,7 @@
         Met_var_IsAvailable(44)=.true.; Met_var_NC_names(44)="RAINC"   ! ACCUMULATED TOTAL CUMULUS PRECIPITATION in mm
         Met_var_IsAvailable(45)=.true.; Met_var_NC_names(45)="RAINNC"  ! ACCUMULATED TOTAL GRID SCALE PRECIPITATION in mm
 
-        fill_value_sp(MR_iwindformat) = 1.e+20_sp
+        fill_value_sp = 1.0e20_sp
 
         Met_var_conversion_factor(1) = 1.0_sp/9.81_sp
 
@@ -2525,10 +2529,10 @@
 
         if(MR_Save_Velocities)then
           write(MR_global_info,*)"Velocities will be saved on the metP grid"
-          allocate(MR_vx_metP_last(nx_submet,ny_submet,np_fullmet))
-          allocate(MR_vx_metP_next(nx_submet,ny_submet,np_fullmet))
-          allocate(MR_vy_metP_last(nx_submet,ny_submet,np_fullmet))
-          allocate(MR_vy_metP_next(nx_submet,ny_submet,np_fullmet))
+          allocate(MR_vx_metP_last(nx_submet,ny_submet,np_fullmet));MR_vx_metP_last(:,:,:)=0.0_sp
+          allocate(MR_vx_metP_next(nx_submet,ny_submet,np_fullmet));MR_vx_metP_next(:,:,:)=0.0_sp
+          allocate(MR_vy_metP_last(nx_submet,ny_submet,np_fullmet));MR_vy_metP_last(:,:,:)=0.0_sp
+          allocate(MR_vy_metP_next(nx_submet,ny_submet,np_fullmet));MR_vy_metP_next(:,:,:)=0.0_sp
         else
           write(MR_global_info,*)"Velocities not saved"
         endif
@@ -2543,8 +2547,8 @@
       !  These are currently only needed for calculating DelMetP_Dx and
       !  DelMetP_Dy
       if(IsLatLon_MetGrid)then
-        allocate(rdphi_MetP_sp(ny_submet,np_fullmet))
-        allocate(rdlambda_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        allocate(rdphi_MetP_sp(ny_submet,np_fullmet))             ;   rdphi_MetP_sp(:,:)=0.0_sp
+        allocate(rdlambda_MetP_sp(nx_submet,ny_submet,np_fullmet));rdlambda_MetP_sp(:,:,:)=0.0_sp
         do k=1,np_fullmet
           if(IsRegular_MetGrid)then
             ! length scale along y (in meters)
@@ -2876,17 +2880,17 @@
         if(prestep) write(MR_global_info,*)"             1 prestep"
         if(poststep)write(MR_global_info,*)"             1 poststep"
       endif
-      allocate(MR_MetStep_File(MR_MetSteps_Total))
-      allocate(MR_MetStep_findex(MR_MetSteps_Total))
-      allocate(MR_MetStep_tindex(MR_MetSteps_Total))
-      allocate(MR_MetStep_Hour_since_baseyear(MR_MetSteps_Total))
-      allocate(MR_MetStep_Interval(MR_MetSteps_Total))
-      allocate(MR_MetStep_year(MR_MetSteps_Total))
-      allocate(MR_MetStep_month(MR_MetSteps_Total))
-      allocate(MR_MetStep_day(MR_MetSteps_Total))
-      allocate(MR_MetStep_DOY(MR_MetSteps_Total))
-      allocate(MR_MetStep_Hour_Of_Day(MR_MetSteps_Total))
-      allocate(MR_iwind5_year(MR_MetSteps_Total))
+      allocate(MR_MetStep_File(MR_MetSteps_Total))               ;MR_MetStep_File(:)=''
+      allocate(MR_MetStep_findex(MR_MetSteps_Total))             ;MR_MetStep_findex(:)=0
+      allocate(MR_MetStep_tindex(MR_MetSteps_Total))             ;MR_MetStep_tindex(:)=0
+      allocate(MR_MetStep_Hour_since_baseyear(MR_MetSteps_Total));MR_MetStep_Hour_since_baseyear(:)=0.0_sp
+      allocate(MR_MetStep_Interval(MR_MetSteps_Total))           ;MR_MetStep_Interval(:)=0
+      allocate(MR_MetStep_year(MR_MetSteps_Total))               ;MR_MetStep_year(:)=0
+      allocate(MR_MetStep_month(MR_MetSteps_Total))              ;MR_MetStep_month(:)=0
+      allocate(MR_MetStep_day(MR_MetSteps_Total))                ;MR_MetStep_day(:)=0
+      allocate(MR_MetStep_DOY(MR_MetSteps_Total))                ;MR_MetStep_DOY(:)=0
+      allocate(MR_MetStep_Hour_Of_Day(MR_MetSteps_Total))        ;MR_MetStep_Hour_Of_Day(:)=0.0_sp
+      allocate(MR_iwind5_year(MR_MetSteps_Total))                ;MR_iwind5_year(:)=0
 
       ! Finally, we need to loop through the steps exactly as above, but this time populate 
       ! the lists just allocated
@@ -3237,10 +3241,10 @@
       !    nx_submet,ny_submet,nz_comp
       ! Allocate 1-d arrays, padding one layer to the bottom and np_fullmet_pad
       ! layers on the top
-      allocate(  z_col_metP(np_fully_padded))
-      allocate(var_col_metP(np_fully_padded))
-      allocate(var_col_metH(nz_comp))
-      allocate(dumVertCoord_sp(nz_comp))
+      allocate(  z_col_metP(np_fully_padded));      z_col_metP(:) = 0.0_sp
+      allocate(var_col_metP(np_fully_padded));    var_col_metP(:) = 0.0_sp
+      allocate(var_col_metH(nz_comp))        ;    var_col_metH(:) = 0.0_sp
+      allocate(dumVertCoord_sp(nz_comp))     ; dumVertCoord_sp(:) = 0.0_sp
 
 !     CREATE 1-D ARRAYS IN P, AND REGRID THEM INTO 1-D ARRAYS IN z
       do i=1,nx_submet
@@ -3253,13 +3257,13 @@
           else
             z_col_metP(2:np_fullmet+1)  = MR_geoH_metP_next(i,j,1:np_fullmet)
           endif
-          ! Set first node at lower boundary
-          z_col_metP(1)                = 0.0e-4_sp  ! 0.1 m
-            ! Sometimes the lowest z from the wind file (k=2) might be
-            ! negative.  If so, reassign to just above boundary.
-          if (z_col_metP(2).le.2.0e-4_sp) z_col_metP(2) = 2.0e-4_sp
-          if (z_col_metP(3).le.3.0e-4_sp) z_col_metP(3) = 3.0e-4_sp
-
+          ! Loop through the nodes and reset any that are negative or non-assending in p
+          ! This is usually never invoked, but would only affect potentially the bottom few nodes
+          ! The intent is to maintain a monotonic GPH, while getting irrelavent nodes out of the
+          ! way. 
+          do k=1,np_fullmet
+            if(z_col_metP(k).le.real(k,kind=sp)*MR_MIN_DZ) z_col_metP(k)=real(k,kind=sp)*MR_MIN_DZ
+          enddo
           var_col_metP(1)              = MR_dum3d_metP(i,j,1)
           var_col_metP(2:np_fullmet+1) = MR_dum3d_metP(i,j,1:np_fullmet)
           ! Fix occasional erroneous pressure levels that are non-increasing by
@@ -3396,7 +3400,7 @@
         ! Now we have MR_dum3d_metH; interpolate onto computational grid
         !  Since MR_dum3d_metH and MR_dum3d_compH have the same z-coordinate, we only
         !  need to do 2d regridding on each k-slice
-      allocate(tmp_regrid2d_sp(nx_comp,ny_comp))
+      allocate(tmp_regrid2d_sp(nx_comp,ny_comp)); tmp_regrid2d_sp(:,:)=0.0_sp
 
       do k=1,nz_comp
         if(MR_iwindformat.eq.1.or.MR_iwindformat.eq.2)then
@@ -3540,7 +3544,7 @@
 
       call MR_Read_2d_Met_Variable(ivar,istep)
 
-      allocate(tmp_regrid2d_sp(nx_comp,ny_comp))
+      allocate(tmp_regrid2d_sp(nx_comp,ny_comp)); tmp_regrid2d_sp(:,:)=0.0_sp
 
         call MR_Regrid_Met2Comp(nx_submet,ny_submet, MR_dum2d_met(1:nx_submet,1:ny_submet),       &
                                 nx_comp,  ny_comp,   tmp_regrid2d_sp(1:nx_comp,1:ny_comp))
@@ -3566,7 +3570,8 @@
 !
 !     This subroutine reads U and V on the metP grid, rotates to EarthRelative
 !
-!     Takes as input :: istep :: specified the met step
+!     Takes as input :: istep   :: specified the met step
+!                       SetComp :: (optional) logical flag to regrid to comp grid
 !
 !     Sets  : MR_dum3d_compH    holds U
 !             MR_dum3d_compH_2  holds V
@@ -3786,7 +3791,7 @@
         ! Now we have MR_dum3d_metH; interpolate onto computational grid
         !  Since MR_dum3d_metH and MR_dum3d_compH have the same z-coordinate, we only
         !  need to do 2d regridding on each k-slice
-      allocate(tmp_regrid2d_sp(nx_comp,ny_comp))
+      allocate(tmp_regrid2d_sp(nx_comp,ny_comp));tmp_regrid2d_sp(:,:)=0.0_sp
 
       do k=1,nz_comp
         if(MR_iwindformat.eq.1.or.MR_iwindformat.eq.2)then
@@ -3855,9 +3860,9 @@
       !    nx_submet,ny_submet,np_fullmet to
       !    nx_submet,ny_submet,nz_comp
 
-      allocate(  z_col_metP(np_fullmet+2))
-      allocate(var_col_metP(np_fullmet+2))
-      allocate(var_col_metH(nz_comp))
+      allocate(  z_col_metP(np_fullmet+2));   z_col_metP(:)=0.0_sp
+      allocate(var_col_metP(np_fullmet+2)); var_col_metP(:)=0.0_sp
+      allocate(var_col_metH(nz_comp))     ; var_col_metH(:)=0.0_sp
 
 !     CREATE 1-D ARRAYS IN P, AND REGRID THEM INTO 1-D ARRAYS IN z
       do i=1,nx_submet
@@ -3870,12 +3875,13 @@
           else
             z_col_metP(2:np_fullmet+1)  = MR_geoH_metP_next(i,j,1:np_fullmet)
           endif
-          ! Set first node at lower boundary
-          z_col_metP(1)                = 1.0e-4_sp  ! 0.1 m
-            ! Sometimes the lowest z from the wind file (k=2) might be
-            ! negative.  If so, reassign to just above boundary.
-          if (z_col_metP(2).le.2.0e-4_sp) z_col_metP(2) = 2.0e-4_sp
-          if (z_col_metP(3).le.3.0e-4_sp) z_col_metP(3) = 3.0e-4_sp
+          ! Loop through the nodes and reset any that are negative or non-assending in p
+          ! This is usually never invoked, but would only affect potentially the bottom few nodes
+          ! The intent is to maintain a monotonic GPH, while getting irrelavent nodes out of the
+          ! way. 
+          do k=1,np_fullmet
+            if(z_col_metP(k).le.real(k,kind=sp)*MR_MIN_DZ) z_col_metP(k)=real(k,kind=sp)*MR_MIN_DZ
+          enddo
           var_col_metP(1)              = 0.0_sp
           var_col_metP(2:np_fullmet+1) = MR_dum3d_metP(i,j,1:np_fullmet)
           ! Fix occasional erroneous pressure levels that are non-increasing by
@@ -3884,7 +3890,13 @@
           ! increase linearly with k
           do k=2,np_fullmet
             if (z_col_metP(k)<z_col_metP(k-1))then
-              write(MR_global_info,*)"MR_WARNING: Need to fix value in MR_Regrid_MetP_to_MetH"
+              write(MR_global_info,*)"MR_WARNING: Need to adjust value in MR_Regrid_MetP_to_MetH"
+              write(MR_global_info,*)"            that are not increasing in height with decreasing p"
+              write(MR_global_info,*)"i = ",i
+              write(MR_global_info,*)"j = ",j
+              write(MR_global_info,*)"k = ",k
+              write(MR_global_info,*)z_col_metP
+              stop 9
               knext=k       !find the first value of z_col_metP that's above z_col_metP(k-1)
               do while (z_col_metP(knext)<z_col_metP(k-1))
                  knext=knext+1
@@ -3949,7 +3961,7 @@
         ! Now we have MR_dum3d_metH; interpolate onto computational grid
         !  Since MR_dum3d_metH and MR_dum3d_compH have the same z-coordinate, we only
         !  need to do 2d regridding on each k-slice
-      allocate(tmp_regrid2d_sp(nx_comp,ny_comp))
+      allocate(tmp_regrid2d_sp(nx_comp,ny_comp));tmp_regrid2d_sp(:,:)=0.0_sp
 
         call MR_Regrid_Met2Comp(nx_submet,ny_submet, MR_dum2d_met(1:nx_submet,1:ny_submet),       &
                                 nx_comp,  ny_comp,   tmp_regrid2d_sp(1:nx_comp,1:ny_comp))
@@ -4313,12 +4325,15 @@
 
       logical,dimension(nz1_max) :: IsFillValue
       logical,dimension(nz1_max) :: InterpolateLev
+      logical,dimension(nz1_max) :: ExtrapolateLev
 
       integer ::  i,j,k,kk,kkk,klow,khigh
       integer :: idx
       real(kind=sp) :: pp,pv,p1,p2,fac
 
-      InterpolateLev = .false.
+
+      InterpolateLev(:) = .false.
+      ExtrapolateLev(:) = .false.
 
       ! First check if this variable is on the same pressure grid as GPH
       idx = Met_var_zdim_idx(ivar)  ! index of pressure level for this variable
@@ -4333,23 +4348,37 @@
         ! of the variable can be copied or must be interpolated
         !
         ! Loop from the top of the variable array (because nz2_max<nz1_max)
-        InterpolateLev = .true.
-        do k=nz2_max,1,-1
+        InterpolateLev(:) = .true.
+        ExtrapolateLev(:) = .false.
+        do k=nz2_max,1,-1  ! these are the p-levels the variable lives on (nz2_max<nz1_max)
           pv = levs_fullmet_sp(idx,k)  ! Pressure level in question
+
           do kk=nz1_max,1,-1           ! Looping over destination pressure levels
-            pp = levs_fullmet_sp(1,kk) 
+            pp = levs_fullmet_sp(1,kk)
             if(abs(pv-pp).lt.MR_EPS_SMALL)then
               ! pv matched with pp
               InterpolateLev(kk) = .false.
+              ExtrapolateLev(kk) = .false.
               ! if the slices are at the same index, do nothing
               if (k.ne.kk)then
                 ! Move the slice to the needed position and flag original slice with NaN/Fill_Value
                 dum_array_sp(1:nx_max,1:ny_max,kk) = dum_array_sp(1:nx_max,1:ny_max,k)
                 dum_array_sp(1:nx_max,1:ny_max,k)  = fill_val_sp
               endif
+            elseif(levs_fullmet_sp(idx,1)-levs_fullmet_sp(1,kk).lt.MR_EPS_SMALL)then
+                ! Check if this kk level of the master grid is less than the first level of the var grid
+                ! pressure level is smaller (higher altitude) than top of GPH
+              ExtrapolateLev(kk) = .true.
+              InterpolateLev(kk) = .false.
+            elseif(levs_fullmet_sp(idx,nz2_max)-levs_fullmet_sp(1,kk).gt.MR_EPS_SMALL)then
+                ! This pressure level is greater (lower altitude) than bottom of GPH
+              ExtrapolateLev(kk) = .true.
+              InterpolateLev(kk) = .false.
             endif
           enddo
+
         enddo
+
         ! Now go to each of the layers we need to calculate, assuming we have the end layers
         do k=2,nz1_max-1
           if (InterpolateLev(k))then
@@ -4464,6 +4493,27 @@
             dum_array_sp(1:nx_max,1:ny_max,k) = dum_array_sp(1:nx_max,1:ny_max,nz2_max)
           enddo
         endif
+      elseif(levs_code(idx).eq.3)then
+        ! Some interpolated grids are also truncated
+        do k=1,nz1_max
+          if(k.gt.nz1_max/2)then
+            if(ExtrapolateLev(k))then
+              if(present(bc_high_sp))then
+                dum_array_sp(1:nx_max,1:ny_max,k) = bc_high_sp
+              else
+                dum_array_sp(1:nx_max,1:ny_max,k) = dum_array_sp(1:nx_max,1:ny_max,nz2_max)
+              endif
+            endif
+          else
+            if(ExtrapolateLev(k))then
+              if(present(bc_low_sp))then
+                dum_array_sp(1:nx_max,1:ny_max,k) = bc_low_sp
+              else
+                dum_array_sp(1:nx_max,1:ny_max,k) = dum_array_sp(1:nx_max,1:ny_max,1)
+              endif
+            endif
+          endif
+        enddo
       endif
 
       end subroutine MR_QC_3dvar

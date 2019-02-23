@@ -53,13 +53,14 @@
       integer(kind=4)  :: iv_paramC
       integer(kind=4)  :: iv_paramN
       integer(kind=4)  :: iv_typeSf
-      integer(kind=4)  :: iv_Table
+      !integer(kind=4)  :: iv_Table
       character(len=3) :: iv_typeSfc
 
       integer(kind=4)  :: numberOfPoints
       integer(kind=4)  :: dum_int
       real(kind=8)     :: dum_dp
-      character(len=19) :: dum_str
+      !character(len=19) :: dum_str
+      character(len=20) :: dum_str
       real(kind=dp) :: x_start,y_start
       real(kind=dp) :: Lon_start,Lat_start
       real(kind=dp),dimension(:),allocatable     :: lats,lons,values
@@ -83,6 +84,7 @@
       logical :: IsTruncatedDim
       logical :: ReadGrid
       integer(kind=4) :: kk,tmp1
+      integer :: stat
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                MR_Read_Met_DimVars_GRIB                    ----------"
@@ -97,7 +99,7 @@
         write(MR_global_error,*)"         iwind=5 files are all multi-step"
         stop 1
       else
-        write(*,*)"Opening grib file to find version number"
+        write(MR_global_production,*)"Opening grib file to find version number"
         iw = 1
         call grib_open_file(ifile,trim(ADJUSTL(MR_windfiles(iw))),'R')
         call grib_new_from_file(ifile,igrib,iret)
@@ -106,7 +108,7 @@
         call grib_release(igrib)
         call grib_close_file(ifile)
       endif
-      write(*,*)"Grib version = ",MR_GRIB_Version
+      write(MR_global_production,*)"Grib version = ",MR_GRIB_Version
       !---------------------------------------------------------------------------------
       ! Checking for dimension length and values for x,y,t,p
       !   Assume all files have the same format
@@ -254,19 +256,22 @@
           elseif(index(dum_str,'polar_stereographic').ne.0)then
             IsLatLon_MetGrid = .false.
             Met_iprojflag     = 1
-            write(*,*)"polar_stereographic not implemented"
-            stop 1
+            call grib_get(igrib,'orientationOfTheGridInDegrees',dum_dp)
+            Met_lam0 = dum_dp
+            Met_phi0 = 90.0_8
+            Met_k0   =  0.933_8
+            Met_Re   =  6371.229_8
 
           elseif(index(dum_str,'albers').ne.0)then
             IsLatLon_MetGrid = .false.
             Met_iprojflag     = 2
-            write(*,*)"Alber Equal Area not implemented"
+            write(MR_global_error,*)"MR ERROR: Alber Equal Area not implemented"
             stop 1
 
           elseif(index(dum_str,'UTM').ne.0)then
             IsLatLon_MetGrid = .false.
             Met_iprojflag     = 3
-            write(*,*)"UTM not implemented"
+            write(MR_global_error,*)"MR ERROR: UTM not implemented"
             stop 1
           elseif(index(dum_str,'lambert').ne.0)then
             IsLatLon_MetGrid = .false.
@@ -298,9 +303,15 @@
 
 
           if(.not.IsLatLon_MetGrid)then
-            call grib_get(igrib,'DxInMetres',dum_int)
+            call grib_get(igrib,'DxInMetres',dum_int,stat)
+            if(stat.ne.0)then
+              call grib_get(igrib,'DiInMetres',dum_int,stat)
+            endif
             dx_met_const = real(dum_int,kind=4)/1000.0_sp
-            call grib_get(igrib,'DyInMetres',dum_int)
+            call grib_get(igrib,'DyInMetres',dum_int,stat)
+            if(stat.ne.0)then
+              call grib_get(igrib,'DjInMetres',dum_int,stat)
+            endif
             dy_met_const = real(dum_int,kind=4)/1000.0_sp
 
             call PJ_proj_for(Lon_start,Lat_start, Met_iprojflag, &
@@ -517,9 +528,14 @@
       write(MR_global_production,*)" Found these levels"
       write(MR_global_production,*)"  VaribleID    LevelIdx       dimID      length"
       do ivar = 1,MR_MAXVARS
-        if (Met_var_IsAvailable(ivar)) &
+        if (Met_var_IsAvailable(ivar))then 
+          if(Met_var_zdim_idx(ivar).eq.0)then
+            write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),0,0
+          else
             write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),0,&
-                                           nlevs_fullmet(Met_var_zdim_idx(ivar))
+                                         nlevs_fullmet(Met_var_zdim_idx(ivar))
+          endif
+        endif
       enddo
 
       ! Now assign these levels to the working arrays
@@ -1515,38 +1531,38 @@
 
       if(ivar.eq.1)then
         ! If this is filling HGT, then we need to do a special QC check
-        !if(MR_iwindformat.eq.24)then
-          ! It seems like only NASA has NaNs for pressures greater than surface
-          ! pressure
-          do i=1,nx_submet
-            do j=1,ny_submet
-              do k=1,np_met_loc
-                if(MR_dum3d_metP(i,j,k).gt.1.0e10_sp)then
-                   ! linearly interpolate in z
-                   ! find the first non NaN above k
-                   do kk = k+1,np_met_loc,1
-                     if(MR_dum3d_metP(i,j,kk).lt.1.0e10_sp)exit
-                   enddo
-                   if(kk.eq.np_met_loc+1)then
-                     kk=np_met_loc
-                     MR_dum3d_metP(i,j,kk) = 0.0_sp
-                   endif
-                   ! find the first non NaN below k if k!=1
-                   do kkk = max(k-1,1),1,-1
-                     if(MR_dum3d_metP(i,j,kkk).lt.1.0e10_sp)exit
-                   enddo
-                   if(kkk.eq.0)then
-                     kkk=1
-                     MR_dum3d_metP(i,j,kkk) = 0.0_sp
-                   endif
-                   MR_dum3d_metP(i,j,k) = MR_dum3d_metP(i,j,kkk) + &
-                         (MR_dum3d_metP(i,j,kk)-MR_dum3d_metP(i,j,kkk)) * &
-                         real(k-kkk,kind=sp)/real(kk-kkk,kind=sp)
-                endif
-              enddo
+        do i=1,nx_submet
+          do j=1,ny_submet
+            do k=1,np_met_loc
+              if(abs(MR_dum3d_metP(i,j,k)-fill_value_sp).lt.MR_EPS_SMALL.or.&
+                     MR_dum3d_metP(i,j,k).lt.0.0_sp)then  ! also flag value as to be reset if it
+                                                          ! maps below sea level
+                 ! linearly interpolate in z
+                 ! find the first non NaN above k
+                 do kk = k+1,np_met_loc,1
+                   if(abs(MR_dum3d_metP(i,j,kk)-fill_value_sp).gt.MR_EPS_SMALL.and.&
+                          MR_dum3d_metP(i,j,kk).ge.0.0_sp)exit
+                 enddo
+                 if(kk.eq.np_met_loc+1)then
+                   kk=np_met_loc
+                   MR_dum3d_metP(i,j,kk) = 0.0_sp
+                 endif
+                 ! find the first non NaN below k if k!=1
+                 do kkk = max(k-1,1),1,-1
+                   if(abs(MR_dum3d_metP(i,j,kkk)-fill_value_sp).gt.MR_EPS_SMALL.and.&
+                          MR_dum3d_metP(i,j,kkk).ge.0.0_sp)exit
+                 enddo
+                 if(kkk.eq.0)then
+                   kkk=1
+                   MR_dum3d_metP(i,j,kkk) = 0.0_sp
+                 endif
+                 MR_dum3d_metP(i,j,k) = MR_dum3d_metP(i,j,kkk) + &
+                       (MR_dum3d_metP(i,j,kk)-MR_dum3d_metP(i,j,kkk)) * &
+                       real(k-kkk,kind=sp)/real(kk-kkk,kind=sp)
+              endif
             enddo
           enddo
-        !endif
+        enddo
         ! convert m to km
         MR_dum3d_metP = MR_dum3d_metP / 1000.0_sp
       elseif(Dimension_of_Variable.eq.3)then
@@ -1555,11 +1571,11 @@
           ! taper winds (vx,vy,vz) to zero at ground surface
           if(istep.eq.MR_iMetStep_Now)then
             call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
-                          np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
+                          np_met_loc,MR_dum3d_metP,fill_value_sp, &
                           bc_low_sp=0.0_sp)
           else
             call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
-                          np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
+                          np_met_loc,MR_dum3d_metP,fill_value_sp, &
                           bc_low_sp=0.0_sp)
           endif
         elseif(ivar.eq.5)then
@@ -1568,21 +1584,21 @@
           T_top = MR_Temp_US_StdAtm(Z_top)
           if(istep.eq.MR_iMetStep_Now)then
             call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
-                          np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
+                          np_met_loc,MR_dum3d_metP,fill_value_sp, &
                           bc_low_sp=293.0_sp, bc_high_sp=T_top)
           else
             call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
-                          np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
+                          np_met_loc,MR_dum3d_metP,fill_value_sp, &
                           bc_low_sp=293.0_sp, bc_high_sp=T_top)
           endif
         else
           ! For other variables, use the top and bottom non-fill values
           if(istep.eq.MR_iMetStep_Now)then
             call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
-                          np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat))
+                          np_met_loc,MR_dum3d_metP,fill_value_sp)
           else
             call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
-                          np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat))
+                          np_met_loc,MR_dum3d_metP,fill_value_sp)
           endif
         endif
       endif

@@ -305,6 +305,15 @@
         IsRegular_MetGrid = .false.
         isGridRelative    = .true.
 
+      elseif(igrid.eq.182)then
+        ! HI N.Pacific 
+        ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID182
+
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
+
       elseif(igrid.eq.193)then
        ! Used by GFS forecast (0.25)
        !  http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID193
