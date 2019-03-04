@@ -902,8 +902,8 @@
             enddo
           elseif(IsGlobal_MetGrid)then
               ! There are some special cases where the met grid is global, but do not
-              ! have values at the poles (e.g. ERA).  There are occasional instances where we need
-              ! values between the extreme lat value and the pole
+              ! have values at the poles (e.g. ERA and NAVGEMHA).  There are occasional
+              ! instances where we need values between the extreme lat value and the pole
             jstart = 1
             y_pad_North = .true.
           else
@@ -947,7 +947,11 @@
               if(cond1.and.cond2) jstart = j
             enddo
           elseif(IsGlobal_MetGrid)then
+              ! There are some special cases where the met grid is global, but do not
+              ! have values at the poles (e.g. ERA and NAVGEMHA).  There are occasional
+              ! instances where we need values between the extreme lat value and the pole
             jstart = 1
+            y_pad_North = .true.
           else
             write(MR_global_info,*)"MR ERROR: yLL < y_fullmet_sp(1)"
             write(MR_global_info,*)"y_fullmet_sp(1),yLL",y_fullmet_sp(1),yLL,&
@@ -963,6 +967,7 @@
               if(cond1.and.cond2) jend = j + 1
             enddo
           elseif(IsGlobal_MetGrid)then
+              ! Here is the same special case as above, but for the southern boundary
             jend = ny_fullmet
             y_pad_South = .true.
           else
@@ -1721,7 +1726,6 @@
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
       !write(MR_global_production,*)"----------      MR_Regrid_P2H_linear                                  ----------"
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-
 
       var_comp = -9999.0_sp
       ! Loop over all comp points

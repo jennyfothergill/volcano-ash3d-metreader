@@ -3260,9 +3260,9 @@
           ! Loop through the nodes and reset any that are negative or non-assending in p
           ! This is usually never invoked, but would only affect potentially the bottom few nodes
           ! The intent is to maintain a monotonic GPH, while getting irrelavent nodes out of the
-          ! way. 
+          ! way.
           do k=1,np_fullmet
-            if(z_col_metP(k).le.real(k,kind=sp)*MR_MIN_DZ) z_col_metP(k)=real(k,kind=sp)*MR_MIN_DZ
+            if(z_col_metP(k).le.real(k-1,kind=sp)*MR_MIN_DZ) z_col_metP(k)=real(k-1,kind=sp)*MR_MIN_DZ
           enddo
           var_col_metP(1)              = MR_dum3d_metP(i,j,1)
           var_col_metP(2:np_fullmet+1) = MR_dum3d_metP(i,j,1:np_fullmet)
