@@ -3896,7 +3896,6 @@
               write(MR_global_info,*)"j = ",j
               write(MR_global_info,*)"k = ",k
               write(MR_global_info,*)z_col_metP
-              stop 9
               knext=k       !find the first value of z_col_metP that's above z_col_metP(k-1)
               do while (z_col_metP(knext)<z_col_metP(k-1))
                  knext=knext+1
