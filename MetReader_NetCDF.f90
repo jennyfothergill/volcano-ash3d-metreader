@@ -69,15 +69,15 @@
            ! https://rda.ucar.edu/datasets/ds090.0
           maxdimlen            = 17
           nlev_coords_detected = 3
-          allocate(nlevs_fullmet(nlev_coords_detected))
+          allocate(nlevs_fullmet(nlev_coords_detected));nlevs_fullmet(:)=0
           nlevs_fullmet(1) = 17
           nlevs_fullmet(2) = 12
           nlevs_fullmet(3) = 8
-          allocate(levs_code(nlev_coords_detected))
+          allocate(levs_code(nlev_coords_detected));levs_code(:)=0
           levs_code(1) = 1
           levs_code(2) = 2
           levs_code(3) = 2
-          allocate(levs_fullmet_sp(nlev_coords_detected,maxdimlen))
+          allocate(levs_fullmet_sp(nlev_coords_detected,maxdimlen));levs_fullmet_sp(:,:)=0
           np_fullmet = 17
           allocate(p_fullmet_sp(np_fullmet))
           levs_fullmet_sp(:,:) = 0.0_sp
@@ -362,6 +362,9 @@
           stop 1
         endif
 
+        idx = Met_var_zdim_idx(1)
+        p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
+
       else  ! MR_iwind not equal to 5
         if(MR_iwindformat.eq.50)then
           ! WRF files have a special reader, but we still need to set up 
@@ -420,6 +423,7 @@
             endif
     
             ! 3-d transient variables should be in the COORDS convention (time, level, y, x)
+            !                                                                4      3  2  1
             ! if ivar = 1 (Geopotential Height), then get the info on x,y and t too
             if(ivar.eq.1)then
               i_dim = 1  ! get x info
@@ -689,6 +693,10 @@
               endif
             else
               write(MR_global_error,*)'MR ERROR: level coordinate is not in pos. 3 for ',invar
+              write(MR_global_error,*)'          Expected one of: lev, isobaric, pressure,'
+              write(MR_global_error,*)'            height, depth, lv_ISBL1, bottom_top,'
+              write(MR_global_error,*)'            bottom_top_stag, soil_layers_stag'
+              write(MR_global_error,*)'          Instead, found: ',Met_dim_names(2)
               write(MR_global_log  ,*)'MR ERROR: level coordinate is not in pos. 3 for ',invar
               stop 1
             endif
@@ -787,7 +795,8 @@
               endif
               
               ! Finally, check for orientation
-              if(IsPressureDimension)then
+              if(IsPressureDimension.and. &     ! We are only concerned with orientation in pressure
+                 nlevs_fullmet(idx).gt.1)then   ! Neglect single-valued pressure coordinates
                 if(levs_fullmet_sp(idx,1).lt.levs_fullmet_sp(idx,2))then
                   z_inverted = .true.
                 else
@@ -796,6 +805,7 @@
               endif
             endif
           enddo  ! ivar
+
           ! Close file
           nSTAT = nf90_close(ncid)
           if(nSTAT.ne.NF90_NOERR)then
@@ -809,9 +819,14 @@
         write(MR_global_production,*)" Found these levels"
         write(MR_global_production,*)"  VaribleID    LevelIdx       dimID      length"
         do ivar = 1,MR_MAXVARS
-          if (Met_var_IsAvailable(ivar)) &
+          if (Met_var_IsAvailable(ivar))then
+            if(Met_var_zdim_idx(ivar).eq.0)then
+              write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),Met_var_zdim_ncid(ivar),0
+            else
               write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),Met_var_zdim_ncid(ivar),&
                                            nlevs_fullmet(Met_var_zdim_idx(ivar))
+            endif
+          endif
         enddo
         if(.not.allocated(p_fullmet_sp))then
           ! Now invert if necessary and convert to Pa
@@ -869,7 +884,6 @@
         if(.not.allocated(p_fullmet_sp))  allocate(p_fullmet_sp(np_fullmet))
         idx = Met_var_zdim_idx(1)
         p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
-        MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
   
       endif ! MR_iwind.eq.5
       !---------------------------------------------------------------------------------
@@ -886,6 +900,7 @@
         ! or hPa
         z_approx(k) = MR_Z_US_StdAtm(p_fullmet_sp(k))
       enddo
+      MR_Max_geoH_metP_predicted = z_approx(np_fullmet)
 
       write(MR_global_info,*)"Dimension info:"
       write(MR_global_info,*)"  record (time): ",nt_fullmet
@@ -1390,7 +1405,7 @@
         stop 1
       endif
       p_fullmet_sp(:) = p_fullmet_sp(:) + dum4d_sp(1,1,:,1)
-      MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)*0.01_sp) 
+      MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp) 
       !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
 
        x_inverted = .false.
@@ -1709,7 +1724,7 @@
                 stop 1
               endif
               allocate(filetime_in_sp(nt_fullmet))
-              If(nt_fullmet.gt.1)then
+              if(nt_fullmet.gt.1)then
                 write(MR_global_error,*)"MR ERROR: Currently WRF files are expected to only have one"
                 write(MR_global_error,*)"       timestep/file"
                 stop 1
@@ -2222,14 +2237,11 @@
       integer            :: length
       integer            :: attnum
       character(len=40)  :: invar
-      character(len = nf90_max_name) :: name_dum
+      character(len=nf90_max_name) :: name_dum
       integer :: t_dim_id
-      !integer :: x_dim_id,y_dim_id
       integer :: var_id
-      !real(kind=dp),dimension(:), allocatable :: dum1d_dp
-      !real(kind=sp),dimension(:), allocatable :: dum1d_sp
       real(kind=sp):: dum_sp
-      logical :: TimeHasFillVAttr
+      integer :: ivar
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                MR_Set_Met_Dims_Template_netcdf             ----------"
@@ -2283,41 +2295,28 @@
         stop 1
       endif
 
-      ! We need to check if this is a regular grid
-      !IsRegular_MetGrid = .true.
-      !do i = 1,nx_fullmet-1
-      !  if(abs(MR_dx_met(i+1)-MR_dx_met(i)).gt.tol*MR_dx_met(i))then
-      !    IsRegular_MetGrid = .false.
-      !  endif
-      !enddo
-      !do i = 1,ny_fullmet-1
-      !  if(abs(MR_dy_met(i+1)-MR_dy_met(i)).gt.tol*MR_dy_met(i))then
-      !    IsRegular_MetGrid = .false.
-      !  endif
-      !enddo
-
-      ! Need to get fill_value
-      ! Try to get it from geopotential height variable
-      nSTAT = nf90_inq_varid(ncid,Met_var_NC_names(1),var_id)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_varid: ',invar,nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_varid: ',invar,nf90_strerror(nSTAT)
-        stop 1
-      endif
-      nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
-                                     "_FillValue",xtype, length, attnum)
-      if(nSTAT.eq.0)then
-        TimeHasFillVAttr = .true.
-      else
-        TimeHasFillVAttr = .false.
-      endif
-      if(TimeHasFillVAttr)then
-        nSTAT = nf90_get_att(ncid, var_id,"_FillValue",dum_sp)
-        fill_value_sp(MR_iwindformat) = dum_sp
-        write(MR_global_info,*)"    Found fill value",fill_value_sp(MR_iwindformat)
-      else
-        fill_value_sp(MR_iwindformat) = -9999.0_sp
-      endif
+      ! Need to get fill_value.  If we can't find it, fill_value will remain as initialized
+      ! according to the MR_iwindformat (probably -9999.0_sp)
+      ! We'll look in variables 1,2,3 (GPH, U, V) and assume if it is found, that the
+      ! value is used throughout the file
+      FoundFillVAttr = .false.
+      do ivar=1,3
+        nSTAT = nf90_inq_varid(ncid,Met_var_NC_names(ivar),var_id)
+        if(nSTAT.ne.NF90_NOERR)then
+          write(MR_global_error,*)'MR ERROR: inq_varid: ',invar,nf90_strerror(nSTAT)
+          write(MR_global_log  ,*)'MR ERROR: inq_varid: ',invar,nf90_strerror(nSTAT)
+          stop 1
+        endif
+        nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
+                                       "_FillValue",xtype, length, attnum)
+        if(nSTAT.eq.0)then
+          FoundFillVAttr = .true.
+          nSTAT = nf90_get_att(ncid, var_id,"_FillValue",dum_sp)
+          fill_value_sp = dum_sp
+          write(MR_global_info,*)"    Found fill value",fill_value_sp
+          exit
+        endif
+      enddo
 
       nSTAT = nf90_close(ncid)
       if(nSTAT.ne.NF90_NOERR)then
@@ -2523,7 +2522,7 @@
 
       if(Dimension_of_Variable.eq.3)then
         MR_dum3d_metP = 0.0_sp
-        If(MR_iwindformat.ne.50)then
+        if(MR_iwindformat.ne.50)then
           allocate(temp3d_sp(nx_submet,ny_submet,np_met_loc,1))
         else
             ! For MR_iwindformat = 50 (WRF), we need an extra point in p
@@ -2553,7 +2552,9 @@
             allocate(temp3d_sp(nx_submet,ny_submet,np_met_loc,1))
             allocate(dum3d_metP_aux(nx_submet,ny_submet,np_met_loc,1))
           endif
+          dum3d_metP_aux(:,:,:,:)=0.0_sp
         endif ! MR_iwindformat.ne.50
+        temp3d_sp(:,:,:,:)=0.0_sp
 
         do i=1,ict        !read subgrid at current time step
           ! Branch on four cases: (1) iw=5, NCEP with NetCDFv3
@@ -2778,7 +2779,7 @@
         !  At this point, we have temp3d_sp with the direct read from the file
         !  Next, we need to copy it to MR_dum3d_metP
 
-        If(MR_iwindformat.ne.50)then
+        if(MR_iwindformat.ne.50)then
           do j=1,ny_submet
             itmp = ny_submet-j+1
             !reverse the j indices (since they increment from N to S)
@@ -2820,7 +2821,7 @@
 
       elseif(Dimension_of_Variable.eq.2)then
         if(IsCategorical)then
-          allocate(temp2d_int(nx_submet,ny_submet,1))
+          allocate(temp2d_int(nx_submet,ny_submet,1));temp2d_int(:,:,:)=0
           do i=1,ict        !read subgrid at current time step
             if(MR_iwindformat.eq.25)then
               ! No categorical variables for MR_iwindformat = 25
@@ -2845,10 +2846,10 @@
           enddo
           deallocate(temp2d_int)
         else
-          allocate(temp2d_sp(nx_submet,ny_submet,1))
+          allocate(temp2d_sp(nx_submet,ny_submet,1));temp2d_sp(:,:,:)=0.0_sp
           if(ivar.eq.11.or.ivar.eq.12)then
               ! Surface winds usually have a z coordinate as well
-            allocate(temp3d_sp(nx_submet,ny_submet,1,1))
+            allocate(temp3d_sp(nx_submet,ny_submet,1,1));temp3d_sp(:,:,:,:)=0.0_sp
           endif
   
           do i=1,ict        !read subgrid at current time step
@@ -2931,51 +2932,51 @@
       ! Quality control checks
       if(ivar.eq.1)then
         ! If this is filling HGT, then we need to do a special QC check
-        !if(MR_iwindformat.eq.24)then
-          ! It seems like only NASA has NaNs for pressures greater than surface
-          ! pressure
-          do i=1,nx_submet
-            do j=1,ny_submet
-              do k=1,np_met_loc
-                if(MR_dum3d_metP(i,j,k).gt.1.0e10_sp)then
-                   ! linearly interpolate in z
-                   ! find the first non NaN above k
-                   do kk = k+1,np_met_loc,1
-                     if(MR_dum3d_metP(i,j,kk).lt.1.0e10_sp)exit
-                   enddo
-                   if(kk.eq.np_met_loc+1)then
-                     kk=np_met_loc
-                     MR_dum3d_metP(i,j,kk) = 0.0_sp
-                   endif
-                   ! find the first non NaN below k if k!=1
-                   do kkk = max(k-1,1),1,-1
-                     if(MR_dum3d_metP(i,j,kkk).lt.1.0e10_sp)exit
-                   enddo
-                   if(kkk.eq.0)then
-                     kkk=1
-                     MR_dum3d_metP(i,j,kkk) = 0.0_sp
-                   endif
-                   MR_dum3d_metP(i,j,k) = MR_dum3d_metP(i,j,kkk) + &
-                         (MR_dum3d_metP(i,j,kk)-MR_dum3d_metP(i,j,kkk)) * &
-                         real(k-kkk,kind=sp)/real(kk-kkk,kind=sp)
-                endif
-              enddo
+        do i=1,nx_submet
+          do j=1,ny_submet
+            do k=1,np_met_loc
+              if(abs(MR_dum3d_metP(i,j,k)-fill_value_sp).lt.MR_EPS_SMALL.or.&
+                     MR_dum3d_metP(i,j,k).lt.0.0_sp)then  ! also flag value as to be reset if it
+                                                          ! maps below sea level
+                 ! linearly interpolate in z
+                 ! find the first non NaN above k
+                 do kk = k+1,np_met_loc,1
+                   if(abs(MR_dum3d_metP(i,j,kk)-fill_value_sp).gt.MR_EPS_SMALL.and.&
+                          MR_dum3d_metP(i,j,kk).ge.0.0_sp)exit
+                 enddo
+                 if(kk.eq.np_met_loc+1)then
+                   kk=np_met_loc
+                   MR_dum3d_metP(i,j,kk) = 0.0_sp
+                 endif
+                 ! find the first non NaN below k if k!=1
+                 do kkk = max(k-1,1),1,-1
+                   if(abs(MR_dum3d_metP(i,j,kkk)-fill_value_sp).gt.MR_EPS_SMALL.and.&
+                          MR_dum3d_metP(i,j,kkk).ge.0.0_sp)exit
+                 enddo
+                 if(kkk.eq.0)then
+                   kkk=1
+                   MR_dum3d_metP(i,j,kkk) = 0.0_sp
+                 endif
+                 MR_dum3d_metP(i,j,k) = MR_dum3d_metP(i,j,kkk) + &
+                       (MR_dum3d_metP(i,j,kk)-MR_dum3d_metP(i,j,kkk)) * &
+                       real(k-kkk,kind=sp)/real(kk-kkk,kind=sp)
+              endif
             enddo
           enddo
-        !endif
+        enddo
         ! convert m to km
         MR_dum3d_metP = MR_dum3d_metP / 1000.0_sp
       elseif(Dimension_of_Variable.eq.3)then
         ! Do QC checking of all other 3d variables
-        If(ivar.eq.2.or.ivar.eq.3.or.ivar.eq.4)then
+        if(ivar.eq.2.or.ivar.eq.3.or.ivar.eq.4)then
           ! taper winds (vx,vy,vz) to zero at ground surface
           if(istep.eq.MR_iMetStep_Now)then
             call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
-                          np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
+                          np_met_loc,MR_dum3d_metP,fill_value_sp, &
                           bc_low_sp=0.0_sp)
           else
             call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
-                          np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
+                          np_met_loc,MR_dum3d_metP,fill_value_sp, &
                           bc_low_sp=0.0_sp)
           endif
         elseif(ivar.eq.5)then
@@ -2986,21 +2987,21 @@
           T_top = MR_Temp_US_StdAtm(Z_top)
           if(istep.eq.MR_iMetStep_Now)then
             call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
-                          np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
+                          np_met_loc,MR_dum3d_metP,fill_value_sp, &
                           bc_low_sp=293.0_sp, bc_high_sp=T_top)
           else
             call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
-                          np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat), &
+                          np_met_loc,MR_dum3d_metP,fill_value_sp, &
                           bc_low_sp=293.0_sp, bc_high_sp=T_top)
           endif
         else
           ! For other variables, use the top and bottom non-fill values
           if(istep.eq.MR_iMetStep_Now)then
             call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
-                          np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat))
+                          np_met_loc,MR_dum3d_metP,fill_value_sp)
           else
             call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_next,       &
-                          np_met_loc,MR_dum3d_metP,fill_value_sp(MR_iwindformat))
+                          np_met_loc,MR_dum3d_metP,fill_value_sp)
           endif
         endif
       endif

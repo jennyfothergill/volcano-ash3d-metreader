@@ -305,6 +305,15 @@
         IsRegular_MetGrid = .false.
         isGridRelative    = .true.
 
+      elseif(igrid.eq.182)then
+        ! HI N.Pacific 
+        ! http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID182
+
+        IsLatLon_MetGrid  = .true.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
+
       elseif(igrid.eq.193)then
        ! Used by GFS forecast (0.25)
        !  http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID193
@@ -893,8 +902,8 @@
             enddo
           elseif(IsGlobal_MetGrid)then
               ! There are some special cases where the met grid is global, but do not
-              ! have values at the poles (e.g. ERA).  There are occasional instances where we need
-              ! values between the extreme lat value and the pole
+              ! have values at the poles (e.g. ERA and NAVGEMHA).  There are occasional
+              ! instances where we need values between the extreme lat value and the pole
             jstart = 1
             y_pad_North = .true.
           else
@@ -938,7 +947,11 @@
               if(cond1.and.cond2) jstart = j
             enddo
           elseif(IsGlobal_MetGrid)then
+              ! There are some special cases where the met grid is global, but do not
+              ! have values at the poles (e.g. ERA and NAVGEMHA).  There are occasional
+              ! instances where we need values between the extreme lat value and the pole
             jstart = 1
+            y_pad_North = .true.
           else
             write(MR_global_info,*)"MR ERROR: yLL < y_fullmet_sp(1)"
             write(MR_global_info,*)"y_fullmet_sp(1),yLL",y_fullmet_sp(1),yLL,&
@@ -954,6 +967,7 @@
               if(cond1.and.cond2) jend = j + 1
             enddo
           elseif(IsGlobal_MetGrid)then
+              ! Here is the same special case as above, but for the southern boundary
             jend = ny_fullmet
             y_pad_South = .true.
           else
@@ -1257,6 +1271,25 @@
         imap_iwf25 = 0
         !Tot_Bytes_on_Heap = Tot_Bytes_on_Heap + sp*(as_nxmax*as_nymax*4)
 
+        ! These should be read directly, but for now, just hardcode it.        
+        do i = 1,192
+          x_in_iwf25_sp(i)=(i-1)*1.875_sp
+        enddo
+        y_in_iwf25_sp(1:94) = (/ &
+         88.542_sp,  86.6531_sp,  84.7532_sp,  82.8508_sp,  80.9473_sp,   79.0435_sp,  77.1394_sp, 75.2351_sp, &
+        73.3307_sp,  71.4262_sp,  69.5217_sp,  67.6171_sp,  65.7125_sp,   63.8079_sp,  61.9033_sp, 59.9986_sp, &
+        58.0939_sp,  56.1893_sp,  54.2846_sp,  52.3799_sp,  50.4752_sp,   48.5705_sp,  46.6658_sp, 44.7611_sp, &
+        42.8564_sp,  40.9517_sp,   39.047_sp,  37.1422_sp,  35.2375_sp,   33.3328_sp,  31.4281_sp, 29.5234_sp, &
+        27.6186_sp,  25.7139_sp,  23.8092_sp,  21.9044_sp,  19.9997_sp,    18.095_sp,  16.1902_sp, 14.2855_sp, &
+        12.3808_sp, 10.47604_sp,  8.57131_sp,  6.66657_sp,  4.76184_sp,    2.8571_sp, 0.952368_sp, &
+      -0.952368_sp,  -2.8571_sp, -4.76184_sp, -6.66657_sp, -8.57131_sp, -10.47604_sp, -12.3808_sp, &
+       -14.2855_sp, -16.1902_sp,  -18.095_sp, -19.9997_sp, -21.9044_sp,  -23.8092_sp, -25.7139_sp, &
+       -27.6186_sp, -29.5234_sp, -31.4281_sp, -33.3328_sp, -35.2375_sp,  -37.1422_sp,  -39.047_sp, &
+       -40.9517_sp, -42.8564_sp, -44.7611_sp, -46.6658_sp, -48.5705_sp,  -50.4752_sp, -52.3799_sp, &
+       -54.2846_sp, -56.1893_sp, -58.0939_sp, -59.9986_sp, -61.9033_sp,  -63.8079_sp, -65.7125_sp, &
+       -67.6171_sp, -69.5217_sp, -71.4262_sp, -73.3307_sp, -75.2351_sp,  -77.1394_sp, -79.0435_sp, &
+       -80.9473_sp, -82.8508_sp, -84.7532_sp, -86.6531_sp,  -88.542_sp /)
+
         do ilon = 1,nx_submet
           x_loc = max(0.0_sp,x_submet_sp(ilon))
           do i = 1,191
@@ -1295,7 +1328,6 @@
         enddo
 
       endif
-
       write(MR_global_info,*)"Finished MR_Set_MetComp_Grids"
       write(MR_global_info,*)" "
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
@@ -1694,7 +1726,6 @@
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
       !write(MR_global_production,*)"----------      MR_Regrid_P2H_linear                                  ----------"
       !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-
 
       var_comp = -9999.0_sp
       ! Loop over all comp points
