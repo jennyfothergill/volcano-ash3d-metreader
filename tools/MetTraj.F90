@@ -320,6 +320,9 @@
       ! Find the start time given on the command line
       Probe_StartHour = HS_hours_since_baseyear(inyear,inmonth,inday,inhour,&
                                                 MR_BaseYear,MR_useLeap)
+      MR_Comp_StartHour = Probe_StartHour
+      MR_Comp_Time_in_hours = Simtime_in_hours
+
       ! Calculate the earliest Met data needed
       if(TrajFlag.gt.0)then
         Met_needed_StartHour = Probe_StartHour
