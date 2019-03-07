@@ -1977,15 +1977,16 @@
       !  and the forecast (offset from start of file) for each step        : MR_windfile_stephour(iw,iwstep)
 
       if (MR_iwind.ne.5)then
-        write(MR_global_info,*)"File, step, Ref, Offset, HoursSince"
+        write(MR_global_info,*)"  File,  step,        Ref,     Offset,  HoursSince"
         do iw = 1,MR_iwindfiles
           do iws = 1,nt_fullmet
-            write(MR_global_info,*)iw,iws,real(MR_windfile_starthour(iw),kind=4),&
+            write(MR_global_info,800)iw,iws,real(MR_windfile_starthour(iw),kind=4),&
                              real(MR_windfile_stephour(iw,iws),kind=4),&
                              real(MR_windfile_starthour(iw)+MR_windfile_stephour(iw,iws),kind=4)
           enddo
         enddo
       endif
+ 800  format(i7,i7,3f12.2)
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
@@ -2470,8 +2471,8 @@
 
       invar = Met_var_NC_names(ivar)
 
-      write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
-                trim(adjustl(infile))!,nx_submet,ny_submet,np_met_loc
+      write(MR_global_info,*)"Reading ",trim(adjustl(invar))," from file : ",&
+                trim(adjustl(infile)),"   step, file, slice = ",istep,iw,iwstep
       nSTAT = nf90_open(trim(adjustl(infile)),NF90_NOWRITE,ncid)
 
       if(nSTAT.ne.NF90_NOERR)then
