@@ -189,6 +189,8 @@
                                                      MR_BaseYear,MR_useLeap)
       Probe_StartHour = HS_hours_since_baseyear(inyear,inmonth,inday,inhour,&
                                                 MR_BaseYear,MR_useLeap)
+      MR_Comp_StartHour = Probe_StartHour
+      MR_Comp_Time_in_hours = Simtime_in_hours
 
       if(RunStartHour-FC_Package_StartHour.lt.GFS_Avail_Delay)then
         ! The closest forecast package to the probe time is too close to

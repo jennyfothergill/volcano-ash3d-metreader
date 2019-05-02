@@ -1120,8 +1120,8 @@
       !  Grib2 without index file
       if(MR_GRIB_Version.eq.1)then
         if(Use_GRIB_Index)then
-          write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
-                    trim(adjustl(index_file))
+          write(MR_global_info,*)"Reading ",trim(adjustl(invar))," from file : ",&
+                trim(adjustl(index_file)),"   step, file, slice = ",istep,iw,iwstep
 
           call grib_index_read(idx,index_file)
           call grib_multi_support_on()
