@@ -36,7 +36,7 @@ SYSTEM = gfortran
 #      PROF  : includes profiling flags with some optimization
 #      OPT   : includes optimizations flags for fastest runtime
 #    This variable cannot be left blank
-RUN = OPT
+RUN =OPT
 #
 INSTALLDIR=/opt/USGS
 #INSTALLDIR=~/gcc
@@ -69,9 +69,9 @@ ifeq ($(USEGRIB), T)
  grbFPPFLAG = -DUSEGRIB
  grbOBJS = MetReader_GRIB.o MetReader_GRIB_index.o
  # These are the libraries for grib_api
- grblib = -lgrib_api_f90 -lgrib_api
+ #grblib = -lgrib_api_f90 -lgrib_api
  # These are the libraries for ecCodes
- #grblib = -leccodes -leccodes_f90
+ grblib = -leccodes -leccodes_f90
 else
  grb2FPPFLAG =
  grb2OBJS =

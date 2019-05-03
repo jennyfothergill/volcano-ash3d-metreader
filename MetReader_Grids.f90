@@ -702,7 +702,7 @@
       real(kind=sp) :: x_start_sub,y_start_sub
 
       real(kind=dp) :: xout,yout
-      logical       :: cond1, cond2
+      logical       :: cond1, cond2, cond3
       integer       :: nx_tmp
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
@@ -1101,9 +1101,17 @@
               ! Set interval inclusive of lower node
             cond1 = px.ge.x_submet_sp(ii  )
             cond2 = px.lt.x_submet_sp(ii+1)
-            if(cond1.and.cond2)then
-              isubmet = ii
-              exit
+            cond3 = px.le.x_submet_sp(ii+1)
+            if(ii.lt.nx_tmp)then
+              if(cond1.and.cond2)then
+                isubmet = ii
+                exit
+              endif
+            else ! This is when ii = nx_tmp
+              if(cond1.and.cond3)then
+                isubmet = ii
+                exit
+              endif
             endif
           enddo
           CompPoint_on_subMet_idx(i,j,1) = isubmet
@@ -1162,6 +1170,7 @@
             write(MR_global_error,*)"Comp point : ",i,j,x_comp_sp(i),y_comp_sp(j)
             write(MR_global_error,*)"Coord on Met: ",CompPoint_X_on_Met_sp(i,j),CompPoint_Y_on_Met_sp(i,j)
             write(MR_global_error,*)"Index on subMet: ",isubmet,jsubmet
+            write(MR_global_error,*)MR_dx_submet(:)
             write(MR_global_error,*)"fractional pos.: ",xfrac,yfrac
             stop 1
           endif
