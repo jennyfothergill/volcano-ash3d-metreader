@@ -96,7 +96,8 @@ EXEC = \
  tools/MetSonde  \
  tools/MetTraj_F \
  tools/MetTraj_B \
- tools/MetCheck
+ tools/MetCheck  \
+ tools/makegfsncml
 
 ###############################################################################
 ###############################################################################
@@ -164,7 +165,7 @@ else
   GRIBTOOL =
 endif
 
-tools: MetSonde MetTraj_F MetTraj_B MetCheck $(GRIBTOOL)
+tools: MetSonde MetTraj_F MetTraj_B MetCheck makegfsncml $(GRIBTOOL)
 
 MetSonde: tools/MetSonde.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) -L./ -lMetReader $(LIBS) $(nclib) $(grblib) -c tools/MetSonde.f90
@@ -176,6 +177,9 @@ MetTraj_B: tools/MetTraj.F90 makefile libMetReader.a
 MetCheck: tools/MetCheck.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/MetCheck.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) MetCheck.o $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB) -o tools/MetCheck
+makegfsncml: tools/makegfsncml.f90 makefile
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) -c tools/makegfsncml.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) makegfsncml.o  $(LIBS) $(nclib) -o tools/makegfsncml
 
 clean:
 	rm -f *.o
