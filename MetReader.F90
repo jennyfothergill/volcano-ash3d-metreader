@@ -80,9 +80,15 @@
       character(len=42)                             ,public :: MR_iw5_prefix
       character(len=24)                             ,public :: MR_iw5_suffix1  ! e.g. 1912060100_1912063021.nc
       character(len=24)                             ,public :: MR_iw5_suffix2
+#if USEPOINTERS      
+      real(kind=sp)     , pointer,dimension(:)  ,    public :: MR_windfile_starthour
+      real(kind=sp)     , pointer,dimension(:,:),    public :: MR_windfile_stephour
+#else
       real(kind=dp)     , allocatable,dimension(:)  ,public :: MR_windfile_starthour   ! start hour of the file
-      integer           , allocatable,dimension(:)  ,public :: MR_windfiles_nt_fullmet ! number of steps in files
       real(kind=dp)     , allocatable,dimension(:,:),public :: MR_windfile_stephour    ! offset hours of step
+#endif      
+
+      integer           , allocatable,dimension(:)  ,public :: MR_windfiles_nt_fullmet ! number of steps in files
       character(len=80)                             ,public :: MR_iwf_template         ! name of the template file
       logical           , allocatable,dimension(:)  ,public :: MR_windfiles_Have_GRIB_index
       character(len=130), allocatable,dimension(:)  ,public :: MR_windfiles_GRIB_index ! name of grib index file
@@ -467,9 +473,11 @@
        write(MR_global_production,*)"-------- Resetting all MetReader Memory ---------------"
        write(MR_global_production,*)"-------------------------------------------------------"
 
+#if !USEPOINTERS
        if(allocated(MR_windfile_starthour         ))deallocate(MR_windfile_starthour)
-       if(allocated(MR_windfiles_nt_fullmet       ))deallocate(MR_windfiles_nt_fullmet)
        if(allocated(MR_windfile_stephour          ))deallocate(MR_windfile_stephour)
+#endif       
+       if(allocated(MR_windfiles_nt_fullmet       ))deallocate(MR_windfiles_nt_fullmet)
        if(allocated(MR_windfiles_Have_GRIB_index  ))deallocate(MR_windfiles_Have_GRIB_index)
        if(allocated(MR_windfiles_GRIB_index       ))deallocate(MR_windfiles_GRIB_index)
        if(allocated(MR_MetStep_File               ))deallocate(MR_MetStep_File)

@@ -828,7 +828,11 @@
             endif
           endif
         enddo
+#ifdef USEPOINTERS
+        if(.not.associated(p_fullmet_sp))then
+#else
         if(.not.allocated(p_fullmet_sp))then
+#endif            
           ! Now invert if necessary and convert to Pa
           allocate(p_fullmet_sp(maxdimlen))
           do idx = 1,nlev_coords_detected
@@ -881,7 +885,11 @@
         np_fullmet    = nlevs_fullmet(Met_var_zdim_idx(1))  ! Assign fullmet the length of H,U,V
   
         ! Geopotential
+#ifdef USEPOINTERS        
+        if(.not.associated(p_fullmet_sp))  allocate(p_fullmet_sp(np_fullmet))
+#else        
         if(.not.allocated(p_fullmet_sp))  allocate(p_fullmet_sp(np_fullmet))
+#endif        
         idx = Met_var_zdim_idx(1)
         p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
   
