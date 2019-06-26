@@ -81,8 +81,8 @@
       character(len=24)                             ,public :: MR_iw5_suffix1  ! e.g. 1912060100_1912063021.nc
       character(len=24)                             ,public :: MR_iw5_suffix2
 #if USEPOINTERS      
-      real(kind=sp)     , pointer,dimension(:)  ,    public :: MR_windfile_starthour
-      real(kind=sp)     , pointer,dimension(:,:),    public :: MR_windfile_stephour
+      real(kind=dp)     , pointer,dimension(:)  ,    public :: MR_windfile_starthour
+      real(kind=dp)     , pointer,dimension(:,:),    public :: MR_windfile_stephour
 #else
       real(kind=dp)     , allocatable,dimension(:)  ,public :: MR_windfile_starthour   ! start hour of the file
       real(kind=dp)     , allocatable,dimension(:,:),public :: MR_windfile_stephour    ! offset hours of step
@@ -473,7 +473,7 @@
        write(MR_global_production,*)"-------- Resetting all MetReader Memory ---------------"
        write(MR_global_production,*)"-------------------------------------------------------"
 
-#if !USEPOINTERS
+#ifndef USEPOINTERS
        if(allocated(MR_windfile_starthour         ))deallocate(MR_windfile_starthour)
        if(allocated(MR_windfile_stephour          ))deallocate(MR_windfile_stephour)
 #endif       
@@ -2888,17 +2888,19 @@
         if(prestep) write(MR_global_info,*)"             1 prestep"
         if(poststep)write(MR_global_info,*)"             1 poststep"
       endif
-      allocate(MR_MetStep_File(MR_MetSteps_Total))               ;MR_MetStep_File(:)=''
-      allocate(MR_MetStep_findex(MR_MetSteps_Total))             ;MR_MetStep_findex(:)=0
-      allocate(MR_MetStep_tindex(MR_MetSteps_Total))             ;MR_MetStep_tindex(:)=0
-      allocate(MR_MetStep_Hour_since_baseyear(MR_MetSteps_Total));MR_MetStep_Hour_since_baseyear(:)=0.0_sp
-      allocate(MR_MetStep_Interval(MR_MetSteps_Total))           ;MR_MetStep_Interval(:)=0
-      allocate(MR_MetStep_year(MR_MetSteps_Total))               ;MR_MetStep_year(:)=0
-      allocate(MR_MetStep_month(MR_MetSteps_Total))              ;MR_MetStep_month(:)=0
-      allocate(MR_MetStep_day(MR_MetSteps_Total))                ;MR_MetStep_day(:)=0
-      allocate(MR_MetStep_DOY(MR_MetSteps_Total))                ;MR_MetStep_DOY(:)=0
-      allocate(MR_MetStep_Hour_Of_Day(MR_MetSteps_Total))        ;MR_MetStep_Hour_Of_Day(:)=0.0_sp
-      allocate(MR_iwind5_year(MR_MetSteps_Total))                ;MR_iwind5_year(:)=0
+      if (.not. allocated(MR_MetStep_File)) then
+        allocate(MR_MetStep_File(MR_MetSteps_Total))               ;MR_MetStep_File(:)=''
+        allocate(MR_MetStep_findex(MR_MetSteps_Total))             ;MR_MetStep_findex(:)=0
+        allocate(MR_MetStep_tindex(MR_MetSteps_Total))             ;MR_MetStep_tindex(:)=0
+        allocate(MR_MetStep_Hour_since_baseyear(MR_MetSteps_Total));MR_MetStep_Hour_since_baseyear(:)  =0.0_sp  
+        allocate(MR_MetStep_Interval(MR_MetSteps_Total))           ;MR_MetStep_Interval(:)=0  
+        allocate(MR_MetStep_year(MR_MetSteps_Total))               ;MR_MetStep_year(:)=0  
+        allocate(MR_MetStep_month(MR_MetSteps_Total))              ;MR_MetStep_month(:)=  0  
+        allocate(MR_MetStep_day(MR_MetSteps_Total))                ;MR_MetStep_day(:)=0  
+        allocate(MR_MetStep_DOY(MR_MetSteps_Total))                ;MR_MetStep_DOY(:)=0  
+        allocate(MR_MetStep_Hour_Of_Day(MR_MetSteps_Total))        ;MR_MetStep_Hour_Of_Day(:)=0.0_sp
+        allocate(MR_iwind5_year(MR_MetSteps_Total))                ;MR_iwind5_year(:)=0
+      endif
 
       ! Finally, we need to loop through the steps exactly as above, but this time populate 
       ! the lists just allocated

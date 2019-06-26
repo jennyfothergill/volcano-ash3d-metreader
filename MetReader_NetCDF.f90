@@ -1,28 +1,10 @@
 !##############################################################################
-!
-!     MR_Read_Met_DimVars_netcdf
-!
-!     Called once from MR_Read_Met_DimVars 
-!
-!     This subroutine reads the variable and dimension IDs, and fills the
-!     coordinate dimension variables
-!
-!     After this subroutine completes, the following variables will be set:
-!       All the projection parameters of NWP grid
-!       Met_dim_names, Met_var_NC_names, Met_var_conversion_factor, Met_var_IsAvailable
-!       The lengths of all the dimensions of the file
-!       p_fullmet_sp (converted to Pa)
-!       x_fullmet_sp, y_fullmet_sp
-!       IsLatLon_MetGrid, IsGlobal_MetGrid, IsRegular_MetGrid 
-!
-!##############################################################################
 
       subroutine MR_Read_Met_DimVars_netcdf
 
       use MetReader
       use netcdf
       use projection
-
       implicit none
 
       integer, parameter :: sp        = 4 ! single precision
@@ -3071,6 +3053,15 @@
           enddo ! k
         endif
       endif
+
+      ! Close file
+      nSTAT = nf90_close(ncid)
+      if(nSTAT.ne.NF90_NOERR)then
+        write(MR_global_error,*)'MR ERROR: close file: ',nf90_strerror(nSTAT)
+        write(MR_global_log  ,*)'MR ERROR: close file: ',nf90_strerror(nSTAT)
+        stop 1
+      endif
+
 
       MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_met_loc) =  &
       MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_met_loc) * Met_var_conversion_factor(ivar)
