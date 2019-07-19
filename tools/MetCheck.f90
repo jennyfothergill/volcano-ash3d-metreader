@@ -7,7 +7,7 @@
       implicit none
 
       integer             :: iargc, nargs
-      integer             :: status
+      integer             :: status,iostat,stat
       character (len=100) :: arg
 
       real(kind=4)        :: inlon,inlat
@@ -36,6 +36,7 @@
       integer,dimension(8) :: values
       integer :: Current_Year
       real(kind=8) :: hsince
+      real(kind=8) :: HS_hours_since_baseyear  ! function that calculates hours
       integer      :: HS_YearOfEvent
       integer      :: HS_DayOfYear
       real(kind=8) :: HS_HourOfDay
@@ -140,10 +141,16 @@
         else
           iy = Current_Year
         endif
+        MR_Comp_StartHour     = HS_hours_since_baseyear(iy,1,1,0.0_8,1900,.True.)
+        MR_Comp_Time_in_hours = 1.0
       endif
 
       write(MR_global_info,*)"Set up windfile data structure"
-      iw      = 4
+      if(iwf.eq.25)then
+        iw      = 5
+      else
+        iw      = 4
+      endif
       igrid   = 0  ! this will get reset in MR_Allocate_FullMetFileList
       iwfiles = 1
       call MR_Allocate_FullMetFileList(iw,iwf,igrid,idf,iwfiles)
@@ -200,24 +207,16 @@
       ! since the conversion relies on dp/dz
       call MR_Read_HGT_arrays(1)  ! Just fill with the geopotential height at step 1
 
+      open(unit=19,iostat=stat,file='MetCheck_log.txt',status='old')
+      if (stat == 0) close(19, status='delete')
+
+      open(unit=19,file='MetCheck_log.txt',status='replace')
+
       do imetstep = 1,nt_fullmet
-        if(iwf.eq.25)then
-          write(MR_global_info,*)"Met_DoY : ",iy," : ",real((imetstep-1),kind=4)*6.0_4/24_4
-        else
-          hsince = MR_windfile_starthour(1)+MR_windfile_stephour(1,imetstep)
-          write(MR_global_info,*)"Met_DoY : ",HS_YearOfEvent(hsince,MR_BaseYear,MR_useLeap)," : ",&
-                                 real(HS_DayOfYear(hsince,MR_BaseYear,MR_useLeap)+ &
-                                    HS_HourOfDay(hsince,MR_BaseYear,MR_useLeap)/24.0_8,kind=4)
-        endif
         do ivar=1,5
           idx = Met_var_zdim_idx(ivar)
           if(Met_dim_IsAvailable(ivar).eqv..true.)then
             np = nlevs_fullmet(idx)
-            !if(ivar.eq.4)then
-            !  np = np_fullmet_Vz
-            !else
-            !  np = np_fullmet
-            !endif
             v1 = Met_var_MinMax(ivar,1)
             v2 = Met_var_MinMax(ivar,2)
             call MR_Read_3d_MetP_Variable(ivar,imetstep)
@@ -237,18 +236,24 @@
             enddo
           endif
         enddo
+
+        if(iwf.eq.25)then
+          write(19,*)adjustl(trim(MR_windfiles(1)))," : ", &
+                     imetstep                      ," : ", &
+                     iy                            ," : ", &
+                     real((imetstep-1),kind=4)*6.0_4/24_4
+        else
+          hsince = MR_windfile_starthour(1)+MR_windfile_stephour(1,imetstep)
+          write(19,*)adjustl(trim(MR_windfiles(1)))," : ", &
+                     imetstep                      ," : ", &
+                     HS_YearOfEvent(hsince,MR_BaseYear,MR_useLeap)," : ",&
+                     real(HS_DayOfYear(hsince,MR_BaseYear,MR_useLeap)+ &
+                       HS_HourOfDay(hsince,MR_BaseYear,MR_useLeap)/24.0_8,kind=4)
+        endif
+
       enddo
 
-      ! For the NCEP case, give the last time step checked
-      if(iwf.eq.25)then
-        write(MR_global_info,*)"Met_DoY : ",iy," : ",real((nt_fullmet-1),kind=4)*6.0_4/24_4
-      else
-        hsince = MR_windfile_starthour(1)+MR_windfile_stephour(1,1)
-        write(MR_global_info,*)"Met_DoY : ",HS_YearOfEvent(hsince,MR_BaseYear,MR_useLeap)," : ",&
-                               real(HS_DayOfYear(hsince,MR_BaseYear,MR_useLeap)+ &
-                                  HS_HourOfDay(hsince,MR_BaseYear,MR_useLeap)/24.0_8,kind=4)
-      endif 
-
+      close(19)
       write(MR_global_info,*)"Program ended normally."
 
       end program MetCheck
