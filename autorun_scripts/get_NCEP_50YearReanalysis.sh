@@ -28,6 +28,8 @@
 # This is the location where the downloaded windfiles will be placed.
 # Please edit this to suit your system.
 WINDROOT="/data/WindFiles"
+INSTALLDIR="/opt/USGS/"
+validlist="valid_files.txt"
 
 echo "------------------------------------------------------------"
 echo "running get_NCEP_50YearReanalysis.sh for year $1"
@@ -90,7 +92,11 @@ endtime=`date`
 
 echo "download started at $starttime"
 echo "download ended at $endtime"
-
+echo "Checking files for valid values and time steps"
+${INSTALLDIR}/bin/MetCheck 25 2 ${NCEPDATAHOME} ${y}
+if [[ $? -eq 0 ]]; then
+   cat MetCheck_log.txt >> ${NCEPDATAHOME}/${y}/${validlist}
+fi
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "finished get_NCEP_50YearReanalysis.sh"
 echo `date`
