@@ -27,15 +27,17 @@ JAVAHOME="/usr/local/bin/"
 NCJv="~/ncj/netcdfAll-4.5.jar"
 WINDROOT="/data/WindFiles"
 
-
 yearmonthday=$1
 FChour=$2
+
+GFS="0p50"
+HourMax=198
+HourStep=3
 
 echo "------------------------------------------------------------"
 echo "running convert_gfs0.5deg.sh ${yearmonthday} ${FChour}"
 echo `date`
 echo "------------------------------------------------------------"
-
 
 rc=0
 GFSDATAHOME="${WINDROOT}/gfs"
@@ -57,15 +59,17 @@ cd ${GFSDATAHOME}/${FC_day}
 
 #Convert to NetCDF
 t=0
-while [ "$t" -le 99 ]
+while [ "$t" -le ${HourMax} ]
 do
   if [ "$t" -le 9 ]; then
-    gfsfile="gfs.t${FChour}z.pgrb2.0p50.f00${t}"
-    netcdffile="${yearmonthday}${FChour}.f0${t}.nc"
-  else
-    gfsfile="gfs.t${FChour}z.pgrb2.0p50.f0${t}"
-    netcdffile="${yearmonthday}${FChour}.f${t}.nc"
+      hour="00$t"
+   elif [ "$t" -le 99 ]; then
+      hour="0$t"
+   else
+      hour="$t"
   fi
+  gfsfile="gfs.t${FChour}z.pgrb2.${GFS}.f${hour}"
+  netcdffile="${yearmonthday}${FChour}.f${hour}.nc"
   if test -r ${gfsfile}
   then
      echo "Converting ${gfsfile} to ${netcdffile}"
@@ -74,7 +78,7 @@ do
      if [[ $? -ne 0 ]]; then
           exit 1
      fi
-     t=$((t+3))
+     t=$((t+${HourStep}))
    else
      echo "error: ${gfsfile} does not exist."
      exit 1
@@ -84,17 +88,20 @@ done
 #Make sure the netcdf files all exist
 echo "making sure all netcdf files exist"
 t=0
-while [ "$t" -le 99 ]
+while [ "$t" -le ${HourMax} ]
 do
   if [ "$t" -le 9 ]; then
-    netcdffile="${yearmonthday}${FChour}.f0${t}.nc"
-  else
-    netcdffile="${yearmonthday}${FChour}.f${t}.nc"
+      hour="00$t"
+   elif [ "$t" -le 99 ]; then
+      hour="0$t"
+   else
+      hour="$t"
   fi
+  netcdffile="${yearmonthday}${FChour}.f${hour}.nc"
   if test -r ${netcdffile}
   then
      echo "${netcdffile} exists"
-     t=$((t+3))
+     t=$((t+${HourStep}))
    else
      echo "error: ${netcdffile} does not exist."
      exit 1

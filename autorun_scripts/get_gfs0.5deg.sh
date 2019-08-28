@@ -63,8 +63,7 @@ while [ "$t" -le 99 ]; do
    else
       hour="$t"
   fi
-  filename="http://motherlode.ucar.edu/native/conduit/data/nccf/com/gfs/prod/${FC_day}/gfs.t${FChour}z.pgrb2.0p50.f0${hour}"
-  #filename="ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/${FC_day}/gfs.t${FChour}z.pgrb2.0p50.f0${hour}"
+  filename="ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.${yearmonthday}/${FChour}/gfs.t${FChour}z.pgrb2.0p50.f${hour}"
   echo "wget ${filename}"
   time wget ${filename}
   t=$(($t+3))

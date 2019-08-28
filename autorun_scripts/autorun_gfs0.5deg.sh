@@ -21,34 +21,47 @@
 # Shell script that manages the download of the gfs 0.5 degree data files for the
 # current date, and converts the file to NetCDF.
 # This script expects a command line argument indicating which forecast package to download.
-#   autorun_gfs0.5deg.sh 0   for the 00 foracast package
+#   autorun_gfs0.5deg.sh 0   for the 00 forecast package
 
 # Please edit the line below to be consistant with the install directory specified in
 # the makefile
-INSTALLDIR="/opt/USGS/"
+INSTALLDIR="/opt/USGS"
+
+if [ $# -eq 0 ]
+  then
+  echo "No arguments supplied"
+  echo "Usage: autorun_gfs0.5deg.sh 0"
+  exit
+fi
 
 FC=$1
 
-if [[ "$FC" -eq 0 ]] ; then
- FChour="00"
- FChourR="0.0"
-fi
-if [[ "$FC" -eq 6 ]] ; then
- FChour="06"
- FChourR="6.0"
-fi
-if [[ "$FC" -eq 12 ]] ; then
- FChour="12"
- FChourR="12.0"
-fi
-if [[ "$FC" -eq 18 ]] ; then
- FChour="18"
- FChourR="18.0"
-fi
-if [[ "$FC" -eq 24 ]] ; then
- FChour="24"
- FChourR="24.0"
-fi
+case ${FC} in
+ 0)
+  FChour="00"
+  FChourR="0.0"
+  ;;
+ 6)
+  FChour="06"
+  FChourR="6.0"
+  ;;
+ 12)
+  FChour="12"
+  FChourR="12.0"
+  ;;
+ 18)
+  FChour="18"
+  FChourR="18.0"
+  ;;
+ 24)
+  FChour="24"
+  FChourR="24.0"
+  ;;
+ *)
+  echo "GFS forecast package not recognized"
+  echo "Valid values: 0, 6, 12, 18, 24"
+  exit
+esac
 
 yearmonthday=`date -u +%Y%m%d`
 
@@ -56,7 +69,7 @@ echo "------------------------------------------------------------"
 echo "running autorun_gfs0.5deg ${yearmonthday} ${FChour} script"
 echo "------------------------------------------------------------"
 
-SCRIPTDIR="${INSTALLDIR}bin/autorun_scripts"
+SCRIPTDIR="${INSTALLDIR}/bin/autorun_scripts"
 
 #script that gets the wind files
 echo "  Calling ${SCRIPTDIR}/get_gfs0.5deg.sh ${yearmonthday} ${FChour}"

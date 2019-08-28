@@ -2776,7 +2776,7 @@
       !   Checking if a poststep is needed
       met_t1  = MR_windfile_starthour(MR_iwindfiles)+MR_windfile_stephour(MR_iwindfiles,nt_fullmet)
       met_dt1 = StepInterval
-      if(MR_Comp_StartHour+MR_Comp_Time_in_hours.ge.met_t1)then
+      if(MR_Comp_StartHour+MR_Comp_Time_in_hours.gt.met_t1)then
         ! Start time requested is after that available, check if we can extrapolate
         if(MR_Comp_StartHour+MR_Comp_Time_in_hours.le.met_t1+met_dt1)then
           write(MR_global_info,*)"WARNING: End time is at or after the last time step."

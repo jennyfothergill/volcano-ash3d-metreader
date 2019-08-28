@@ -18,37 +18,27 @@
 #      and its documentation for any purpose.  We assume no responsibility to provide
 #      technical support to users of this software.
 
-echo "get_nam91.sh:  checking input arguments"
-if [ -z $5 ]
-then
-  echo "Error: Insufficient command-line arguments"
-  echo "Usage:  get_nam91.sh YYYY MM DD FChour HH"
-  echo "        where FChour = 00, 06, 12, or 18"
-  echo "        and HH = 0,1,2,...36"
-  exit 1
-else
-  YYYY=$1
-  MM=$2
-  DD=$3
-  FChour=$4
-  HH=$5
-fi
+INSTALLDIR="/opt/USGS"
 
-
-yearmonthday=${YYYY}${MM}${DD}
+yearmonthday=$1
+FChour=$2
+SERVER="https://nomads.ncep.noaa.gov/pub/data/nccf/com/nam/prod"
+#SERVER="ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod"
 
 echo "------------------------------------------------------------"
-echo "running get_nam91.sh script for $yearmonthday ${FChour}"
+echo "running get_nam091.sh script for $yearmonthday ${FChour}"
 echo `date`
 echo "------------------------------------------------------------"
 t0=`date`
 
+HourMax=36
+HourStep=1
+
 WINDROOT="/data/WindFiles"
-NAMDATAHOME="${WINDROOT}/nam/ak03km"
+NAMDATAHOME="${WINDROOT}/nam/091"
 
 #name of directory containing current files
 FC_day=${yearmonthday}_${FChour}
-#FC_day="temp"
 
 #******************************************************************************
 #START EXECUTING
@@ -58,14 +48,44 @@ FC_day=${yearmonthday}_${FChour}
 #       http://nomads.ncep.noaa.gov/txt_descriptions/fast_downloading_grib.shtml
 #       and first download the idx file, process it, and grab only the grib
 #       layers needed.
+#       The following extra utilities are required:
+# ftp://ftp.cpc.ncep.noaa.gov/wd51we/fast_downloading_grib/get_inv.pl
+# ftp://ftp.cpc.ncep.noaa.gov/wd51we/fast_downloading_grib/get_grib.pl
+#       These files will be downloaded if they are not on the path
 
 #go to correct directory
 cd $NAMDATAHOME
-mkdir $FC_day
+mkdir -p $FC_day
 cd $FC_day
 
-t=0
-SERVER=http://nomads.ncep.noaa.gov/pub/data/nccf/com/nam/prod
+# Make sure we have the needed perl scripts for processing the index files
+which get_inv.pl > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+        echo "Can not fine file get_inv.pl"
+        echo "Downloading a fresh copy"
+        wget ftp://ftp.cpc.ncep.noaa.gov/wd51we/fast_downloading_grib/get_inv.pl
+        chmod 775 get_inv.pl
+        my_get_inv=${NAMDATAHOME}/${FC_day}/get_inv.pl
+else
+        my_get_inv=get_inv.pl
+fi
+which get_grib.pl > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+        echo "Can not fine file get_grib.pl"
+        echo "Downloading a fresh copy"
+        wget ftp://ftp.cpc.ncep.noaa.gov/wd51we/fast_downloading_grib/get_grib.pl
+        chmod 775 get_grib.pl
+        my_get_grib=${NAMDATAHOME}/${FC_day}/get_grib.pl
+else
+        my_get_grib=get_grib.pl
+fi
+
+
+
+
+####################################################################
+#  Set up parameters describing the variables we intend to download.
+####################################################################
 
 # Variables as a function of isobaric2
 #  Geopotential_height_isobaric
@@ -122,104 +142,117 @@ nmisc2d=3
 misc2d=("cloud base" "cloud top" "entire atmosphere (considered as a single layer)")
 nvar_misc2d=("PRES" "PRES" "TCDC")
 
-# To download the whole forcast package, uncomment the while loop
-#while [ "$t" -le 36 ]; do
-t=${HH}
-
+####################################################################
+#  Now start the loop over all time steps
+####################################################################
+t=0
+while [ "$t" -le ${HourMax} ]; do
   if [ "$t" -le 9 ]; then
       hour="0$t"
    else
       hour="$t"
   fi
+  # Set up file names and get the index file listing locations of
+  # the grib records.
   INFILE=nam.t${FChour}z.alaskanest.hiresf${hour}.tm00.grib2
   INFILEx=${INFILE}.idx
-  MyINFILE=nam.t${FChour}z.alaskanest.hiresf${hour}.tm00.avo.grib2
+  OUTFILE=nam.t${FChour}z.alaskanest.hiresf${hour}.tm00.loc.grib2
   URL=${SERVER}/nam.${yearmonthday}/${INFILE}
-  echo "$URL"
-  ~/bin/get_inv.pl $URL.idx > my_inv
+  echo "$t of ${HourMax} $URL"
+  # This script needs to be current (12/2018 or later) to handle https
+  ${my_get_inv} $URL.idx > my_inv
 
   # Get all variables that are a function of isobaric2
-  rm iso2.grib2
+  rm -f iso2.grib2
   touch iso2.grib2
   for (( iv=0;iv<$nvar_iso2;iv++))
   do
     for (( id=0;id<$niso2;id++))
     do
-      echo "${iv} ${var_iso2[iv]} ${iso2[id]}"
+      echo "${t}/${HourMax} isobaric2 ${iv}/${nvar_iso2} ${var_iso2[iv]} ${iso2[id]}"
       grep ":${var_iso2[iv]}:" my_inv | grep ":${iso2[id]}:" > rec.tmp
-      cat rec.tmp | ~/bin/get_grib.pl $URL tmp.grib2
-      cat iso2.grib2 tmp.grib2 >> iso2.grib2
+      cat rec.tmp | ${my_get_grib} $URL tmp.grib2 > /dev/null 2>&1
+      cat iso2.grib2 tmp.grib2 >> iso2.grib2 2>/dev/null
     done
   done
   # Get all variables that are a function of isobaric3
-  rm iso3.grib2
+  rm -f iso3.grib2
   touch iso3.grib2
   for (( iv=0;iv<$nvar_iso3;iv++))
   do
     for (( id=0;id<$niso3;id++))
     do
-      echo "${iv} ${var_iso3[iv]} ${iso3[id]}"
+      echo "${t}/${HourMax} isobaric3 ${iv}/${nvar_iso3} ${var_iso3[iv]} ${iso3[id]}"
       grep ":${var_iso3[iv]}:" my_inv | grep ":${iso3[id]}:" > rec.tmp
-      cat rec.tmp | ~/bin/get_grib.pl $URL tmp.grib2
-      cat iso3.grib2 tmp.grib2 >> iso3.grib2
+      cat rec.tmp | ${my_get_grib} $URL tmp.grib2  > /dev/null 2>&1
+      cat iso3.grib2 tmp.grib2 >> iso3.grib2 2>/dev/null
     done
   done
   # Get all variables that are function of height_above_ground7
-  rm hag7.grib2
+  rm -f hag7.grib2
   touch hag7.grib2
   for (( iv=0;iv<$nvar_hag7;iv++))
   do
     for (( id=0;id<$nhag7;id++))
     do
-      echo "${iv} ${var_hag7[iv]} ${hag7[id]}"
+      echo "${t}/${HourMax} ght_above_ground7 ${iv}/${nvar_hag7} ${var_hag7[iv]} ${hag7[id]}"
       grep ":${var_hag7[iv]}:" my_inv | grep ":${hag7[id]}:" > rec.tmp
-      cat rec.tmp | ~/bin/get_grib.pl $URL tmp.grib2
-      cat hag7.grib2 tmp.grib2 >> hag7.grib2
+      cat rec.tmp | ${my_get_grib} $URL tmp.grib2  > /dev/null 2>&1
+      cat hag7.grib2 tmp.grib2 >> hag7.grib2 2>/dev/null
     done
   done
   # Get all variables that are function of depth_below_surface_layer
-  rm dbsl.grib2
+  rm -f dbsl.grib2
   touch dbsl.grib2
   for (( iv=0;iv<$nvar_dbsl;iv++))
   do
     for (( id=0;id<$ndbsl;id++))
     do
-      echo "${iv} ${var_dbsl[iv]} ${dbsl[id]}"
+      echo "${t}/${HourMax} depth_below_surface_layer ${iv}/${nvar_dbsl} ${var_dbsl[iv]} ${dbsl[id]}"
       grep ":${var_dbsl[iv]}:" my_inv | grep ":${dbsl[id]}:" > rec.tmp
-      cat rec.tmp | ~/bin/get_grib.pl $URL tmp.grib2
-      cat dbsl.grib2 tmp.grib2 >> dbsl.grib2
+      cat rec.tmp | ${my_get_grib} $URL tmp.grib2  > /dev/null 2>&1
+      cat dbsl.grib2 tmp.grib2 >> dbsl.grib2 2>/dev/null
     done
   done
   # Get all variables that are function of surface
-  rm surf.grib2
+  rm -f surf.grib2
   touch surf.grib2
   for (( iv=0;iv<$nvar_surf;iv++))
   do
     for (( id=0;id<$nsurf;id++))
     do
-      echo "${iv} ${var_surf[iv]} ${surf[id]}"
+      echo "${t}/${HourMax} surface ${iv}/${nvar_surf} ${var_surf[iv]} ${surf[id]}"
       grep ":${var_surf[iv]}:" my_inv | grep ":${surf[id]}:" > rec.tmp
-      cat rec.tmp | ~/bin/get_grib.pl $URL tmp.grib2
-      cat surf.grib2 tmp.grib2 >> surf.grib2
+      cat rec.tmp | ${my_get_grib} $URL tmp.grib2  > /dev/null 2>&1
+      cat surf.grib2 tmp.grib2 >> surf.grib2 2>/dev/null
     done
   done
   # Get all variables that are function of some special 2d variable
-  rm misc2d.grib2
+  rm -f misc2d.grib2
   touch misc2d.grib2
   for (( iv=0;iv<$nvar_misc2d;iv++))
   do
-    echo "${iv} ${var_misc2d[iv]} ${misc2d[iv]}"
+    echo "${t}/${HourMax} misc ${iv}/${nvar_misc2d} ${var_misc2d[iv]} ${misc2d[iv]}"
     grep ":${var_misc2d[iv]}:" my_inv | grep ":${misc2d[iv]}:" > rec.tmp
-    cat rec.tmp | ~/bin/get_grib.pl $URL tmp.grib2
-    cat misc2d.grib2 tmp.grib2 >> misc2d.grib2
+    cat rec.tmp | ${my_get_grib} $URL tmp.grib2  > /dev/null 2>&1
+    cat misc2d.grib2 tmp.grib2 >> misc2d.grib2 2>/dev/null
   done
 
   # Now bundle all these grib2 files into a grib2 file for this timestep
-  cat iso2.grib2 iso3.grib2 hag7.grib2 dbsl.grib2 surf.grib2 misc2d.grib2 > ${MyINFILE}
-  /opt/USGS/bin/gen_GRIB2_index ${MyINFILE}
+  cat iso2.grib2 iso3.grib2 hag7.grib2 dbsl.grib2 surf.grib2 misc2d.grib2 > ${OUTFILE}
+  ${INSTALLDIR}/bin/gen_GRIB_index ${OUTFILE}
 
-  rm iso2.grib2 iso3.grib2 hag7.grib2 dbsl.grib2 surf.grib2 misc2d.grib2 rec.tmp tmp.grib2
+  rm -f iso2.grib2 iso3.grib2 hag7.grib2 dbsl.grib2 surf.grib2 misc2d.grib2 rec.tmp tmp.grib2
 
-#  t=$(($t+1))
-#done
+  t=$(($t+${HourStep}))
 
+done # iterate to the next forecast hour
+
+mkdir -p $NAMDATAHOME/latest
+cd $NAMDATAHOME/latest
+rm -f nam.*
+ln -s $NAMDATAHOME/$FC_day/* .
+#
+#t1=`date`
+#echo "download start: $t0"
+#echo "download   end: $t1"
