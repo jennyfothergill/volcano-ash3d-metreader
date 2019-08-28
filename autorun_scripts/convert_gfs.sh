@@ -26,6 +26,7 @@
 JAVAHOME="/usr/local/bin/"
 NCJv="~/ncj/netcdfAll-4.5.jar"
 WINDROOT="/data/WindFiles"
+INSTALLDIR="/opt/USGS"
 
 GFS=$1
 yearmonthday=$2
@@ -40,6 +41,7 @@ echo `date`
 echo "------------------------------------------------------------"
 
 rc=0
+validlist="valid_files.txt"
 GFSDATAHOME="${WINDROOT}/gfs"
 if [[ -d ${GFSDATAHOME} ]] ; then
    echo "Error:  Download directory ${GFSDATAHOME} does not exist"
@@ -59,6 +61,9 @@ cd ${GFSDATAHOME}/${FC_day}
 
 #Convert to NetCDF
 t=0
+rm -f ${GFSDATAHOME}/${FC_day}/${validlist}
+touch ${GFSDATAHOME}/${FC_day}/${validlist}
+vcount=0
 while [ "$t" -le ${HourMax} ]
 do
   if [ "$t" -le 9 ]; then
@@ -69,15 +74,29 @@ do
       hour="$t"
   fi
   gfsfile="gfs.t${FChour}z.pgrb2.${GFS}.f${hour}"
+  ncmlfile="gfs.t${FChour}z.f${hour}.ncml"
   netcdffile="${yearmonthday}${FChour}.f${hour}.nc"
   if test -r ${gfsfile}
   then
+     echo "making ${ncmlfile}"
+     ${INSTALLDIR}/bin/makegfsncml ${gfsfile} ${ncmlfile}
+     if [[ $? -ne 0 ]]; then
+          exit 1
+     fi
      echo "Converting ${gfsfile} to ${netcdffile}"
      echo "java -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out ${netcdffile} -IsLargeFile"
      ${JAVAHOME}java -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out ${netcdffile} -IsLargeFile
      if [[ $? -ne 0 ]]; then
           exit 1
      fi
+     # Check converted file for valid values
+     echo "checking ${netcdffile} for corrupt values"
+     ${INSTALLDIR}/bin/MetCheck 20 2 ${netcdffile}
+     if [[ $? -eq 0 ]]; then
+       cat MetCheck_log.txt >> ${GFSDATAHOME}/${FC_day}/${validlist}
+       vcount=$((vcount+1))
+     fi
+
      t=$((t+${HourStep}))
    else
      echo "error: ${gfsfile} does not exist."
