@@ -18,62 +18,82 @@
 #      and its documentation for any purpose.  We assume no responsibility to provide
 #      technical support to users of this software.
 
-# Shell script that downloads gfs 0.5degree data files for the current date.
-# This script is called from autorun_gfs0.5deg.sh and takes two command-line arguments
-#   get_gfs0.5deg.sh YYYYMMDD HR
-
-# This is the location where the downloaded windfiles will be placed.
-# Please edit this to suit your system.
-WINDROOT="/data/WindFiles"
-
-yearmonthday=$1
-FChour=$2
+NAM=$1
+yearmonthday=$2
+FChour=$3
+#SERVER="https://nomads.ncep.noaa.gov/pub/data/nccf/com/nam/prod"
+SERVER="ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/nam/prod"
 
 echo "------------------------------------------------------------"
-echo "running get_gfs0.5deg.sh ${yearmonthday} ${FChour}"
+echo "running get_nam.sh script for ${NAM} $yearmonthday ${FChour}"
 echo `date`
 echo "------------------------------------------------------------"
 t0=`date`
 
+case ${NAM} in
+ 196)
+  # HI 2.5 km
+  HourMax=36
+  HourStep=1
+  #        nam.t00z.hawaiinest.hiresf00.tm00.grib2
+  FilePre="nam.t${FChour}z.hawaiinest.hiresf"
+  FilePost=".tm00.grib2"
+  ;;
+ 091)
+  # AK 2.95 km
+  HourMax=36
+  HourStep=1
+  #        nam.t06z.alaskanest.hiresf00.tm00.grib2
+  FilePre="nam.t${FChour}z.alaskanest.hiresf"
+  FilePost=".tm00.grib2"
+  ;;
+ *)
+  echo "NAM product not recognized"
+  echo "Valid values: 091, 196"
+  exit
+esac
+
 rc=0
-GFSDATAHOME="${WINDROOT}/gfs"
-install -d ${GFSDATAHOME}
+WINDROOT="/data/WindFiles"
+NAMDATAHOME="${WINDROOT}/nam/${NAM}"
+install -d ${NAMDATAHOME}
 if [[ $? -ne 0 ]] ; then
-   echo "Error:  Download directory ${GFSDATAHOME} cannot be"
+   echo "Error:  Download directory ${NAMDATAHOME} cannot be"
    echo "        created or has insufficient write permissions."
    rc=$((rc + 1))
    exit $rc
 fi
 
 #name of directory containing current files
-FC_day=gfs.${yearmonthday}${FChour}
+FC_day=${yearmonthday}_${FChour}
 
 #******************************************************************************
 #START EXECUTING
 
 #go to correct directory
-cd $GFSDATAHOME
-mkdir $FC_day
+cd $NAMDATAHOME
+mkdir -p $FC_day
 cd $FC_day
 
 t=0
-while [ "$t" -le 99 ]; do
+while [ "$t" -le ${HourMax} ]; do
   if [ "$t" -le 9 ]; then
       hour="0$t"
    else
       hour="$t"
   fi
-  filename="ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.${yearmonthday}/${FChour}/gfs.t${FChour}z.pgrb2.0p50.f${hour}"
-  echo "wget ${filename}"
-  time wget ${filename}
-  t=$(($t+3))
+  INFILE=${FilePre}${hour}${FilePost}
+  fileURL=${SERVER}/nam.${yearmonthday}/$INFILE
+  time wget ${fileURL}
+  /opt/USGS/bin/gen_GRIB2_index $INFILE
+  t=$(($t+${HourStep}))
 done
 
-echo "finished downloading wind files"
+mkdir -p $NAMDATAHOME/latest
+cd $NAMDATAHOME/latest
+rm nam.*
+ln -s ../$FC_day/* .
+
 t1=`date`
 echo "download start: $t0"
 echo "download   end: $t1"
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "finished get_gfs0.5deg.sh ${yearmonthday} ${FChour}"
-echo `date`
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"

@@ -141,13 +141,15 @@
         else
           iy = Current_Year
         endif
-        MR_Comp_StartHour     = HS_hours_since_baseyear(iy,1,1,0.0_8,1900,.True.)
-        MR_Comp_Time_in_hours = 1.0
+        !MR_Comp_StartHour     = HS_hours_since_baseyear(iy,1,1,0.0_8,1900,.True.)
+        !MR_Comp_Time_in_hours = 1.0
       endif
 
       write(MR_global_info,*)"Set up windfile data structure"
       if(iwf.eq.25)then
         iw      = 5
+        MR_Comp_StartHour     = HS_hours_since_baseyear(iy,1,1,0.0_8,1900,.True.)
+        MR_Comp_Time_in_hours = 1.0
       else
         iw      = 4
       endif

@@ -22,7 +22,7 @@
 
 # Please edit the line below to be consistant with the install directory specified in
 # the makefile
-INSTALLDIR="/opt/USGS/"
+INSTALLDIR="/opt/USGS"
 # This is the location where the downloaded windfiles will be placed.
 # Please edit this to suit your system.
 WINDROOT="/data/WindFiles"
@@ -32,7 +32,7 @@ echo "running NCEP_50year_Reanalysis.sh"
 echo `date`
 echo "------------------------------------------------------------"
 
-SCRIPTDIR="${INSTALLDIR}bin/autorun_scripts"
+SCRIPTDIR="${INSTALLDIR}/bin/autorun_scripts"
 echo "SCRIPTDIR=$SCRIPTDIR"
 
 starttime=`date`                  #record when we're starting the download

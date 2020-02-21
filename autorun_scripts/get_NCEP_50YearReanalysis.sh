@@ -28,6 +28,8 @@
 # This is the location where the downloaded windfiles will be placed.
 # Please edit this to suit your system.
 WINDROOT="/data/WindFiles"
+INSTALLDIR="/opt/USGS/"
+validlist="valid_files.txt"
 
 echo "------------------------------------------------------------"
 echo "running get_NCEP_50YearReanalysis.sh for year $1"
@@ -35,15 +37,15 @@ echo `date`
 echo "------------------------------------------------------------"
 
 starttime=`date`                  #record when we're starting the download
-echo "starting NCEP_getyear.sh at $starttime"
+echo "starting get_NCEP_getyear.sh at $starttime"
 
 rc=0
 NCEPDATAHOME="${WINDROOT}/NCEP"
-if [[ -d ${NCEPDATAHOME} ]] ; then
-   echo "Error:  Download directory ${NCEPDATAHOME} does not exist"
-   rc=$((rc + 1))
-   exit $rc
-fi
+#if [[ -d ${NCEPDATAHOME} ]] ; then
+#   echo "Error:  Download directory ${NCEPDATAHOME} does not exist"
+#   rc=$((rc + 1))
+#   exit $rc
+#fi
 echo "NCEPDATAHOME=$NCEPDATAHOME"
 
 #get year
@@ -56,33 +58,33 @@ else
 fi
 
 #Make sure the destination directory exists
-echo "making sure the directory for year ${y} exists"
-if [ ! -r "${NCEPDATAHOME}/${y}" ]         
-then
-   echo "Error: Directory ${NCEPDATAHOME}/${y} does not exist"
-   exit 1
-else
-   echo "Good.  It does."
-   echo "Copying contents of ${NCEPDATAHOME}/${y} to ${NCEPDATAHOME}/backup"
-   cp -v ${NCEPDATAHOME}/${y}/* ${NCEPDATAHOME}/backup
-   echo "all done copying files"
-fi
+#echo "making sure the directory for year ${y} exists"
+#if [ ! -r "${NCEPDATAHOME}/${y}" ]         
+#then
+#   echo "Error: Directory ${NCEPDATAHOME}/${y} does not exist"
+#   exit 1
+#else
+#   echo "Good.  It does."
+#   echo "Copying contents of ${NCEPDATAHOME}/${y} to ${NCEPDATAHOME}/backup"
+#   cp -v ${NCEPDATAHOME}/${y}/* ${NCEPDATAHOME}/backup
+#   echo "all done copying files"
+#fi
 
-if test -r ${NCEPDATAHOME}/dbuffer
-then
-    echo "moving to ${NCEPDATAHOME}/dbuffer"
+#if test -r ${NCEPDATAHOME}/dbuffer
+#then
+#    echo "moving to ${NCEPDATAHOME}/dbuffer"
     cd ${NCEPDATAHOME}/dbuffer
-  else
-    echo "error: ${NCEPDATAHOME}/dbuffer does not exist."
-    exit 1
-fi
+#  else
+#    echo "error: ${NCEPDATAHOME}/dbuffer does not exist."
+#    exit 1
+#fi
 
 var=( air hgt omega shum uwnd vwnd )
 for (( i=0;i<=5;i++))
 do
  echo "wget http://www.esrl.noaa.gov/psd/thredds/fileServer/Datasets/ncep/${var[i]}.${y}.nc"
  wget http://www.esrl.noaa.gov/psd/thredds/fileServer/Datasets/ncep.reanalysis/pressure/${var[i]}.${y}.nc
- mv ${var[i]}.${y}.nc ../${y}/${var[i]}.${y}.nc       #overwrite older file
+ mv ${NCEPDATAHOME}/dbuffer/${var[i]}.${y}.nc ${NCEPDATAHOME}/${y}/${var[i]}.${y}.nc       #overwrite older file
 done
 
 echo "Finished downloading."
@@ -90,7 +92,11 @@ endtime=`date`
 
 echo "download started at $starttime"
 echo "download ended at $endtime"
-
+echo "Checking files for valid values and time steps"
+${INSTALLDIR}/bin/MetCheck 25 2 ${NCEPDATAHOME} ${y}
+if [[ $? -eq 0 ]]; then
+   cat MetCheck_log.txt >> ${NCEPDATAHOME}/${y}/${validlist}
+fi
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "finished get_NCEP_50YearReanalysis.sh"
 echo `date`

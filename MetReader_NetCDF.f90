@@ -640,15 +640,18 @@
               write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
               stop 1
             endif
-            if(index(dimname,'lev').ne.0.or.&
-               index(dimname,'isobaric').ne.0.or.&
-               index(dimname,'pressure').ne.0.or.&
-               index(dimname,'height').ne.0.or.&
-               index(dimname,'depth').ne.0.or.&
-               index(dimname,'lv_ISBL1').ne.0.or.&
-               index(dimname,'bottom_top').ne.0.or.&
-               index(dimname,'bottom_top_stag').ne.0.or.&
-               index(dimname,'soil_layers_stag').ne.0)then
+            nSTAT = nf90_inq_varid(ncid,dimname,var_id)
+            if(nSTAT.eq.NF90_NOERR.and. &   ! This first condition excludes dims with no vars
+               (index(dimname,'lev').ne.0.or.&
+                index(dimname,'isobaric').ne.0.or.&
+                index(dimname,'pressure').ne.0.or.&
+                index(dimname,'height').ne.0.or.&
+                index(dimname,'depth').ne.0.or.&
+                index(dimname,'lv_ISBL1').ne.0.or.&
+                index(dimname,'bottom_top').ne.0.or.&
+                index(dimname,'bottom_top_stag').ne.0.or.&
+                index(dimname,'soil_layers_stag').ne.0))then
+
               ! Log this level coordinate if it is the first
               if (nlev_coords_detected.eq.0)then
                 nlev_coords_detected = nlev_coords_detected + 1
