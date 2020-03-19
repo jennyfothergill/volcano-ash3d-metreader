@@ -70,32 +70,31 @@
 1     format('<?xml version="1.0" encoding="UTF-8"?>',/, &
              '<!--this is an attempt at an ncml version of the grib2 file -->',/, &
              '<netcdf xmlns="http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2" location="',a24,'">',/, &
-             '  <remove name="pressure_difference_layer" type="variable" />',/, &
-             '  <remove name="pressure_difference_layer_bounds" type="variable" />',/, &
-             '  <remove name="isobaric" type="variable" />',/, &
-             '  <remove name="height_above_ground_layer" type="variable" />',/, &
-             '  <remove name="height_above_ground_layer_bounds" type="variable" />',/, &
-             '  <remove name="pressure_difference_layer1" type="variable" />',/, &
-             '  <remove name="pressure_difference_layer1_bounds" type="variable" />',/, &
+!             '  <remove name="pressure_difference_layer" type="variable" />',/, &
+!             '  <remove name="pressure_difference_layer_bounds" type="variable" />',/, &
+!             '  <remove name="height_above_ground_layer" type="variable" />',/, &
+!             '  <remove name="height_above_ground_layer_bounds" type="variable" />',/, &
+!             '  <remove name="pressure_difference_layer1" type="variable" />',/, &
+!             '  <remove name="pressure_difference_layer1_bounds" type="variable" />',/, &
              '  <remove name="potential_vorticity_surface" type="variable" />',/, &
-             '  <remove name="height_above_ground" type="variable" />',/, &
-             '  <remove name="altitude_above_msl" type="variable" />',/, &
-             '  <remove name="isobaric1" type="variable" />',/, &
-             '  <remove name="sigma_layer" type="variable" />',/, &
-             '  <remove name="sigma_layer_bounds" type="variable" />',/, &
-             '  <remove name="height_above_ground1" type="variable" />',/, &
-             '  <remove name="height_above_ground2" type="variable" />',/, &
-             '  <remove name="height_above_ground3" type="variable" />',/, &
-             '  <remove name="sigma" type="variable" />',/, &
-             '  <remove name="height_above_ground_layer1" type="variable" />',/, &
-             '  <remove name="height_above_ground_layer1_bounds" type="variable" />',/, &
-             '  <remove name="height_above_ground4" type="variable" />',/, &
-             '  <remove name="depth_below_surface_layer" type="variable" />',/, &
-             '  <remove name="depth_below_surface_layer_bounds" type="variable" />',/, &
-             '  <remove name="pressure_difference_layer2" type="variable" />',/, &
-             '  <remove name="pressure_difference_layer2_bounds" type="variable" />',/, &
+!             '  <remove name="height_above_ground" type="variable" />',/, &
+!             '  <remove name="altitude_above_msl" type="variable" />',/, &
+!             '  <remove name="sigma_layer" type="variable" />',/, &
+!             '  <remove name="sigma_layer_bounds" type="variable" />',/, &
+!             '  <remove name="height_above_ground1" type="variable" />',/, &
+!             '  <remove name="height_above_ground2" type="variable" />',/, &
+!             '  <remove name="height_above_ground3" type="variable" />',/, &
+!             '  <remove name="sigma" type="variable" />',/, &
+!             '  <remove name="height_above_ground_layer1" type="variable" />',/, &
+!             '  <remove name="height_above_ground_layer1_bounds" type="variable" />',/, &
+!             '  <remove name="height_above_ground4" type="variable" />',/, &
+!             '  <remove name="depth_below_surface_layer" type="variable" />',/, &
+!             '  <remove name="depth_below_surface_layer_bounds" type="variable" />',/, &
+!             '  <remove name="pressure_difference_layer2" type="variable" />',/, &
+!             '  <remove name="pressure_difference_layer2_bounds" type="variable" />',/, &
              '  <remove name="Absolute_vorticity_isobaric" type="variable" />',/, &
              '  <remove name="Apparent_temperature_height_above_ground" type="variable" />',/, &
+             '  <remove name="Cloud_mixing_ratio_hybrid" type="variable" />',/, &
              '  <remove name="Cloud_mixing_ratio_isobaric" type="variable" />',/, &
              '  <remove name="Cloud_water_entire_atmosphere" type="variable" />',/, &
              '  <remove name="Convective_available_potential_energy_pressure_difference_layer" type="variable" />',/, &
@@ -109,13 +108,18 @@
              '  <remove name="Geopotential_height_highest_tropospheric_freezing" type="variable" />',/, &
              '  <remove name="Geopotential_height_zeroDegC_isotherm" type="variable" />',/, &
              '  <remove name="Geopotential_height_maximum_wind" type="variable" />',/, &
+             '  <remove name="Graupel_snow_pellets_hybrid" type="variable"  />',/, &
+             '  <remove name="Graupel_snow_pellets_isobaric" type="variable" />',/, &
              '  <remove name="Haines_Index_surface" type="variable" />',/, &
              '  <remove name="ICAO_Standard_Atmosphere_Reference_Height_tropopause" type="variable" />',/, &
              '  <remove name="ICAO_Standard_Atmosphere_Reference_Height_maximum_wind" type="variable" />',/, &
              '  <remove name="Ice_cover_surface" type="variable" />',/, &
+             '  <remove name="Ice_water_mixing_ratio_hybrid" type="variable" />',/, &
+             '  <remove name="Ice_water_mixing_ratio_isobaric" type="variable" />',/, &
              '  <remove name="Land_cover_0__sea_1__land_surface" type="variable" />',/, &
              '  <remove name="Per_cent_frozen_precipitation_surface" type="variable" />',/, &
              '  <remove name="Potential_temperature_sigma" type="variable" />',/, &
+             '  <remove name="Precipitation_rate_surface" type="variable" />',/, &
              '  <remove name="Precipitable_water_entire_atmosphere" type="variable" />',/, &
              '  <remove name="Pressure_height_above_ground" type="variable" />',/, &
              '  <remove name="Pressure_potential_vorticity_surface" type="variable" />',/, &
@@ -123,6 +127,9 @@
              '  <remove name="Pressure_surface" type="variable" />',/, &
              '  <remove name="Pressure_maximum_wind" type="variable" />',/, &
              '  <remove name="Pressure_reduced_to_MSL_msl" type="variable" />',/, &
+             '  <remove name="Rain_mixing_ratio_hybrid" type="variable" />',/, &
+             '  <remove name="Rain_mixing_ratio_isobaric" type="variable" />',/, &
+             '  <remove name="Relative_humidity_isobaric" type="variable" />',/, &
              '  <remove name="Relative_humidity_sigma_layer" type="variable" />',/, &
              '  <remove name="Relative_humidity_sigma" type="variable" />',/, &
              '  <remove name="Relative_humidity_entire_atmosphere" type="variable" />',/, &
@@ -131,6 +138,8 @@
              '  <remove name="Relative_humidity_highest_tropospheric_freezing" type="variable" />',/, &
              '  <remove name="Relative_humidity_zeroDegC_isotherm" type="variable" />',/, &
              '  <remove name="Snow_depth_surface" type="variable" />',/, &
+             '  <remove name="Snow_mixing_ratio_hybrid" type="variable" />',/, &
+             '  <remove name="Snow_mixing_ratio_isobaric" type="variable" />',/, &
              '  <remove name="Soil_temperature_depth_below_surface_layer" type="variable" />',/, &
              '  <remove name="Specific_humidity_pressure_difference_layer" type="variable" />',/, &
              '  <remove name="Specific_humidity_height_above_ground" type="variable" />',/, &
@@ -143,6 +152,12 @@
              '  <remove name="Temperature_surface" type="variable" />',/, &
              '  <remove name="Temperature_pressure_difference_layer" type="variable" />',/, &
              '  <remove name="Temperature_sigma" type="variable" />',/, &
+             '  <remove name="Total_cloud_cover_isobaric" type="variable" />',/, &
+             '  <remove name="Categorical_Rain_surface" type="variable" />',/, &
+             '  <remove name="Categorical_Freezing_Rain_surface" type="variable" />',/, &
+             '  <remove name="Categorical_Ice_Pellets_surface" type="variable" />',/, &
+             '  <remove name="Categorical_Snow_surface" type="variable" />',/, &
+             '  <remove name="Composite_reflectivity_entire_atmosphere" type="variable" />',/, &
              '  <remove name="Total_ozone_entire_atmosphere" type="variable" />',/, &
              '  <remove name="Ozone_Mixing_Ratio_isobaric" type="variable" />',/, &
              '  <remove name="Vertical_Speed_Shear_potential_vorticity_surface" type="variable" />',/, &
@@ -151,7 +166,7 @@
              '  <remove name="V-Component_Storm_Motion_height_above_ground_layer" type="variable" />',/, &
              '  <remove name="Ventilation_Rate_planetary_boundary" type="variable" />',/, &
              '  <remove name="MSLP_Eta_model_reduction_msl" type="variable" />',/, &
-!             '  <remove name="\5-Wave_Geopotential_Height_isobaric" type="variable" />',/, &
+             '  <remove name="5-Wave_Geopotential_Height_isobaric" type="variable" />',/, &
              '  <remove name="Planetary_Boundary_Layer_Height_surface" type="variable" />',/, &
              '  <remove name="Pressure_of_level_from_which_parcel_was_lifted_pressure_difference_layer" type="variable" />',/, &
              '  <remove name="Sunshine_Duration_surface" type="variable" />',/, &
@@ -161,6 +176,8 @@
              '  <remove name="Wilting_Point_surface" type="variable" />',/, &
              '  <remove name="Field_Capacity_surface" type="variable" />',/, &
              '  <remove name="Vertical_velocity_pressure_sigma" type="variable" />',/, &
+             '  <remove name="Vertical_velocity_geometric_isobaric" type="variable" />',/, &
+             '  <remove name="Visibility_surface" type="variable" />',/, &
              '  <remove name="Water_equivalent_of_accumulated_snow_depth_surface" type="variable" />',/, &
              '  <remove name="Wind_speed_gust_surface" type="variable" />',/, &
              '  <remove name="u-component_of_wind_height_above_ground" type="variable" />',/, &

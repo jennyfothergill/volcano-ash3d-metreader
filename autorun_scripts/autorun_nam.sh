@@ -18,23 +18,40 @@
 #      and its documentation for any purpose.  We assume no responsibility to provide
 #      technical support to users of this software.
 
-# Shell script that manages the download of the gfs 0.5 degree data files for the
-# current date, and converts the file to NetCDF.
+# Shell script that manages the download of the nam AK 2.95 km data files for the
+# current date.
 # This script expects a command line argument indicating which forecast package to download.
-#   autorun_gfs0.5deg.sh 0   for the 00 forecast package
+#   autorun_nam.sh 091 0   for the AK HiRes 00 forecast package
 
 # Please edit the line below to be consistant with the install directory specified in
 # the makefile
 INSTALLDIR="/opt/USGS"
+ABRIDGED="0"            # Default is to get the whole file
 
 if [ $# -eq 0 ]
   then
   echo "No arguments supplied"
-  echo "Usage: autorun_gfs0.5deg.sh 0"
+  echo "Usage: autorun_nam.sh 091 0"
   exit
 fi
 
-FC=$1
+NAM=$1
+FC=$2
+
+case ${NAM} in
+ 196)
+  echo "HI 2.5 km"
+  ;;
+ 091)
+  echo "AK 2.95"
+  ABRIDGED="1"  # These files are too big so use a special script to pull
+                # only select grib records
+  ;;
+ *)
+  echo "NAM product not recognized"
+  echo "Valid values: 091, 196"
+  exit
+esac
 
 case ${FC} in
  0)
@@ -58,7 +75,7 @@ case ${FC} in
   FChourR="24.0"
   ;;
  *)
-  echo "GFS forecast package not recognized"
+  echo "NAM forecast package not recognized"
   echo "Valid values: 0, 6, 12, 18, 24"
   exit
 esac
@@ -66,20 +83,19 @@ esac
 yearmonthday=`date -u +%Y%m%d`
 
 echo "------------------------------------------------------------"
-echo "running autorun_gfs0.5deg ${yearmonthday} ${FChour} script"
+echo "running autorun_nam script : ${NAM} ${yearmonthday} ${FChour}"
 echo "------------------------------------------------------------"
 
 SCRIPTDIR="${INSTALLDIR}/bin/autorun_scripts"
 
 #script that gets the wind files
-echo "  Calling ${SCRIPTDIR}/get_gfs0.5deg.sh ${yearmonthday} ${FChour}"
-${SCRIPTDIR}/get_gfs0.5deg.sh ${yearmonthday} ${FChour}
-
-#script that converts grib2 to netcdf
-echo "  Calling ${SCRIPTDIR}/convert_gfs0.5deg.sh ${yearmonthday} ${FChour}"
-${SCRIPTDIR}/convert_gfs0.5deg.sh ${yearmonthday} ${FChour}
-
+if [ "$ABRIDGED" -eq "1" ]; then
+ echo "  Calling ${SCRIPTDIR}/get_nam${NAM}.sh ${yearmonthday} ${FChour}"
+ ${SCRIPTDIR}/get_nam${NAM}.sh ${yearmonthday} ${FChour}
+else
+ echo "  Calling ${SCRIPTDIR}/get_nam.sh ${NAM} ${yearmonthday} ${FChour}"
+ ${SCRIPTDIR}/get_nam.sh ${NAM} ${yearmonthday} ${FChour}
+fi
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "finished autorun_gfs0.5deg_00 script"
+echo "finished autorun_nam script"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-

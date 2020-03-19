@@ -640,15 +640,18 @@
               write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
               stop 1
             endif
-            if(index(dimname,'lev').ne.0.or.&
-               index(dimname,'isobaric').ne.0.or.&
-               index(dimname,'pressure').ne.0.or.&
-               index(dimname,'height').ne.0.or.&
-               index(dimname,'depth').ne.0.or.&
-               index(dimname,'lv_ISBL1').ne.0.or.&
-               index(dimname,'bottom_top').ne.0.or.&
-               index(dimname,'bottom_top_stag').ne.0.or.&
-               index(dimname,'soil_layers_stag').ne.0)then
+            nSTAT = nf90_inq_varid(ncid,dimname,var_id)
+            if(nSTAT.eq.NF90_NOERR.and. &   ! This first condition excludes dims with no vars
+               (index(dimname,'lev').ne.0.or.&
+                index(dimname,'isobaric').ne.0.or.&
+                index(dimname,'pressure').ne.0.or.&
+                index(dimname,'height').ne.0.or.&
+                index(dimname,'depth').ne.0.or.&
+                index(dimname,'lv_ISBL1').ne.0.or.&
+                index(dimname,'bottom_top').ne.0.or.&
+                index(dimname,'bottom_top_stag').ne.0.or.&
+                index(dimname,'soil_layers_stag').ne.0))then
+
               ! Log this level coordinate if it is the first
               if (nlev_coords_detected.eq.0)then
                 nlev_coords_detected = nlev_coords_detected + 1
@@ -869,9 +872,15 @@
         ! Geopotential
 #ifdef USEPOINTERS        
         if(.not.associated(p_fullmet_sp))  allocate(p_fullmet_sp(np_fullmet))
+<<<<<<< HEAD
 #else
         if(.not.allocated(p_fullmet_sp))   allocate(p_fullmet_sp(np_fullmet))
 #endif
+=======
+#else        
+        if(.not.allocated(p_fullmet_sp))   allocate(p_fullmet_sp(np_fullmet))
+#endif        
+>>>>>>> 922d8f6c69536dfce5df92915632d50e81a91b8a
         idx = Met_var_zdim_idx(1)
         p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
   
@@ -3061,7 +3070,6 @@
         write(MR_global_log  ,*)'MR ERROR: close file: ',nf90_strerror(nSTAT)
         stop 1
       endif
-
 
       MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_met_loc) =  &
       MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_met_loc) * Met_var_conversion_factor(ivar)

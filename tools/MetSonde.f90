@@ -240,7 +240,7 @@
           FC_hour_int = nint((i-1)*FC_intvl)
           write(string1,'(a9,I4.4,I2.2,I2.2,I2.2,a1)')'/gfs/gfs.', &
                         FC_year,FC_mon,FC_day,FC_Package_hour,'/'
-          write(string2,'(I4.4,I2.2,I2.2,I2.2,a2,I2.2,a3)') &
+          write(string2,'(I4.4,I2.2,I2.2,I2.2,a2,I3.3,a3)') &
                          FC_year,FC_mon,FC_day,FC_Package_hour, &
                         '.f',FC_hour_int,'.nc'
           write(MR_windfiles(i),*)trim(ADJUSTL(infile1)), &

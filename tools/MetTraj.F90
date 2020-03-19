@@ -153,15 +153,15 @@
 
       nzmax = ntraj
       ! Define grid padding based on the integration time
-      if(Simtime_in_hours.le.8)then
+      if(Simtime_in_hours.le.8.0_8)then
         ! +-15 in lon ; +-10 in lat
         nxmax =  61; dx = 0.5_4
         nymax =  41; dy = 0.5_4
-      elseif(Simtime_in_hours.le.16)then
+      elseif(Simtime_in_hours.le.16.0_8)then
         ! +-25 in lon ; +-15 in lat
         nxmax = 101; dx = 0.5_4
         nymax =  61; dy = 0.5_4
-      elseif(Simtime_in_hours.le.24)then
+      elseif(Simtime_in_hours.le.24.0_8)then
         ! +-35 in lon ; +-20 in lat
         nxmax = 141; dx = 0.5_4
         nymax =  81; dy = 0.5_4
@@ -398,7 +398,7 @@
           FC_hour_int = nint((i-1)*FC_intvl)
           write(string1,'(a9,I4.4,I2.2,I2.2,I2.2,a1)')'/gfs/gfs.', &
                         FC_year,FC_mon,FC_day,FC_Package_hour,'/'
-          write(string2,'(I4.4,I2.2,I2.2,I2.2,a2,I2.2,a3)')&
+          write(string2,'(I4.4,I2.2,I2.2,I2.2,a2,I3.3,a3)')&
                         FC_year,FC_mon,FC_day,FC_Package_hour, &
                         '.f',FC_hour_int,'.nc'
 

@@ -18,31 +18,74 @@
 #      and its documentation for any purpose.  We assume no responsibility to provide
 #      technical support to users of this software.
 
-# Script that converts the gfs grib files to netcdf using netcdf-java.
+# Shell script that downloads gfs 0.5degree data files for the current date.
 # This script is called from autorun_gfs0.5deg.sh and takes two command-line arguments
 #   get_gfs0.5deg.sh YYYYMMDD HR
 
-# Please edit these variables to match your system and location of netcdf-java
-JAVAHOME="/usr/local/bin/"
-NCJv="~/ncj/netcdfAll-4.5.jar"
-WINDROOT="/data/WindFiles"
+# This is the location where the downloaded windfiles will be placed.
+# Please edit this to suit your system.
+INSTALLDIR="/opt/USGS"
 
-yearmonthday=$1
-FChour=$2
+if [ $# -eq 0 ]
+  then
+  echo "No arguments supplied"
+  echo "Usage: get_gfs.sh Resolution YYYYMMDD FCpackage"
+  echo "       where Resolution = 1p00, 0p50, or 0p25"
+  echo "             YYYYMMDD   = date"
+  echo "             FCpackage  = 0, 6, 12, 18 or 24"
+  exit
+fi
 
-GFS="0p50"
-HourMax=198
-HourStep=3
+GFS=$1
+yearmonthday=$2
+FChour=$3
+
+#SERVER="https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod"
+SERVER="ftp://ftp.ncep.noaa.gov/pub/data/nccf/com/gfs/prod"
+
 
 echo "------------------------------------------------------------"
-echo "running convert_gfs0.5deg.sh ${yearmonthday} ${FChour}"
+echo "running get_gfs.sh ${GFS} ${yearmonthday} ${FChour}"
 echo `date`
 echo "------------------------------------------------------------"
+t0=`date`
+
+case ${GFS} in
+ 0p25)
+  # GFS 0.25 degree
+  HourMax=99
+  HourStep=3
+  #        gfs.t00z.pgrb2.0p25.f$000
+  FilePre="gfs.t${FChour}z.pgrb2.0p25.f"
+  ;;
+ 0p50)
+  # GFS 0.50 degree
+  HourMax=198
+  HourStep=3
+  #        gfs.t00z.pgrb2.0p50.f$000
+  FilePre="gfs.t${FChour}z.pgrb2.0p50.f"
+  ;;
+ 1p00)
+  # GFS 1.00 degree
+  HourMax=384
+  HourStep=3
+  #        gfs.t00z.pgrb2.1p00.f$000
+  FilePre="gfs.t${FChour}z.pgrb2.1p00.f"
+  ;;
+ *)
+  echo "GFS product not recognized"
+  echo "Valid values: 0p25, 0p50, 1p00"
+  exit
+esac
+
 
 rc=0
+WINDROOT="/data/WindFiles"
 GFSDATAHOME="${WINDROOT}/gfs"
-if [[ -d ${GFSDATAHOME} ]] ; then
-   echo "Error:  Download directory ${GFSDATAHOME} does not exist"
+install -d ${GFSDATAHOME}
+if [[ $? -ne 0 ]] ; then
+   echo "Error:  Download directory ${GFSDATAHOME} cannot be"
+   echo "        created or has insufficient write permissions."
    rc=$((rc + 1))
    exit $rc
 fi
@@ -54,13 +97,12 @@ FC_day=gfs.${yearmonthday}${FChour}
 #START EXECUTING
 
 #go to correct directory
-echo "going to ${GFSDATAHOME}/${FC_day}"
-cd ${GFSDATAHOME}/${FC_day}
+cd $GFSDATAHOME
+mkdir -p $FC_day
+cd $FC_day
 
-#Convert to NetCDF
 t=0
-while [ "$t" -le ${HourMax} ]
-do
+while [ "$t" -le ${HourMax} ]; do
   if [ "$t" -le 9 ]; then
       hour="00$t"
    elif [ "$t" -le 99 ]; then
@@ -68,49 +110,20 @@ do
    else
       hour="$t"
   fi
-  gfsfile="gfs.t${FChour}z.pgrb2.${GFS}.f${hour}"
-  netcdffile="${yearmonthday}${FChour}.f${hour}.nc"
-  if test -r ${gfsfile}
-  then
-     echo "Converting ${gfsfile} to ${netcdffile}"
-     echo "java -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out ${netcdffile} -IsLargeFile"
-     ${JAVAHOME}java -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out ${netcdffile} -IsLargeFile
-     if [[ $? -ne 0 ]]; then
-          exit 1
-     fi
-     t=$((t+${HourStep}))
-   else
-     echo "error: ${gfsfile} does not exist."
-     exit 1
-   fi
+  INFILE=${FilePre}${hour}
+  fileURL=${SERVER}/gfs.${yearmonthday}/${FChour}/$INFILE
+  echo "wget ${fileURL}"
+  time wget ${fileURL}
+  ${INSTALLDIR}/bin/gen_GRIB_index $INFILE
+
+  t=$(($t+${HourStep}))
 done
 
-#Make sure the netcdf files all exist
-echo "making sure all netcdf files exist"
-t=0
-while [ "$t" -le ${HourMax} ]
-do
-  if [ "$t" -le 9 ]; then
-      hour="00$t"
-   elif [ "$t" -le 99 ]; then
-      hour="0$t"
-   else
-      hour="$t"
-  fi
-  netcdffile="${yearmonthday}${FChour}.f${hour}.nc"
-  if test -r ${netcdffile}
-  then
-     echo "${netcdffile} exists"
-     t=$((t+${HourStep}))
-   else
-     echo "error: ${netcdffile} does not exist."
-     exit 1
-   fi
-done
-
-echo "all done with windfiles"
-
+echo "finished downloading wind files"
+t1=`date`
+echo "download start: $t0"
+echo "download   end: $t1"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "finished convert_gfs0.5deg.sh ${yearmonthday} ${FChour}"
+echo "finished get_gfs0.5deg.sh ${yearmonthday} ${FChour}"
 echo `date`
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"

@@ -54,9 +54,8 @@ FC_day=${yearmonthday}_${FChour}
 #       These files will be downloaded if they are not on the path
 
 #go to correct directory
-cd $NAMDATAHOME
-mkdir -p $FC_day
-cd $FC_day
+mkdir -p ${NAMDATAHOME}/${FC_day}
+cd ${NAMDATAHOME}/${FC_day}
 
 # Make sure we have the needed perl scripts for processing the index files
 which get_inv.pl > /dev/null 2>&1

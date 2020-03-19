@@ -21,7 +21,7 @@
 # Shell script that manages the download of the gfs 0.5 degree data files for the
 # current date, and converts the file to NetCDF.
 # This script expects a command line argument indicating which forecast package to download.
-#   autorun_gfs0.5deg.sh 0   for the 00 forecast package
+#   autorun_gfs.sh 0p25 0   for the 0.25 degree 00 forecast package
 
 # Please edit the line below to be consistant with the install directory specified in
 # the makefile
@@ -30,11 +30,30 @@ INSTALLDIR="/opt/USGS"
 if [ $# -eq 0 ]
   then
   echo "No arguments supplied"
-  echo "Usage: autorun_gfs0.5deg.sh 0"
+  echo "Usage: autorun_gfs.sh Resolution FCpackage"
+  echo "       where Resolution = 1p00, 0p50, or 0p25"
+  echo "             FCpackage  = 0, 6, 12, 18 or 24"
   exit
 fi
 
-FC=$1
+GFS=$1
+FC=$2
+
+case ${GFS} in
+ 0p25)
+  echo "GFS 0.25 degree"
+  ;;
+ 0p50)
+  echo "GFS 0.50 degree"
+  ;;
+ 1p00)
+  echo "GFS 1.00 degree"
+  ;;
+ *)
+  echo "GFS product not recognized"
+  echo "Valid values: 0p25, 0p50, 1p00"
+  exit
+esac
 
 case ${FC} in
  0)
@@ -66,20 +85,20 @@ esac
 yearmonthday=`date -u +%Y%m%d`
 
 echo "------------------------------------------------------------"
-echo "running autorun_gfs0.5deg ${yearmonthday} ${FChour} script"
+echo "running autorun_gfs ${GFS} ${yearmonthday} ${FChour} script"
 echo "------------------------------------------------------------"
 
 SCRIPTDIR="${INSTALLDIR}/bin/autorun_scripts"
 
 #script that gets the wind files
-echo "  Calling ${SCRIPTDIR}/get_gfs0.5deg.sh ${yearmonthday} ${FChour}"
-${SCRIPTDIR}/get_gfs0.5deg.sh ${yearmonthday} ${FChour}
+echo "  Calling ${SCRIPTDIR}/get_gfs.sh ${GFS} ${yearmonthday} ${FChour}"
+${SCRIPTDIR}/get_gfs.sh ${GFS} ${yearmonthday} ${FChour}
 
-#script that converts grib2 to netcdf
-echo "  Calling ${SCRIPTDIR}/convert_gfs0.5deg.sh ${yearmonthday} ${FChour}"
-${SCRIPTDIR}/convert_gfs0.5deg.sh ${yearmonthday} ${FChour}
+script that converts grib2 to netcdf
+echo "  Calling ${SCRIPTDIR}/convert_gfs.sh ${GFS} ${yearmonthday} ${FChour}"
+${SCRIPTDIR}/convert_gfs.sh ${GFS} ${yearmonthday} ${FChour}
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "finished autorun_gfs0.5deg_00 script"
+echo "finished autorun_gfs script"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
