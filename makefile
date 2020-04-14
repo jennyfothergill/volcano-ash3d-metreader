@@ -45,7 +45,7 @@ INSTALLDIR=/opt/USGS
 #  For each data format you want to include in the library, set the corresponding
 #  variable below to 'T'.  Set to 'F' any you do not want compiled or any unavailable
 USENETCDF = T
-USEGRIB = T
+USEGRIB   = T
 
 # MEMORY
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'
@@ -73,8 +73,8 @@ ifeq ($(USEGRIB), T)
  # These are the libraries for ecCodes
  grblib = -leccodes -leccodes_f90
 else
- grb2FPPFLAG =
- grb2OBJS =
+ grbFPPFLAG =
+ grbOBJS =
  grblib =
 endif
 
@@ -90,14 +90,6 @@ FPPFLAGS = -x f95-cpp-input $(ncFPPFLAG) $(grbFPPFLAG) $(grbFPPFLAG) $(memFPPFLA
 USGSLIBDIR = -L$(INSTALLDIR)/lib
 USGSINC = -I$(INSTALLDIR)/include
 USGSLIB = $(USGSLIBDIR) $(USGSINC) -lhourssince -lprojection
-
-EXEC = \
- gen_GRIB_index   \
- tools/MetSonde  \
- tools/MetTraj_F \
- tools/MetTraj_B \
- tools/MetCheck  \
- tools/makegfsncml
 
 ###############################################################################
 ###############################################################################
@@ -132,7 +124,43 @@ endif
 endif
 ###############################################################################
 
-all: libMetReader.a tools
+LIB = libMetReader.a
+
+ifeq ($(USEGRIB), T)
+  GRIBTOOL = gen_GRIB_index
+else
+  GRIBTOOL =
+endif
+
+EXEC = \
+ tools/MetSonde  \
+ tools/MetTraj_F \
+ tools/MetTraj_B \
+ tools/MetCheck  \
+ tools/makegfsncml \
+ tools/$(GRIBTOOL)
+
+AUTOSCRIPTS = \
+ autorun_scripts/autorun_gfs.sh \
+ autorun_scripts/get_gfs.sh     \
+ autorun_scripts/convert_gfs.sh \
+ autorun_scripts/autorun_nam.sh \
+ autorun_scripts/get_nam.sh     \
+ autorun_scripts/autorun_NCEP_50YearReanalysis.sh \
+ autorun_scripts/get_NCEP_50YearReanalysis.sh     \
+ autorun_scripts/grib2nc.sh \
+ autorun_scripts/prune_windfiles.sh \
+ autorun_scripts/get_gmao.sh
+
+###############################################################################
+# TARGETS
+###############################################################################
+
+all: ${lib} tools
+
+lib: $(LIB)
+
+tools: $(EXEC)
 
 libMetReader.a: MetReader.F90 MetReader.o $(ncOBJS) $(grbOBJS) MetReader_Grids.o MetReader_ASCII.o makefile
 	ar rcs libMetReader.a MetReader.o $(ncOBJS) $(grbOBJS) MetReader_Grids.o MetReader_ASCII.o
@@ -153,31 +181,22 @@ MetReader_GRIB_index.o: MetReader_GRIB_index.f90 makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) $(USGSLIB) -c MetReader_GRIB_index.f90
 MetReader_GRIB.o: MetReader_GRIB.f90 MetReader_GRIB_index.o MetReader.o makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c MetReader_GRIB.f90
-gen_GRIB_index: gen_GRIB_index.f90 MetReader_GRIB_index.o makefile libMetReader.a
+tools/gen_GRIB_index: gen_GRIB_index.f90 MetReader_GRIB_index.o makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c gen_GRIB_index.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) MetReader_GRIB_index.o gen_GRIB_index.o $(LIBS) $(grblib) -o gen_GRIB_index
+	$(FC) $(FFLAGS) $(EXFLAGS) MetReader_GRIB_index.o gen_GRIB_index.o $(LIBS) $(grblib) -o tools/gen_GRIB_index
 endif
 
-
-ifeq ($(USEGRIB), T)
-  GRIBTOOL = gen_GRIB_index
-else
-  GRIBTOOL =
-endif
-
-tools: MetSonde MetTraj_F MetTraj_B MetCheck makegfsncml $(GRIBTOOL)
-
-MetSonde: tools/MetSonde.f90 makefile libMetReader.a
+tools/MetSonde: tools/MetSonde.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) -L./ -lMetReader $(LIBS) $(nclib) $(grblib) -c tools/MetSonde.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) MetSonde.o  -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB) -o tools/MetSonde
-MetTraj_F: tools/MetTraj.F90 makefile libMetReader.a
+tools/MetTraj_F: tools/MetTraj.F90 makefile libMetReader.a
 	$(FC) -x f95-cpp-input -DFORWARD  $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_F $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
-MetTraj_B: tools/MetTraj.F90 makefile libMetReader.a
+tools/MetTraj_B: tools/MetTraj.F90 makefile libMetReader.a
 	$(FC) -x f95-cpp-input -DBACKWARD $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_B $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
-MetCheck: tools/MetCheck.f90 makefile libMetReader.a
+tools/MetCheck: tools/MetCheck.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/MetCheck.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) MetCheck.o $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB) -o tools/MetCheck
-makegfsncml: tools/makegfsncml.f90 makefile
+tools/makegfsncml: tools/makegfsncml.f90 makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) -c tools/makegfsncml.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) makegfsncml.o  $(LIBS) $(nclib) -o tools/makegfsncml
 
@@ -192,7 +211,28 @@ install:
 	install -d $(INSTALLDIR)/include/
 	install -d $(INSTALLDIR)/bin/
 	install -d $(INSTALLDIR)/bin/autorun_scripts
-	install -m 644 libMetReader.a $(INSTALLDIR)/lib/
+	install -m 644 $(LIB) $(INSTALLDIR)/lib/
 	install -m 644 *.mod $(INSTALLDIR)/include/
 	install -m 755 $(EXEC) $(INSTALLDIR)/bin/
-	install -m 755 autorun_scripts/*.sh $(INSTALLDIR)/bin/autorun_scripts/
+	install -m 755 $(AUTOSCRIPTS) $(INSTALLDIR)/bin/autorun_scripts/
+
+uninstall:
+	rm -f $(INSTALLDIR)/lib/$(LIB)
+	rm -f $(INSTALLDIR)/include/metreader.mod
+	rm -f $(INSTALLDIR)/bin/MetSonde
+	rm -f $(INSTALLDIR)/bin/MetTraj_F
+	rm -f $(INSTALLDIR)/bin/MetTraj_B
+	rm -f $(INSTALLDIR)/bin/MetCheck
+	rm -f $(INSTALLDIR)/bin/makegfsncml
+	rm -f $(INSTALLDIR)/bin/gen_GRIB_index
+	rm -f $(INSTALLDIR)/bin/autorun_scripts/autorun_gfs.sh
+	rm -f $(INSTALLDIR)/bin/autorun_scripts/autorun_nam.sh
+	rm -f $(INSTALLDIR)/bin/autorun_scripts/autorun_NCEP_50YearReanalysis.sh
+	rm -f $(INSTALLDIR)/bin/autorun_scripts/get_gfs.sh
+	rm -f $(INSTALLDIR)/bin/autorun_scripts/get_nam.sh
+	rm -f $(INSTALLDIR)/bin/autorun_scripts/get_NCEP_50YearReanalysis.sh
+	rm -f $(INSTALLDIR)/bin/autorun_scripts/convert_gfs.sh
+	rm -f $(INSTALLDIR)/bin/autorun_scripts/grib2nc.sh
+	rm -f $(INSTALLDIR)/bin/autorun_scripts/prune_windfiles.sh
+	rm -f $(INSTALLDIR)/bin/autorun_scripts/get_gmao.sh
+

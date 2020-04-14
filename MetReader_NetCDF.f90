@@ -872,15 +872,9 @@
         ! Geopotential
 #ifdef USEPOINTERS        
         if(.not.associated(p_fullmet_sp))  allocate(p_fullmet_sp(np_fullmet))
-<<<<<<< HEAD
 #else
         if(.not.allocated(p_fullmet_sp))   allocate(p_fullmet_sp(np_fullmet))
 #endif
-=======
-#else        
-        if(.not.allocated(p_fullmet_sp))   allocate(p_fullmet_sp(np_fullmet))
-#endif        
->>>>>>> 922d8f6c69536dfce5df92915632d50e81a91b8a
         idx = Met_var_zdim_idx(1)
         p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
   
