@@ -595,6 +595,12 @@
        if(allocated(Met_Proj_lat                  ))deallocate(Met_Proj_lat)
        if(allocated(Met_Proj_lon                  ))deallocate(Met_Proj_lon)
 
+       if(allocated(MR_SndVars_metP               ))deallocate(MR_SndVars_metP)
+       if(allocated(MR_SndVarsID                  ))deallocate(MR_SndVarsID)
+       if(allocated(MR_Snd_np_fullmet             ))deallocate(MR_Snd_np_fullmet)
+       if(allocated(MR_Snd2Comp_tri_map_wgt       ))deallocate(MR_Snd2Comp_tri_map_wgt)
+       if(allocated(MR_Snd2Comp_tri_map_idx       ))deallocate(MR_Snd2Comp_tri_map_idx)
+
        nlev_coords_detected = 0
 
       end subroutine MR_Reset_Memory
@@ -2656,11 +2662,11 @@
 
       integer :: i
       integer :: iw
-      real(kind=8)       :: HS_HourOfDay
-      integer            :: HS_YearOfEvent
-      integer            :: HS_MonthOfEvent
-      integer            :: HS_DayOfEvent
-      integer            :: HS_DayOfYear
+      !real(kind=8)       :: HS_HourOfDay
+      !integer            :: HS_YearOfEvent
+      !integer            :: HS_MonthOfEvent
+      !integer            :: HS_DayOfEvent
+      !integer            :: HS_DayOfYear
       integer            :: iwstep
       integer            :: istep
       real(kind=8)       :: stephour
@@ -2670,6 +2676,35 @@
       real(kind=8) :: StepInterval
       real(kind=8) :: met_t1,met_t2,met_dt1
       logical      :: prestep, poststep
+
+      INTERFACE
+        real(kind=8) function HS_HourOfDay(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_HourOfDay
+        integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_YearOfEvent
+        integer function HS_MonthOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_MonthOfEvent
+
+        integer function HS_DayOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_DayOfEvent
+        integer function HS_DayOfYear(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_DayOfYear
+      END INTERFACE
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------      MR_Set_Met_Times                                      ----------"
@@ -2995,7 +3030,7 @@
         stephour = MR_MetStep_Hour_since_baseyear(istep)
       enddo
 
- !     MAKE SURE THE WIND MODEL TIME WINDOW COVERS THE ENTIRE SUMULATION TIME
+!     MAKE SURE THE WIND MODEL TIME WINDOW COVERS THE ENTIRE SUMULATION TIME
       write(MR_global_info,99)
 99    format(/,4x,'Making sure the mesoscale model time covers the simulation time . . . ')
       if (MR_MetStep_Hour_since_baseyear(1).gt.MR_Comp_StartHour) then

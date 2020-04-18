@@ -1478,7 +1478,7 @@
       character(len=NF90_MAX_NAME)  :: invar
       integer            :: xtype, length, attnum
       character(len=31)  :: tstring2
-      real(kind=8)       :: HS_hours_since_baseyear !,HS_HourOfDay
+      !real(kind=8)       :: HS_hours_since_baseyear !,HS_HourOfDay
       real(kind=8)       :: iwf_int,iwf_tot
       integer            :: iwstep
       logical            :: TimeHasUnitsAttr = .false.
@@ -1489,9 +1489,35 @@
       integer,dimension(8)  :: values
       integer               :: Current_Year,nt_tst
       character(len=130)    :: Z_infile
-      integer               :: HS_YearOfEvent
-      integer               :: HS_MonthOfEvent
-      integer               :: HS_DayOfEvent
+      !integer               :: HS_YearOfEvent
+      !integer               :: HS_MonthOfEvent
+      !integer               :: HS_DayOfEvent
+
+      INTERFACE
+        real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
+          integer            :: iyear
+          integer            :: imonth
+          integer            :: iday
+          real(kind=8)       :: hours
+          integer            :: byear
+          logical            :: useLeaps
+        end function HS_hours_since_baseyear
+        integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_YearOfEvent
+        integer function HS_MonthOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_MonthOfEvent
+        integer function HS_DayOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_DayOfEvent
+      END INTERFACE
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                MR_Read_Met_Times_netcdf                    ----------"
@@ -2011,14 +2037,35 @@
       integer           ,intent(in)  :: ivar
       character(len=130),intent(out) :: infile
 
-      integer               :: HS_YearOfEvent
-      integer               :: HS_MonthOfEvent
-      integer               :: HS_DayOfEvent
-      logical               :: HS_IsLeapYear
+      !integer               :: HS_YearOfEvent
+      !integer               :: HS_MonthOfEvent
+      !integer               :: HS_DayOfEvent
+      !logical               :: HS_IsLeapYear
       integer,dimension(12) :: DaysInMonth
       integer               :: dum_i1,dum_i2,dum_i3
 
       integer :: thisYear,thisMonth,thisDay
+
+      INTERFACE
+        logical function HS_IsLeapYear(iyear)
+          integer            :: iyear
+        end function HS_IsLeapYear
+        integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_YearOfEvent
+        integer function HS_MonthOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_MonthOfEvent
+        integer function HS_DayOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_DayOfEvent
+      END INTERFACE
 
       if(ivar.ne.1.and. &
          ivar.ne.2.and. &

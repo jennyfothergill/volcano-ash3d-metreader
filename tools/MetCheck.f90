@@ -6,8 +6,9 @@
 
       implicit none
 
-      integer             :: iargc, nargs
-      integer             :: status,iostat,stat
+      !integer             :: iargc
+      integer             :: nargs
+      integer             :: status,stat
       character (len=100) :: arg
 
       real(kind=4)        :: inlon,inlat
@@ -53,7 +54,8 @@
       MR_useLeap  = useLeap
 
 !     TEST READ COMMAND LINE ARGUMENTS
-      nargs = iargc()
+      !nargs = iargc()
+      nargs = command_argument_count()
       if (nargs.lt.3) then
         write(MR_global_info,*)"ERROR: not enough command-line arguments."
         write(MR_global_info,*)"  Usage: MetCheck iwf idf filename [year]"

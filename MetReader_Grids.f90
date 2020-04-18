@@ -705,6 +705,11 @@
       logical       :: cond1, cond2, cond3
       integer       :: nx_tmp
 
+      INTERFACE
+        subroutine MR_Set_Comp2Met_Map
+        end subroutine
+      END INTERFACE
+
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                 MR_Set_MetComp_Grids                       ----------"
       write(MR_global_production,*)"--------------------------------------------------------------------------------"

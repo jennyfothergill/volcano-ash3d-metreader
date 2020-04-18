@@ -39,7 +39,6 @@ SYSTEM = gfortran
 RUN =OPT
 #
 INSTALLDIR=/opt/USGS
-#INSTALLDIR=~/gcc
 #
 # DATA FORMATS
 #  For each data format you want to include in the library, set the corresponding
@@ -84,8 +83,6 @@ else
  memFPPFLAG =
 endif
 
-FPPFLAGS = -x f95-cpp-input $(ncFPPFLAG) $(grbFPPFLAG) $(grbFPPFLAG) $(memFPPFLAG)
-
 # location of HoursSince and projection
 USGSLIBDIR = -L$(INSTALLDIR)/lib
 USGSINC = -I$(INSTALLDIR)/include
@@ -106,8 +103,9 @@ ifeq ($(SYSTEM), gfortran)
     COMPINC = -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules -I$(INSTALLDIR)/include
     COMPLIBS = -L$(FCHOME)/lib64 -L${INSTALLDIR}/lib
 
-    LIBS = $(COMPLIBS) $(COMPINC) #-lefence
+    LIBS = $(COMPLIBS) $(COMPINC)
     # -lefence 
+
 # Debugging flags
 ifeq ($(RUN), DEBUG)
     FFLAGS =  -O0 -g3 -Wall -fbounds-check -pedantic -fimplicit-none -Wunderflow -Wuninitialized -ffpe-trap=invalid,zero,overflow -fdefault-real-8 
@@ -120,6 +118,9 @@ endif
 ifeq ($(RUN), OPT)
     FFLAGS = -O3 -w -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signaling-nans -fcx-limited-range -fno-rounding-math -fdefault-real-8
 endif
+      # Preprocessing flags
+    FPPFLAGS = -x f95-cpp-input $(ncFPPFLAG) $(grbFPPFLAG) $(grbFPPFLAG) $(memFPPFLAG)
+      # Extra flags
     EXFLAGS =
 endif
 ###############################################################################
@@ -138,7 +139,7 @@ EXEC = \
  tools/MetTraj_B \
  tools/MetCheck  \
  tools/makegfsncml \
- tools/$(GRIBTOOL)
+ $(GRIBTOOL)
 
 AUTOSCRIPTS = \
  autorun_scripts/autorun_gfs.sh \
@@ -168,9 +169,9 @@ libMetReader.a: MetReader.F90 MetReader.o $(ncOBJS) $(grbOBJS) MetReader_Grids.o
 MetReader.o: MetReader.F90 makefile
 	$(FC) $(FPPFLAGS) $(EXFLAGS) -c MetReader.F90
 MetReader_Grids.o: MetReader_Grids.f90 MetReader.o makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c MetReader_Grids.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(USGSLIB) -c MetReader_Grids.f90
 MetReader_ASCII.o: MetReader_ASCII.f90 MetReader.o makefile
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c MetReader_ASCII.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(USGSLIB) -c MetReader_ASCII.f90
 
 ifeq ($(USENETCDF), T)
 MetReader_NetCDF.o: MetReader_NetCDF.f90 MetReader.o makefile
@@ -181,7 +182,7 @@ MetReader_GRIB_index.o: MetReader_GRIB_index.f90 makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) $(USGSLIB) -c MetReader_GRIB_index.f90
 MetReader_GRIB.o: MetReader_GRIB.f90 MetReader_GRIB_index.o MetReader.o makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c MetReader_GRIB.f90
-tools/gen_GRIB_index: gen_GRIB_index.f90 MetReader_GRIB_index.o makefile libMetReader.a
+gen_GRIB_index: gen_GRIB_index.f90 MetReader_GRIB_index.o makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(grblib) -c gen_GRIB_index.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) MetReader_GRIB_index.o gen_GRIB_index.o $(LIBS) $(grblib) -o tools/gen_GRIB_index
 endif
@@ -190,9 +191,9 @@ tools/MetSonde: tools/MetSonde.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) -L./ -lMetReader $(LIBS) $(nclib) $(grblib) -c tools/MetSonde.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) MetSonde.o  -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB) -o tools/MetSonde
 tools/MetTraj_F: tools/MetTraj.F90 makefile libMetReader.a
-	$(FC) -x f95-cpp-input -DFORWARD  $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_F $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
+	$(FC) $(FPPFLAGS) -DFORWARD  $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_F $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
 tools/MetTraj_B: tools/MetTraj.F90 makefile libMetReader.a
-	$(FC) -x f95-cpp-input -DBACKWARD $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_B $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
+	$(FC) $(FPPFLAGS) -DBACKWARD $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_B $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
 tools/MetCheck: tools/MetCheck.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/MetCheck.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) MetCheck.o $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB) -o tools/MetCheck
@@ -201,7 +202,7 @@ tools/makegfsncml: tools/makegfsncml.f90 makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) makegfsncml.o  $(LIBS) $(nclib) -o tools/makegfsncml
 
 clean:
-	rm -f *.o
+	rm -f *.o *__genmod.f90 *__genmod.mod
 	rm -f *.mod
 	rm -f lib*.a
 	rm -f $(EXEC)

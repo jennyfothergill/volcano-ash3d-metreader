@@ -6,7 +6,7 @@
 
       implicit none
 
-      integer             :: iargc, nargs
+      integer             :: nargs
       integer             :: status
       character (len=100) :: arg
 
@@ -29,12 +29,31 @@
       integer :: BaseYear = 1900
       logical :: useLeap  = .true.
 
+      INTERFACE
+        subroutine GetWindFile_FC(inyear,inmonth,inday,inhour,infile1,FC_freq)
+          integer,parameter   :: dp        = 8 ! double precision
+          integer             :: inyear,inmonth,inday
+          real(kind=dp)       :: inhour
+          character(len=100)  :: infile1
+          integer             :: FC_freq
+        end subroutine
+        subroutine GetMetProfile(inlon,inlat,inyear,inmonth,inday,inhour)
+          integer,parameter   :: sp        = 4 ! single precision
+          integer,parameter   :: dp        = 8 ! double precision
+          real(kind=sp)       :: inlon
+          real(kind=sp)       :: inlat
+          integer             :: inyear,inmonth,inday
+          real(kind=dp)       :: inhour
+        end subroutine
+      END INTERFACE
+
+
       ! Make sure user MetReader is using the same calendar
       MR_BaseYear = BaseYear
       MR_useLeap  = useLeap
 
 !     TEST READ COMMAND LINE ARGUMENTS
-      nargs = iargc()
+      nargs = command_argument_count()
       if (nargs.lt.6) then
         write(6,*)"Enter lon lat YYYY MM DD HH [WIND_ROOT]"
         stop 1
@@ -170,7 +189,8 @@
       call date_and_time(date,time2,zone,values)
       read(zone,'(i3)') timezone
         ! FIND TIME IN UTC
-      StartHour = float(values(5)-timezone) + float(values(6))/60
+      StartHour = real(values(5)-timezone,kind=8) + &
+                  real(values(6)/60.0,kind=8)
         ! find time in hours since BaseYear
       RunStartHour = HS_hours_since_baseyear(values(1),values(2),values(3),&
                                              StartHour,MR_BaseYear,MR_useLeap)
