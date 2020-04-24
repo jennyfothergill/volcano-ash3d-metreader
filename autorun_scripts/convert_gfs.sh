@@ -23,9 +23,11 @@
 #   convert_gfs.sh GFSres YYYYMMDD HR
 
 # Please edit these variables to match your system and location of netcdf-java
-#JAVAHOME="/usr/local/bin"
-JAVAHOME="/usr/bin"
+JAVAHOME="/usr/local/bin/"
 NCJv="${HOME}/ncj/netcdfAll-4.5.jar"
+#JAVAHOME="/usr/bin/"
+#NCJv="${HOME}/ncj/netcdfAll-4.6.14.jar"
+
 WINDROOT="/data/WindFiles"
 INSTALLDIR="/opt/USGS"
 
