@@ -53,7 +53,7 @@
                                        ! 26 JRA-55                                  :: ds628.0  iwind=5
                                        ! 27 NOAA-CIRES reanalysis 2.0 degree files  :: ds131.2  iwind=5
                                        ! 28 ECMWF Interim Reanalysis (ERA-Interim)  :: ds627.0  requires catted grib files
-                                       ! 29 ECMWF ERA5                              :: ds630.0  iwind=5
+                                       ! 29 ECMWF ERA5                              :: ds633.0  iwind=5
                                        ! 30 ECMWF 20-Century (ERA-20C)              :: ds626.0  iwind=5
                                        ! 32 Air Force Weather Agency subcenter = 0
                                        ! 33 CCSM3.0 Community Atmosphere Model (CAM)

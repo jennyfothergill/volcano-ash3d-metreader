@@ -2045,6 +2045,7 @@
       integer               :: dum_i1,dum_i2,dum_i3
 
       integer :: thisYear,thisMonth,thisDay
+      logical :: Use_ds630 = .false.
 
       INTERFACE
         logical function HS_IsLeapYear(iyear)
@@ -2189,20 +2190,39 @@
  327    format(i4,a3)
  427    format(a50,a1,i4,a1,a,a)
       elseif(MR_iwindformat.eq.29)then
-        ! YYYY/e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
         dum_i1 = thisDay                  ! Start day in file
         dum_i2 = thisDay                  ! End day in file
         dum_i3 = 23                                ! End hour in file
-        if(ivar.eq.1)then
-          write(MR_iw5_prefix ,291)'e5.oper.an.pl.128_129_z.regn320sc.'
-        elseif(ivar.eq.2)then
-          write(MR_iw5_prefix ,291)'e5.oper.an.pl.128_131_u.regn320uv.'
-        elseif(ivar.eq.3)then
-          write(MR_iw5_prefix ,291)'e5.oper.an.pl.128_132_v.regn320uv.'
-        elseif(ivar.eq.4)then
-          write(MR_iw5_prefix ,291)'e5.oper.an.pl.128_135_w.regn320sc.'
-        elseif(ivar.eq.5)then
-          write(MR_iw5_prefix ,291)'e5.oper.an.pl.128_130_t.regn320sc.'
+        if (Use_ds630) then
+          ! Dataset https://rda.ucar.edu/datasets/ds630.0/
+          !  uses the following format:
+          ! YYYY/e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
+          if(ivar.eq.1)then
+            write(MR_iw5_prefix,291)'e5.oper.an.pl.128_129_z.regn320sc.'
+          elseif(ivar.eq.2)then
+            write(MR_iw5_prefix,291)'e5.oper.an.pl.128_131_u.regn320uv.'
+          elseif(ivar.eq.3)then
+            write(MR_iw5_prefix,291)'e5.oper.an.pl.128_132_v.regn320uv.'
+          elseif(ivar.eq.4)then
+            write(MR_iw5_prefix,291)'e5.oper.an.pl.128_135_w.regn320sc.'
+          elseif(ivar.eq.5)then
+            write(MR_iw5_prefix,291)'e5.oper.an.pl.128_130_t.regn320sc.'
+          endif
+        else
+          !  whereas https://rda.ucar.edu/datasets/ds633.0
+          !  uses the following format:
+          ! YYYY/e5.oper.an.pl.128_129_z.ll025sc.2018062000_2018062023.nc
+          if(ivar.eq.1)then
+            write(MR_iw5_prefix ,292)'e5.oper.an.pl.128_129_z.ll025sc.'
+          elseif(ivar.eq.2)then
+            write(MR_iw5_prefix ,292)'e5.oper.an.pl.128_131_u.ll025uv.'
+          elseif(ivar.eq.3)then
+            write(MR_iw5_prefix ,292)'e5.oper.an.pl.128_132_v.ll025uv.'
+          elseif(ivar.eq.4)then
+            write(MR_iw5_prefix ,292)'e5.oper.an.pl.128_135_w.ll025sc.'
+          elseif(ivar.eq.5)then
+            write(MR_iw5_prefix ,292)'e5.oper.an.pl.128_130_t.ll025sc.'
+          endif
         endif
         write(MR_iw5_suffix1,329)thisYear,thisMonth,dum_i1,'00_',&
                                  thisYear,thisMonth,dum_i2,dum_i3,'.nc'
@@ -2210,6 +2230,7 @@
                          trim(adjustl(MR_iw5_prefix)),   &
                          trim(adjustl(MR_iw5_suffix1))
  291    format(a34)
+ 292    format(a32)
  329    format(i4,i0.2,i0.2,a3,i4,i0.2,i0.2,i0.2,a3)
  429    format(a50,a1,i4,a1,a,a24)
       elseif(MR_iwindformat.eq.30)then
