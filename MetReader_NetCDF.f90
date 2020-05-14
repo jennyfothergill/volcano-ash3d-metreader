@@ -1489,6 +1489,7 @@
       integer,dimension(8)  :: values
       integer               :: Current_Year,nt_tst
       character(len=130)    :: Z_infile
+      character(len=1)      :: answer          !for debugging
       !integer               :: HS_YearOfEvent
       !integer               :: HS_MonthOfEvent
       !integer               :: HS_DayOfEvent
