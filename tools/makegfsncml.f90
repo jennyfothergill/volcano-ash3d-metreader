@@ -22,17 +22,17 @@
 !    program that makes an ncml file that strips out all the variables not used
 
       implicit none
-      integer            ::   nargs
-      character(len=130)  :: infile
+      integer            :: nargs
+      character(len=130) :: infile
       character(len=18)  :: outfile
-     
+      integer            :: status
 
 !     TEST READ COMMAND LINE ARGUMENTS
-      nargs = iargc()
+      nargs = command_argument_count()
       if (nargs.eq.2) then                !If there's 1 command-line argument,
                                           ! it's the input file name.  Read it.
-           call getarg(1,infile)
-           call getarg(2,outfile)
+           call get_command_argument(1, infile, status)
+           call get_command_argument(2, outfile, status)
          else
            write(6,*)'Enter name of input file:$'
            write(6,*)'Example: gfs.t18z.pgrb2f00'

@@ -22,9 +22,10 @@
 # This script takes one command-line argument, the name of the grib file
 
 # Please edit these variables to match your system and location of netcdf-java
-JAVAHOME=/usr/local/bin/
-NCJv=~/ncj/netcdfAll-4.5.jar
-
+JAVAHOME="/usr/local/bin/"
+NCJv="${HOME}/ncj/netcdfAll-4.5.jar"
+#JAVAHOME="/usr/bin/"
+#NCJv="${HOME}/ncj/netcdfAll-4.6.14.jar"
 
 echo "------------------------------------------------------------"
 echo "running grib2nc.sh $1"
@@ -36,7 +37,7 @@ GribFile="${FILEROOT}"
 NCFile="${FILEROOT}.nc"
 
 ${JAVAHOME}java -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset \
-     -in ${ncmlfile} -out ${netcdffile} -IsLargeFile
+     -in ${GribFile} -out ${NCFile} -IsLargeFile
 
 rm ${FILEROOT}.ncx2 ${FILEROOT}.gbx9
 

@@ -132,7 +132,7 @@
       integer,dimension(:),allocatable :: SndColReadOrder
       character(len=3),dimension(0:50) :: MR_SndVarsName
 
-      real(kind=dp)      :: HS_hours_since_baseyear  ! function that calculates hours
+      !real(kind=dp)      :: HS_hours_since_baseyear  ! function that calculates hours
                                                      !  since base year
       integer           :: Stat_ID
       real(kind=sp)     :: Stat_elev
@@ -145,6 +145,22 @@
       logical           :: IsRUCNOAA = .false.
       logical           :: HasTTCC   = .false.
       integer           :: DayOfMonth, SndHour
+
+      INTERFACE
+        subroutine MR_Get_Radiosonde_Station_Coord(StatID,Stat_lon,Stat_lat,Stat_elv)
+          integer,      parameter   :: sp        = 4 ! single precision
+          integer,      intent(in)  :: StatID
+          real(kind=sp),intent(out) :: Stat_lon,Stat_lat,Stat_elv
+        end subroutine
+        real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
+          integer            :: iyear
+          integer            :: imonth
+          integer            :: iday
+          real(kind=8)       :: hours
+          integer            :: byear
+          logical            :: useLeaps
+        end function HS_hours_since_baseyear
+      END INTERFACE
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                MR_Read_Met_DimVars_ASCII_1d                  ----------"
@@ -290,7 +306,7 @@
 
         MR_windfile_starthour = 0.0_dp ! This is the initialization; will be set below
         MR_windfile_stephour  = 0.0_dp ! This will be the final value since all files
-                                    ! have one step and so no offset.
+                                       ! have one step and so no offset.
         MR_windfiles_nt_fullmet(:) = nt_fullmet
 
         do itime = 1,MR_Snd_nt_fullmet
@@ -686,7 +702,7 @@
             open(unit=fid,file=trim(adjustl(MR_windfiles(iw_idx))), status='unknown',err=1971)
             if(iw_idx.eq.1)then
               MR_Snd_nvars = 5
-              allocate(MR_SndVarsID(MR_Snd_nvars))    ! This is the storage oder
+              allocate(MR_SndVarsID(MR_Snd_nvars))    ! This is the storage order
               MR_SndVarsID(1) = 0 ! P
               MR_SndVarsID(2) = 1 ! H
               MR_SndVarsID(3) = 2 ! U
@@ -1136,9 +1152,12 @@
                                               real(ivalue4,kind=dp),MR_BaseYear,MR_useLeap)
 
             endif
- 
+            close(fid)
+            ! Finished reading all the data for this file
+
             deallocate( WindVelocity)
             deallocate(WindDirection)
+
           enddo
         enddo
         Met_dim_IsAvailable(2) = .true.  ! P

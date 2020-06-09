@@ -53,7 +53,7 @@
                                        ! 26 JRA-55                                  :: ds628.0  iwind=5
                                        ! 27 NOAA-CIRES reanalysis 2.0 degree files  :: ds131.2  iwind=5
                                        ! 28 ECMWF Interim Reanalysis (ERA-Interim)  :: ds627.0  requires catted grib files
-                                       ! 29 ECMWF ERA5                              :: ds630.0  iwind=5
+                                       ! 29 ECMWF ERA5                              :: ds633.0  iwind=5
                                        ! 30 ECMWF 20-Century (ERA-20C)              :: ds626.0  iwind=5
                                        ! 32 Air Force Weather Agency subcenter = 0
                                        ! 33 CCSM3.0 Community Atmosphere Model (CAM)
@@ -594,6 +594,12 @@
        if(allocated(temp3d_short                  ))deallocate(temp3d_short)
        if(allocated(Met_Proj_lat                  ))deallocate(Met_Proj_lat)
        if(allocated(Met_Proj_lon                  ))deallocate(Met_Proj_lon)
+
+       if(allocated(MR_SndVars_metP               ))deallocate(MR_SndVars_metP)
+       if(allocated(MR_SndVarsID                  ))deallocate(MR_SndVarsID)
+       if(allocated(MR_Snd_np_fullmet             ))deallocate(MR_Snd_np_fullmet)
+       if(allocated(MR_Snd2Comp_tri_map_wgt       ))deallocate(MR_Snd2Comp_tri_map_wgt)
+       if(allocated(MR_Snd2Comp_tri_map_idx       ))deallocate(MR_Snd2Comp_tri_map_idx)
 
        nlev_coords_detected = 0
 
@@ -1878,17 +1884,30 @@
 
         Met_var_GRIB1_Table(1:MR_MAXVARS) = 128
 
-        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
-        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "level"
-        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "latitude"
-        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "longitude"
+        !Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
+        !Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "level"
+        !Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "latitude"
+        !Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "longitude"
+
+        !Modified for ERA5 windfiles downloaded from ds633.0 ERA5 files
+        !downloaded from https://rda.ucar.edu on May 13, 2020
+        Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "initial_time0_hours"
+        Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "lv_ISBL1"
+        Met_dim_IsAvailable(3)=.true.; Met_dim_names(3) = "g0_lat_2"
+        Met_dim_IsAvailable(4)=.true.; Met_dim_names(4) = "g0_lon_3"
+        Met_dim_IsAvailable(5)=.true.; Met_dim_names(5) = "ncl_strlen_0"
 
         ! Momentum / State variables
-        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="Z" ! e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
-        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U" ! e5.oper.an.pl.128_131_u.regn320uv.2018062000_2018062023.nc
-        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V" ! e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
-        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W" ! e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
-        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T" ! e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
+        Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="Z_GDS0_ISBL" ! e5.oper.an.pl.128_129_z.ll025sc.1991061500_1991061523.nc
+        Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U_GDS0_ISBL" ! e5.oper.an.pl.128_129_u.ll025uv.1991061500_1991061523.nc
+        Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_GDS0_ISBL" ! e5.oper.an.pl.128_129_v.ll025uv.1991061500_1991061523.nc
+        Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W_GDS0_ISBL" ! e5.oper.an.pl.128_129_w.ll025sc.1991061500_1991061523.nc
+        Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T_GDS0_ISBL" ! e5.oper.an.pl.128_129_t.ll025sc.1991061500_1991061523.nc
+        !Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="Z" ! e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
+        !Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U" ! e5.oper.an.pl.128_131_u.regn320uv.2018062000_2018062023.nc
+        !Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V" ! e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
+        !Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W" ! e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
+        !Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T" ! e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
         ! Atmospheric Structure
         !Met_var_IsAvailable(23)=.true.; Met_var_NC_names(23)="CC" ! e5.oper.an.pl.128_248_cc.regn320sc.2018062000_2018062023.nc
         ! Moisture
@@ -2656,11 +2675,11 @@
 
       integer :: i
       integer :: iw
-      real(kind=8)       :: HS_HourOfDay
-      integer            :: HS_YearOfEvent
-      integer            :: HS_MonthOfEvent
-      integer            :: HS_DayOfEvent
-      integer            :: HS_DayOfYear
+      !real(kind=8)       :: HS_HourOfDay
+      !integer            :: HS_YearOfEvent
+      !integer            :: HS_MonthOfEvent
+      !integer            :: HS_DayOfEvent
+      !integer            :: HS_DayOfYear
       integer            :: iwstep
       integer            :: istep
       real(kind=8)       :: stephour
@@ -2670,6 +2689,35 @@
       real(kind=8) :: StepInterval
       real(kind=8) :: met_t1,met_t2,met_dt1
       logical      :: prestep, poststep
+
+      INTERFACE
+        real(kind=8) function HS_HourOfDay(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_HourOfDay
+        integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_YearOfEvent
+        integer function HS_MonthOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_MonthOfEvent
+
+        integer function HS_DayOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_DayOfEvent
+        integer function HS_DayOfYear(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_DayOfYear
+      END INTERFACE
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------      MR_Set_Met_Times                                      ----------"
@@ -2995,7 +3043,7 @@
         stephour = MR_MetStep_Hour_since_baseyear(istep)
       enddo
 
- !     MAKE SURE THE WIND MODEL TIME WINDOW COVERS THE ENTIRE SUMULATION TIME
+!     MAKE SURE THE WIND MODEL TIME WINDOW COVERS THE ENTIRE SUMULATION TIME
       write(MR_global_info,99)
 99    format(/,4x,'Making sure the mesoscale model time covers the simulation time . . . ')
       if (MR_MetStep_Hour_since_baseyear(1).gt.MR_Comp_StartHour) then
