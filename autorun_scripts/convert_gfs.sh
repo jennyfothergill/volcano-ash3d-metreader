@@ -23,10 +23,8 @@
 #   convert_gfs.sh GFSres YYYYMMDD HR
 
 # Please edit these variables to match your system and location of netcdf-java
-JAVAHOME="/usr/local/bin/"
+JAVAHOME="/usr/bin/"
 NCJv="${HOME}/ncj/netcdfAll-4.5.jar"
-#JAVAHOME="/usr/bin/"
-#NCJv="${HOME}/ncj/netcdfAll-4.6.14.jar"
 
 WINDROOT="/data/WindFiles"
 INSTALLDIR="/opt/USGS"
@@ -185,10 +183,14 @@ do
 done
 
 cd ${GFSDATAHOME}
-${ASH3DBINDIR}/ncGFS4_2_pf gfslist.txt
-echo "mv Puff__GFS_______pf.nc ${PUFFDATAHOME}/${yearmonthday}${FChour}_gfs.nc"
-mv Puff__GFS_______pf.nc ${yearmonthday}${FChour}_gfs.nc
-mv ${yearmonthday}${FChour}_gfs.nc ${PUFFDATAHOME}/${yearmonthday}${FChour}_gfs.nc
+if test -f "${INSTALLDIR}/bin/ncGFS4_2_pf"; then
+  PUFFDATAHOME="${WINDROOT}/puff/gfs/"
+  mkdir -p ${PUFFDATAHOME}
+  ${INSTALLDIR}/bin/ncGFS4_2_pf gfslist.txt
+  echo "mv Puff__GFS_______pf.nc ${PUFFDATAHOME}/${yearmonthday}${FChour}_gfs.nc"
+  mv Puff__GFS_______pf.nc ${yearmonthday}${FChour}_gfs.nc
+  mv ${yearmonthday}${FChour}_gfs.nc ${PUFFDATAHOME}/${yearmonthday}${FChour}_gfs.nc
+fi
 
 echo "removing *.ncml, *.ncx2, and *.gbx9 files"
 echo "rm ${GFSDATAHOME}/${FC_day}/*.ncml ${GFSDATAHOME}/${FC_day}/*.gbx8"
