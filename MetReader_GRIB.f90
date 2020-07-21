@@ -622,7 +622,7 @@
 
       integer :: itstart_hour,itstart_min,itstart_sec
 
-      real(kind=8)       :: HS_hours_since_baseyear
+      !real(kind=8)       :: HS_hours_since_baseyear
       character(len=130) :: dumstr
       integer            :: iwstep
 
@@ -632,6 +632,17 @@
       integer            :: ifile
       integer            :: iret
       integer            :: igrib
+
+      INTERFACE
+        real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
+          integer            :: iyear
+          integer            :: imonth
+          integer            :: iday
+          real(kind=8)       :: hours
+          integer            :: byear
+          logical            :: useLeaps
+        end function HS_hours_since_baseyear
+      END INTERFACE
 
       write(MR_global_production,*)"--------------------------------------------------------------------------------"
       write(MR_global_production,*)"----------                MR_Read_Met_Times_GRIB                      ----------"

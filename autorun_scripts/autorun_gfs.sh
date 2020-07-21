@@ -94,7 +94,7 @@ SCRIPTDIR="${INSTALLDIR}/bin/autorun_scripts"
 echo "  Calling ${SCRIPTDIR}/get_gfs.sh ${GFS} ${yearmonthday} ${FChour}"
 ${SCRIPTDIR}/get_gfs.sh ${GFS} ${yearmonthday} ${FChour}
 
-script that converts grib2 to netcdf
+#script that converts grib2 to netcdf
 echo "  Calling ${SCRIPTDIR}/convert_gfs.sh ${GFS} ${yearmonthday} ${FChour}"
 ${SCRIPTDIR}/convert_gfs.sh ${GFS} ${yearmonthday} ${FChour}
 

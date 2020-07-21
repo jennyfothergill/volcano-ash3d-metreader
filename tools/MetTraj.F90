@@ -6,7 +6,7 @@
 
       implicit none
 
-      integer             :: iargc, nargs
+      integer             :: nargs
       integer             :: status
       character (len=100) :: arg
 
@@ -39,12 +39,37 @@
       integer :: BaseYear = 1900
       logical :: useLeap  = .true.
 
+      INTERFACE
+        subroutine GetWindFile_FC(inyear,inmonth,inday,inhour,&
+                                FC_freq,Simtime_in_hours,TrajFlag)
+          integer,parameter   :: dp        = 8 ! double precision
+          integer             :: inyear,inmonth,inday
+          real(kind=dp)       :: inhour
+          integer             :: FC_freq
+          real(kind=dp)       :: Simtime_in_hours
+          integer             :: TrajFlag
+        end subroutine
+        subroutine Integrate_Trajectory(inlon,inlat,inyear,inmonth,inday,inhour,&
+                                Simtime_in_hours,TrajFlag,ntraj,OutputLevels)
+
+          integer,parameter   :: dp        = 8 ! double precision
+          real(kind=dp)       :: inlon
+          real(kind=dp)       :: inlat
+          integer             :: inyear,inmonth,inday
+          real(kind=dp)       :: inhour
+          real(kind=dp)       :: Simtime_in_hours
+          integer             :: TrajFlag
+          integer             :: ntraj
+          real(kind=dp), dimension(ntraj) :: OutputLevels
+        end subroutine
+      END INTERFACE
+
       ! Make user MetReader is using the same calendar
       MR_BaseYear = BaseYear
       MR_useLeap  = useLeap
 
 !     TEST READ COMMAND LINE ARGUMENTS
-      nargs = iargc()
+      nargs = command_argument_count()
       if (nargs.lt.6) then
         write(MR_global_info,*)"Enter lon,lat,YYYY MM DD HH (FC_hours nlev lev1 lev2 ...)"
         stop 1
@@ -306,7 +331,8 @@
       call date_and_time(date,time2,zone,values)
       read(zone,'(i3)') timezone
         ! FIND TIME IN UTC
-      StartHour = float(values(5)-timezone) + float(values(6))/60
+      StartHour = real(values(5)-timezone,kind=8) + &
+                  real(values(6)/60.0,kind=8)
         ! find time in hours since BaseYear
       RunStartHour = HS_hours_since_baseyear(values(1),values(2),values(3),&
                                              StartHour,MR_BaseYear,MR_useLeap)
@@ -398,7 +424,7 @@
           FC_hour_int = nint((i-1)*FC_intvl)
           write(string1,'(a9,I4.4,I2.2,I2.2,I2.2,a1)')'/gfs/gfs.', &
                         FC_year,FC_mon,FC_day,FC_Package_hour,'/'
-          write(string2,'(I4.4,I2.2,I2.2,I2.2,a2,I2.2,a3)')&
+          write(string2,'(I4.4,I2.2,I2.2,I2.2,a2,I3.3,a3)')&
                         FC_year,FC_mon,FC_day,FC_Package_hour, &
                         '.f',FC_hour_int,'.nc'
 
