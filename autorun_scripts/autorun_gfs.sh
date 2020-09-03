@@ -83,6 +83,8 @@ case ${FC} in
 esac
 
 yearmonthday=`date -u +%Y%m%d`
+# Here you can over-ride the date if need be
+#yearmonthday="20200610"
 
 echo "------------------------------------------------------------"
 echo "running autorun_gfs ${GFS} ${yearmonthday} ${FChour} script"
