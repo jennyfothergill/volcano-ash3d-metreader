@@ -250,7 +250,7 @@ done # iterate to the next forecast hour
 mkdir -p $NAMDATAHOME/latest
 cd $NAMDATAHOME/latest
 rm -f nam.*
-ln -s $NAMDATAHOME/$FC_day/* .
+ln -s $NAMDATAHOME/$FC_day/nam.* .
 #
 #t1=`date`
 #echo "download start: $t0"
