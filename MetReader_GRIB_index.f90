@@ -1,6 +1,6 @@
       subroutine MR_Set_Gen_Index_GRIB(grib_file)
 
-      use grib_api
+      use eccodes
 
       implicit none
 
@@ -34,15 +34,17 @@
       logical          :: Got_Version = .false.
 
       ! First, open grib file and determine if we have a grib1 or grib2 file
-      call grib_open_file(idx,adjustl(trim(grib_file)),'r')
-      call grib_new_from_file(idx,igrib,iret)
-      call grib_get(igrib,'editionNumber',gribver)
-      call grib_close_file(idx)
+      call codes_open_file(idx,adjustl(trim(grib_file)),'r')
+      call codes_new_from_file(idx,igrib,CODES_PRODUCT_GRIB,iret)
+      call codes_get(igrib,'editionNumber',gribver)
+      call codes_close_file(idx)
+
       if(gribver.eq.1.or.gribver.eq.2)then
         write(*,*)"Grib version detected = ",gribver
         Got_Version = .true.
       else
-        write(MR_global_error,*)'MR ERROR : Could not detect grib version.'
+        write(MR_global_error,*)&
+          'MR ERROR : Could not detect grib version.'
         write(MR_global_error,*)'           version must be 1 or 2.'
         stop 0
       endif
@@ -54,44 +56,41 @@
         ! For grib1 files, we use the parameter numbers
         !!!  grib_ls -p indicatorOfParameter,date,time,level
           ! create an index from a grib file using some keys
-        call grib_index_create(idx,adjustl(trim(grib_file)),&
+        call codes_index_create(idx,adjustl(trim(grib_file)),&
               'indicatorOfParameter,level')
+        call codes_grib_multi_support_on()
 
-        call grib_multi_support_on()
           ! get the number of distinct values of all the keys in the index
-        call grib_index_get_size(idx,'indicatorOfParameter',parameterNumberSize)
-
-        call grib_index_get_size(idx,'level',levelSize)
+        call codes_index_get_size(idx,'indicatorOfParameter',parameterNumberSize)
+        call codes_index_get_size(idx,'level',levelSize)
 
           ! allocate the arry to contain the list of distinct values
         allocate(parameterNumber_idx(parameterNumberSize))
         allocate(level_idx(levelSize))
 
           ! get the list of distinct key values from the index
-        call grib_index_get(idx,'indicatorOfParameter',parameterNumber_idx)
-        call grib_index_get(idx,'level',level_idx)
+        call codes_index_get(idx,'indicatorOfParameter',parameterNumber_idx)
+        call codes_index_get(idx,'level',level_idx)
 
         count1=0
         do l=1,parameterNumberSize
-          call grib_index_select(idx,'indicatorOfParameter',parameterNumber_idx(l))
+          call codes_index_select(idx,'indicatorOfParameter',parameterNumber_idx(l))
 
           do i=1,levelSize
-            call grib_index_select(idx,'level',level_idx(i))
-
-            call grib_new_from_index(idx,igrib, iret)
+            call codes_index_select(idx,'level',level_idx(i))
+            call codes_new_from_index(idx,igrib, iret)
             do while (iret /= GRIB_END_OF_INDEX)
               count1=count1+1
-              call grib_release(igrib)
-              call grib_new_from_index(idx,igrib, iret)
+              call codes_release(igrib)
+              call codes_new_from_index(idx,igrib, iret)
             enddo
-            call grib_release(igrib)
+            call codes_release(igrib)
 
           enddo ! loop on level
         enddo ! loop on ParamN
 
-        call grib_index_write(idx,adjustl(trim(index_file)))
-
-        call grib_index_release(idx)
+        call codes_index_write(idx,adjustl(trim(index_file)))
+        call codes_index_release(idx)
 
       elseif(gribver.eq.2)then
         ! For grib2 files, we use the message discipline, parameter category, parameter number,
@@ -165,18 +164,17 @@
         !----------------------------------------------------------------------
 
           ! create an index from a grib file using some keys
-        call grib_index_create(idx,adjustl(trim(grib_file)),&
+        call codes_index_create(idx,adjustl(trim(grib_file)),&
               'discipline,parameterCategory,parameterNumber,scaledValueOfFirstFixedSurface,forecastTime')
+        call codes_grib_multi_support_on()
 
-        call grib_multi_support_on()
-      
           ! get the number of distinct values of all the keys in the index
-        call grib_index_get_size(idx,'discipline',disciplineSize)
-        call grib_index_get_size(idx,'parameterCategory',parameterCategorySize)
-        call grib_index_get_size(idx,'parameterNumber',parameterNumberSize)
-        call grib_index_get_size(idx,'scaledValueOfFirstFixedSurface',levelSize)
-        call grib_index_get_size(idx,'forecastTime',forecastTimeSize)
-      
+        call codes_index_get_size(idx,'discipline',disciplineSize)
+        call codes_index_get_size(idx,'parameterCategory',parameterCategorySize)
+        call codes_index_get_size(idx,'parameterNumber',parameterNumberSize)
+        call codes_index_get_size(idx,'scaledValueOfFirstFixedSurface',levelSize)
+        call codes_index_get_size(idx,'forecastTime',forecastTimeSize)
+
           ! allocate the arry to contain the list of distinct values
         allocate(discipline_idx(disciplineSize))
         allocate(parameterCategory_idx(parameterCategorySize))
@@ -185,46 +183,42 @@
         allocate(forecastTime_idx(forecastTimeSize))
       
           ! get the list of distinct key values from the index
-        call grib_index_get(idx,'discipline',discipline_idx)
-        call grib_index_get(idx,'parameterCategory',parameterCategory_idx)
-        call grib_index_get(idx,'parameterNumber',parameterNumber_idx)
-        call grib_index_get(idx,'scaledValueOfFirstFixedSurface',level_idx)
-        call grib_index_get(idx,'forecastTime',forecastTime_idx)
-      
+        call codes_index_get(idx,'discipline',discipline_idx)
+        call codes_index_get(idx,'parameterCategory',parameterCategory_idx)
+        call codes_index_get(idx,'parameterNumber',parameterNumber_idx)
+        call codes_index_get(idx,'scaledValueOfFirstFixedSurface',level_idx)
+        call codes_index_get(idx,'forecastTime',forecastTime_idx)
+
         count1=0
         do l=1,disciplineSize
-          call grib_index_select(idx,'discipline',discipline_idx(l))
-      
+          call codes_index_select(idx,'discipline',discipline_idx(l))
           do j=1,parameterCategorySize
-            call grib_index_select(idx,'parameterCategory',parameterCategory_idx(j))
-      
+            call codes_index_select(idx,'parameterCategory',parameterCategory_idx(j))
             do k=1,parameterNumberSize
-              call grib_index_select(idx,'parameterNumber',parameterNumber_idx(k))
-      
+              call codes_index_select(idx,'parameterNumber',parameterNumber_idx(k))
               do i=1,levelSize
-                call grib_index_select(idx,'scaledValueOfFirstFixedSurface',level_idx(i))
-      
+                call codes_index_select(idx,&
+                  'scaledValueOfFirstFixedSurface',level_idx(i))
                 do t=1,forecastTimeSize
-                  call grib_index_select(idx,'forecastTime',forecastTime_idx(t))
-      
-      
-                call grib_new_from_index(idx,igrib, iret)
+                     !  forecastTime_idx(t))
+                  call codes_index_select(idx,'forecastTime',&
+                    forecastTime_idx(t))
+                call codes_new_from_index(idx,igrib, iret)
                 do while (iret /= GRIB_END_OF_INDEX)
                    count1=count1+1
-                   call grib_release(igrib)
-                   call grib_new_from_index(idx,igrib, iret)
+                   call codes_release(igrib)
+                   call codes_new_from_index(idx,igrib, iret)
                 enddo
-                call grib_release(igrib)
-      
+                call codes_release(igrib)
                 enddo ! loop on forecastTime
               enddo ! loop on level
             enddo ! loop on parameterNumber
           enddo ! loop on parameterCategory
         enddo ! loop on discipline
       
-        call grib_index_write(idx,adjustl(trim(index_file)))
-      
-        call grib_index_release(idx)
+        call codes_index_write(idx,adjustl(trim(index_file)))
+        call codes_index_release(idx)
+
       endif  ! grib version number
 
       end subroutine MR_Set_Gen_Index_GRIB
