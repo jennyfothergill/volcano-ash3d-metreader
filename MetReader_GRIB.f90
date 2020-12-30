@@ -94,15 +94,17 @@
       logical :: IsNewLevel
       integer :: iz
 
-      write(MR_global_production,*)&
-       "----------------------------------------",&
-       "----------------------------------------"
-      write(MR_global_production,*)&
-       "----------                ",&
-       "MR_Read_Met_DimVars_GRIB                    ----------"
-      write(MR_global_production,*)&
-       "----------------------------------------",&
-       "----------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)&
+         "----------------------------------------",&
+         "----------------------------------------"
+        write(MR_global_production,*)&
+         "----------                ",&
+         "MR_Read_Met_DimVars_GRIB                    ----------"
+        write(MR_global_production,*)&
+         "----------------------------------------",&
+         "----------------------------------------"
+      endif
 
         !---------------------------------------------------------------------------------
         ! Checking for dimension length and values for x,y,t,p
@@ -147,7 +149,7 @@
       do while (iret/=GRIB_END_OF_FILE)
         count1=count1+1
         if (count1.gt.MAXGRIBREC) then
-          write(*,*)"ERROR: too many grib messages"
+          write(MR_global_error,*)"ERROR: too many grib messages"
           stop 1
         endif
         call codes_new_from_file(ifile,igribv(count1),CODES_PRODUCT_GRIB,iret)
@@ -252,7 +254,8 @@
             call codes_get(igribv(ir),'numberOfPoints',numberOfPoints)
             allocate(values(numberOfPoints))
             call codes_get(igribv(ir),'values',values)
-            write(*,*)"ERROR: Need to fix grid reading for gg grids."
+            write(MR_global_error,*)&
+                  "ERROR: Need to fix grid reading for gg grids."
             stop 1
             ReadGrid = .true.
             deallocate(values)
@@ -435,9 +438,6 @@
                      'scaledValueOfFirstFixedSurface',&
                      grb_scaledValueOfFirstFixedSurface)
 
-                !write(*,*)ir,igribv(ir),&
-                !          grb_discipline,grb_parameterCategory,grb_parameterNumber,&
-                !          grb_shortName,grb_longName,grb_scaledValueOfFirstFixedSurface
                 ! Double-check that this isn't a duplicate record
                 IsNewLevel = .true.
                 do iz = 1,zcount(ivar)
@@ -578,11 +578,11 @@
         if (Met_var_IsAvailable(ivar))then 
           if(Met_var_zdim_idx(ivar).eq.0)then
             write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),0,0,&
-                                         Met_var_GRIB_names(ivar)
+                                         trim(adjustl(Met_var_GRIB_names(ivar)))
           else
             write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),0,&
                                          nlevs_fullmet(Met_var_zdim_idx(ivar)),&
-                                         Met_var_GRIB_names(ivar)
+                                         trim(adjustl(Met_var_GRIB_names(ivar)))
           endif
         endif
       enddo
@@ -695,9 +695,11 @@
         end function HS_hours_since_baseyear
       END INTERFACE
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                MR_Read_Met_Times_GRIB                      ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                MR_Read_Met_Times_GRIB                      ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       if(.not.Met_dim_IsAvailable(1))then
         write(MR_global_error,*)"MR ERROR: Time dimension is required and not listed"
@@ -761,7 +763,7 @@
             nt_fullmet = 1
             write(MR_global_info,*)"  Assuming all NWP files have the same number of steps."
             write(MR_global_info,*)"   For grib, assume one time step per file."
-            write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"files"
+            write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"file(s)"
             write(MR_global_info,*)"                              ",nt_fullmet,"step(s) each"
             allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
           endif
@@ -1040,8 +1042,8 @@
           write(index_file,126)trim(adjustl(MR_MetStep_File(istep))), &
                            "pgrbanl_mean_",MR_iwind5_year(istep), &
                            "_VVEL_pres.nc"
-          write(*,*)"+++++++++++++++++++++++++++++++++++++++++++"
-          write(*,*)"  NEED TO FIX THIS Vz"
+          write(MR_global_error,*)"+++++++++++++++++++++++++++++++++++++++++++"
+          write(MR_global_error,*)"  NEED TO FIX THIS Vz"
           np_met_loc = np_fullmet
         elseif(ivar.eq.5)then
           write(index_file,125)trim(adjustl(MR_MetStep_File(istep))), &
@@ -1064,8 +1066,8 @@
           write(index_file,127)trim(adjustl(MR_MetStep_File(istep))), &
                            "pgrbanl_mean_",MR_iwind5_year(istep), &
                            "_RH_pres.nc"
-          write(*,*)"+++++++++++++++++++++++++++++++++++++++++++"
-          write(*,*)"  NEED TO FIX THIS : RH"
+          write(MR_global_error,*)"+++++++++++++++++++++++++++++++++++++++++++"
+          write(MR_global_error,*)"  NEED TO FIX THIS : RH"
           np_met_loc = np_fullmet
         elseif(ivar.eq.44)then
           write(index_file,129)trim(adjustl(MR_MetStep_File(istep))), &
@@ -1157,9 +1159,9 @@
             p_met_loc(1:np_met_loc)  = &
               int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx))/100.0_sp)
           else
-            write(*,*)"np_met_loc",np_met_loc
-            write(*,*)idx
-            write(*,*)nlevs_fullmet
+            write(MR_global_info,*)"np_met_loc",np_met_loc
+            write(MR_global_info,*)idx
+            write(MR_global_info,*)nlevs_fullmet
             p_met_loc(1:np_met_loc)  = &
               int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx)))
           endif

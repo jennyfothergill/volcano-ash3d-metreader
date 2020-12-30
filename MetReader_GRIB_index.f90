@@ -40,7 +40,7 @@
       call codes_close_file(idx)
 
       if(gribver.eq.1.or.gribver.eq.2)then
-        write(*,*)"Grib version detected = ",gribver
+        write(MR_global_info,*)"Grib version detected = ",gribver
         Got_Version = .true.
       else
         write(MR_global_error,*)&

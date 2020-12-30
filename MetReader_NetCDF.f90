@@ -38,9 +38,11 @@
       logical :: IsTruncatedDim
       character(len=130)   :: infile
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                MR_Read_Met_DimVars_netcdf                  ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                MR_Read_Met_DimVars_netcdf                  ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       if(MR_iwind.eq.5)then
         ! For the case where variables are in different files, we will just hard-code the
@@ -806,9 +808,11 @@
         do ivar = 1,MR_MAXVARS
           if (Met_var_IsAvailable(ivar))then
             if(Met_var_zdim_idx(ivar).eq.0)then
-              write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),Met_var_zdim_ncid(ivar),0
+              write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),&
+                                           Met_var_zdim_ncid(ivar),0
             else
-              write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),Met_var_zdim_ncid(ivar),&
+              write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),&
+                                           Met_var_zdim_ncid(ivar),&
                                            nlevs_fullmet(Met_var_zdim_idx(ivar))
             endif
           endif
@@ -1520,9 +1524,11 @@
         end function HS_DayOfEvent
       END INTERFACE
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                MR_Read_Met_Times_netcdf                    ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                MR_Read_Met_Times_netcdf                    ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       if(.not.Met_dim_IsAvailable(1))then
         write(MR_global_error,*)"MR ERROR: Time dimension is required and not listed"
@@ -1726,7 +1732,7 @@
                 stop 1
               endif
               write(MR_global_info,*)"  Assuming all NWP files have the same number of steps."
-              write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"files"
+              write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"file(s)"
               write(MR_global_info,*)"                              ",nt_fullmet,"step(s) each"
               allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
               MR_windfile_stephour(:,:) = 0.0_dp
@@ -2306,9 +2312,11 @@
       real(kind=sp):: dum_sp
       integer :: ivar
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                MR_Set_Met_Dims_Template_netcdf             ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                MR_Set_Met_Dims_Template_netcdf             ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! To set up the grid, we assume that the grid is the same for all
       ! windfiles.  There is no checking if this is actually the case.
@@ -2443,9 +2451,11 @@
       real(kind=sp) :: pp
       integer       :: idx
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------                MR_Read_MetP_Variable_netcdf                ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                MR_Read_MetP_Variable_netcdf                ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       if(.not.Met_var_IsAvailable(ivar))then
         write(MR_global_error,*)"MR ERROR:  Variable not available for this windfile"

@@ -3,6 +3,8 @@
       integer, parameter,private :: sp        = 4 ! single precision
       integer, parameter,private :: dp        = 8 ! double precision
 
+      integer, parameter         :: MR_VERB = 1
+
       integer, parameter :: MR_MAXVARS        = 50 ! Maximum number of variables in fixed arrays
 
       real(kind=dp), parameter :: MR_EPS_SMALL  = 1.0e-7_dp  ! Small number
@@ -21,6 +23,8 @@
 
       logical        :: MR_useCompGrid         = .true. ! Reset this to .false. if you only need the Met grid
       logical        :: MR_useCompTime         = .true. ! Reset this to .false. if you only need the time of the file
+      logical        :: MR_useCompH            = .true.
+      logical        :: MR_useCompP            = .true.
 
       integer,public :: MR_iwind       !     MR_IWIND specifies the type of wind input to the model:
                              !   MR_IWIND=1 if a 1-D wind sounding is use, 
@@ -183,13 +187,17 @@
 #ifdef USEPOINTERS
       integer      ,dimension(:,:)  ,pointer, public :: MR_dum2d_comp_int => null() ! Used for categorical variables
       real(kind=sp),dimension(:,:)  ,pointer, public :: MR_dum2d_comp     => null() ! Used for surface variables
-      real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d_compH    => null() 
+      real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d_compP    => null() ! 
+      real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d_compP_2  => null() ! 
+      real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d_compH    => null() ! 
       real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d_compH_2  => null() ! Used only when a vector field
                                                                                ! rotation is needed
 #else
       integer      ,dimension(:,:)  ,allocatable, public :: MR_dum2d_comp_int  ! Used for categorical variables
       real(kind=sp),dimension(:,:)  ,allocatable, public :: MR_dum2d_comp      ! Used for surface variables
-      real(kind=sp),dimension(:,:,:),allocatable, public :: MR_dum3d_compH
+      real(kind=sp),dimension(:,:,:),allocatable, public :: MR_dum3d_compP     !
+      real(kind=sp),dimension(:,:,:),allocatable, public :: MR_dum3d_compP_2   !
+      real(kind=sp),dimension(:,:,:),allocatable, public :: MR_dum3d_compH     !
       real(kind=sp),dimension(:,:,:),allocatable, public :: MR_dum3d_compH_2   ! Used only when a vector field
                                                                                ! rotation is needed
 #endif
@@ -469,9 +477,11 @@
 
       implicit none
 
-       write(MR_global_production,*)"-------------------------------------------------------"
-       write(MR_global_production,*)"-------- Resetting all MetReader Memory ---------------"
-       write(MR_global_production,*)"-------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"-------------------------------------------------------"
+        write(MR_global_production,*)"-------- Resetting all MetReader Memory ---------------"
+        write(MR_global_production,*)"-------------------------------------------------------"
+      endif
 
 #ifndef USEPOINTERS
        if(allocated(MR_windfile_starthour         ))deallocate(MR_windfile_starthour)
@@ -507,6 +517,8 @@
        if(associated(MR_dum3d_metH                 ))deallocate(MR_dum3d_metH)
        if(associated(MR_dum2d_comp_int             ))deallocate(MR_dum2d_comp_int)
        if(associated(MR_dum2d_comp                 ))deallocate(MR_dum2d_comp)
+       if(associated(MR_dum3d_compP                ))deallocate(MR_dum3d_compP)
+       if(associated(MR_dum3d_compP_2              ))deallocate(MR_dum3d_compP_2)
        if(associated(MR_dum3d_compH                ))deallocate(MR_dum3d_compH)
        if(associated(MR_dum3d_compH_2              ))deallocate(MR_dum3d_compH_2)
        if(associated(x_fullmet_sp                  ))deallocate(x_fullmet_sp)
@@ -551,6 +563,8 @@
        if(allocated(MR_dum3d_metH                 ))deallocate(MR_dum3d_metH)
        if(allocated(MR_dum2d_comp_int             ))deallocate(MR_dum2d_comp_int)
        if(allocated(MR_dum2d_comp                 ))deallocate(MR_dum2d_comp)
+       if(allocated(MR_dum3d_compP                ))deallocate(MR_dum3d_compP)
+       if(allocated(MR_dum3d_compP_2              ))deallocate(MR_dum3d_compP_2)
        if(allocated(MR_dum3d_compH                ))deallocate(MR_dum3d_compH)
        if(allocated(MR_dum3d_compH_2              ))deallocate(MR_dum3d_compH_2)
        if(allocated(x_fullmet_sp                  ))deallocate(x_fullmet_sp)
@@ -645,10 +659,11 @@
       MR_idataFormat        = idf
       MR_iwindfiles         = iwfiles
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------      MR_Allocate_FullMetFileList                           ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Allocate_FullMetFileList                           ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
       if ((MR_iwind.ne.1).and.(MR_iwind.ne.2).and. &
           (MR_iwind.ne.3).and.(MR_iwind.ne.4).and. &
           (MR_iwind.ne.5)) then
@@ -2143,7 +2158,7 @@
         stop 1
       end select
 
-      write(MR_global_info,*)"     Allocating space for ",MR_iwindfiles,"files."
+      write(MR_global_info,*)"     Allocating space for ",MR_iwindfiles,"file(s)."
 
       if (MR_iwind.eq.5)then
         write(MR_global_info,*)"For iwf=5:: one variable per file,"
@@ -2264,9 +2279,11 @@
       logical      :: IsThere
       character(len=130) :: tmp_str
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------      MR_Read_Met_DimVars                                   ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Read_Met_DimVars                                   ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! Check prerequisites
       if(Check_prereq_conditions.eqv..true.) &
@@ -2402,9 +2419,11 @@
       real(kind=8),intent(in) :: ko
       real(kind=8),intent(in) :: Re
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------      MR_Set_CompProjection                                 ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Set_CompProjection                                 ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       isLatLon_CompGrid = LL_flag
 
@@ -2505,9 +2524,11 @@
       !                          *_Met_H for subset of Met grid on height levels
       !                          *_comp_H for data regridded to computational grid
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------      MR_Initialize_Met_Grids                               ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Initialize_Met_Grids                               ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! Check prerequisites
       if(Check_prereq_conditions.eqv..true.) &
@@ -2536,6 +2557,23 @@
         y_comp_sp = dumy_sp
         z_comp_sp = dumz_sp
       endif
+      ! Do some error-checking on these grids to make sure they are
+      ! strictly increasing
+      do i=1,nx-1
+        if(x_comp_sp(i).gt.x_comp_sp(i+1))then
+          write(MR_global_error,*)"MR ERROR:  x_comp not strictly increasing"
+          write(MR_global_error,*)s_comp_sp
+          stop 1
+        endif
+      enddo
+
+      do j=1,ny-1
+        if(y_comp_sp(j).gt.y_comp_sp(j+1))then
+          write(MR_global_error,*)"MR ERROR:  y_comp not strictly increasing"
+          write(MR_global_error,*)y_comp_sp
+          stop 1
+        endif
+      enddo
 
       dx_comp = x_comp_sp(2) - x_comp_sp(1)
       dy_comp = abs(y_comp_sp(2) - y_comp_sp(1))
@@ -2625,10 +2663,11 @@
       real(kind=sp),intent(in) :: dumxy1_sp(nx,ny)
       integer      ,intent(in) :: dum_int
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------      MR_Set_SigmaAlt_Scaling                               ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Set_SigmaAlt_Scaling                               ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       MR_use_SigmaAlt   = .true.
       MR_ztop           = dum_sp
@@ -2719,9 +2758,11 @@
         end function HS_DayOfYear
       END INTERFACE
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------      MR_Set_Met_Times                                      ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Set_Met_Times                                      ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! Check prerequisites
       if(Check_prereq_conditions.eqv..true.) &
@@ -2930,7 +2971,7 @@
       ! We now have the number of steps needed for the computation
       ! Allocate the lists
       MR_MetSteps_Total = nMetSteps_Comp
-      write(MR_global_info,*)"MR: Allocating space for ",MR_MetSteps_Total,"steps"
+      write(MR_global_info,*)"MR: Allocating space for ",MR_MetSteps_Total,"step(s)"
       if(prestep.or.poststep)then
         write(MR_global_info,*)"         Including:"
         if(prestep) write(MR_global_info,*)"             1 prestep"
@@ -3116,9 +3157,12 @@
         first_time = .true.
       endif
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------      MR_Read_HGT_arrays                                    ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Read_HGT_arrays                                    ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
+
       write(MR_global_production,*)"     Reading HGT array for istep = ",istep
 
       ! Check prerequisites
@@ -3209,9 +3253,11 @@
       integer,intent(in)        :: ivar
       integer,intent(in)        :: istep
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------      MR_Read_3d_MetP_Variable                              ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Read_3d_MetP_Variable                              ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! Check prerequisites
       if(Check_prereq_conditions.eqv..true.) &
@@ -3277,9 +3323,11 @@
       integer :: np_fully_padded
       real(kind=sp),dimension(:),allocatable :: dumVertCoord_sp
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------      MR_Read_3d_MetH_Variable                              ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Read_3d_MetH_Variable                              ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! Check prerequisites
       if(Check_prereq_conditions.eqv..true.) &
@@ -3387,6 +3435,8 @@
 !##############################################################################
 !
 !     MR_Read_3d_Met_Variable_to_CompGrid
+!      Note: this should be named MR_Read_3d_Met_Variable_to_CompH since
+!            these is now an analogous subroutine mapping MetP to CompP
 !
 !     This subroutine extracts the variable Met_var_NC_names(ivar) from the
 !     windfile/timestep given by MetStep_File(istep),MetStep_tindex(istep).
@@ -3416,9 +3466,11 @@
       integer             :: i,j,k
       real(kind=sp),dimension(:,:),allocatable :: tmp_regrid2d_sp
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------      MR_Read_3d_Met_Variable_to_CompGrid                   ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Read_3d_Met_Variable_to_CompGrid                   ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! Check prerequisites
       if(Check_prereq_conditions.eqv..true.) &
@@ -3501,6 +3553,119 @@
 
 !##############################################################################
 !
+!     MR_Read_3d_Met_Variable_to_CompP
+!
+!     This subroutine extracts the variable Met_var_NC_names(ivar) from the
+!     windfile/timestep given by MetStep_File(istep),MetStep_tindex(istep).
+!     The values extracted are just on the needed subgrid of the full met
+!     grid remapped on to the computational grid along pressure levels.
+!     This is done by calling:
+!       Read_3d_MetP_Variable                   (gets variable on Met_x,Met_y, Met_p)
+!        -> Read_3d_MetP_Variable               (gets variable on native Met subgrid)
+!            -> Read_3d_MetP_Variable_[format]  (direct read of variable in
+!                                                whatever format :
+!                                                nc,grib1/2,ascii)
+!
+!     Takes as input :: ivar  :: specifies which variable to read
+!                       istep :: specified the met step
+!     Sets  : MR_dum3d_compP
+!               MR_dum3d_metP is also filled in the course of
+!               generating MR_dum3d_compP
+!
+!##############################################################################
+
+      subroutine MR_Read_3d_Met_Variable_to_CompP(ivar,istep,IsNext)
+
+      implicit none
+
+      integer,intent(in)           :: ivar
+      integer,intent(in)           :: istep
+      logical, optional,intent(in) :: IsNext
+
+      integer             :: i,j,k
+      real(kind=sp),dimension(:,:),allocatable :: tmp_regrid2d_sp
+
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Read_3d_Met_Variable_to_CompP                      ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
+
+      ! Check prerequisites
+      if(Check_prereq_conditions.eqv..true.) &
+      call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Read_Met_DimVars            (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Set_CompProjection          (this check is needed)
+                                 .true.,  &  ! CALLED_MR_Initialize_Met_Grids        (this check is needed)
+                                 .true.)     ! CALLED_MR_Set_Met_Times(this check is needed)
+
+      if(.not.MR_useCompP)then
+        write(MR_global_error,*)"MR ERROR: Trying to run a CompP subroutine"
+        write(MR_global_error,*)"          with MR_useCompP = .false."
+        stop 0
+      endif
+
+        ! First get the variable on the pressure levels
+      call MR_Read_3d_MetP_Variable(ivar,istep)
+
+      if(MR_Save_Velocities)then
+        ! Note: this flag for saving the velocity values is useful in special
+        ! cased such where the velocities might be read and used for a local
+        ! calculation, but then can be used later.  Variable diffusivity uses
+        ! this.
+        if(present(IsNext)) then
+          ! MR_dum3d_metP still contains the variable just read
+          if(ivar.eq.2)then
+            if(IsNext)then
+              MR_vx_metP_last = MR_vx_metP_next
+              MR_vx_metP_next = MR_dum3d_metP
+            else
+              MR_vx_metP_last = MR_dum3d_metP
+            endif
+          elseif(ivar.eq.3)then
+            if(IsNext)then
+              MR_vy_metP_last = MR_vy_metP_next
+              MR_vy_metP_next = MR_dum3d_metP
+            else
+              MR_vy_metP_last = MR_dum3d_metP
+            endif
+          endif
+        endif
+      endif
+        ! Now we have MR_dum3d_metP; interpolate onto computational grid
+        !  Since MR_dum3d_metP and MR_dum3d_compP have the same
+        !  pressure level, we only
+        !  need to do 2d regridding on each p-slice
+      allocate(tmp_regrid2d_sp(nx_comp,ny_comp));tmp_regrid2d_sp(:,:)=0.0_sp
+
+      do k=1,np_fullmet
+        if(MR_iwindformat.eq.1.or.MR_iwindformat.eq.2)then
+          !NOTE: This will not work for multi-site sonde data
+          MR_dum3d_compP(:,:,k) = MR_dum3d_metP(1,1,k)
+          cycle
+        endif
+
+        call MR_Regrid_Met2Comp(nx_submet,ny_submet,MR_dum3d_metP(1:nx_submet,1:ny_submet,k),       &
+                                nx_comp,  ny_comp,tmp_regrid2d_sp(1:nx_comp,1:ny_comp))
+
+        do i = 1,nx_comp
+          do j = 1,ny_comp
+            if(isnan(tmp_regrid2d_sp(i,j)))tmp_regrid2d_sp(i,j)=0.0_sp
+          enddo
+        enddo
+        MR_dum3d_compP(:,:,k) = tmp_regrid2d_sp(:,:)
+      enddo
+
+      deallocate(tmp_regrid2d_sp)
+
+      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+      return
+
+      end subroutine MR_Read_3d_Met_Variable_to_CompP
+
+!##############################################################################
+!
 !     MR_Read_2d_Met_Variable
 !
 !     This subroutine extracts the variable Met_var_NC_names(ivar) from the
@@ -3522,9 +3687,11 @@
       integer,intent(in)        :: ivar
       integer,intent(in)        :: istep   
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------      MR_Read_2d_Met_Variable                               ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Read_2d_Met_Variable                               ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! Check prerequisites
       if(Check_prereq_conditions.eqv..true.) &
@@ -3588,9 +3755,11 @@
       integer             :: i,j
       real(kind=sp),dimension(:,:),allocatable :: tmp_regrid2d_sp
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------      MR_Read_2d_Met_Variable_to_CompGrid                   ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Read_2d_Met_Variable_to_CompGrid                   ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! Check prerequisites
       if(Check_prereq_conditions.eqv..true.) &
@@ -3649,9 +3818,11 @@
       real(kind=sp) :: vx_new,vy_new
       real(kind=sp) :: rotang
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------      MR_Rotate_UV_GR2ER_Met                                ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Rotate_UV_GR2ER_Met                                ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! Check prerequisites
       if(Check_prereq_conditions.eqv..true.) &
@@ -3698,14 +3869,35 @@
 
       if(present(SetComp)) then
         if(SetComp)then
-          MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_fullmet) = &
-            MR_v_ER_metP(1:nx_submet,1:ny_submet,1:np_fullmet)
-          call MR_Regrid_MetP_to_CompGrid(istep)
-          MR_dum3d_compH_2(1:nx_comp,1:ny_comp,1:nz_comp) = &
-            MR_dum3d_compH(1:nx_comp,1:ny_comp,1:nz_comp)
-          MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_fullmet) = &
-            MR_u_ER_metP(1:nx_submet,1:ny_submet,1:np_fullmet)
-          call MR_Regrid_MetP_to_CompGrid(istep)
+          if(MR_useCompH)then
+            ! copy v to main workspace and regrid
+            MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_fullmet) = &
+              MR_v_ER_metP(1:nx_submet,1:ny_submet,1:np_fullmet)
+            call MR_Regrid_MetP_to_CompGrid(istep)
+            MR_dum3d_compH_2(1:nx_comp,1:ny_comp,1:nz_comp) = &
+              MR_dum3d_compH(1:nx_comp,1:ny_comp,1:nz_comp)
+  
+            ! copy u to main workspace and regrid
+            MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_fullmet) = &
+              MR_u_ER_metP(1:nx_submet,1:ny_submet,1:np_fullmet)
+            call MR_Regrid_MetP_to_CompGrid(istep)
+            !MR_dum3d_compH is set by this regrid call
+          endif
+
+          if(MR_useCompP)then
+            ! copy v to main workspace and regrid
+            MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_fullmet) = &
+              MR_v_ER_metP(1:nx_submet,1:ny_submet,1:np_fullmet)
+            call MR_Regrid_MetP_to_CompGrid(istep)
+            MR_dum3d_compP_2(1:nx_comp,1:ny_comp,1:np_fullmet) = &
+              MR_dum3d_compP(1:nx_comp,1:ny_comp,1:np_fullmet)
+            ! copy u to main workspace and regrid
+            MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_fullmet) = &
+              MR_u_ER_metP(1:nx_submet,1:ny_submet,1:np_fullmet)
+            call MR_Regrid_MetP_to_CompGrid(istep)
+            !MR_dum3d_compP is set by this regrid call
+          endif
+
         endif
       endif
 
@@ -3746,9 +3938,11 @@
       real(kind=sp) :: vx_new,vy_new
       real(kind=sp) :: rotang1
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------      MR_Rotate_UV_ER2GR_Met                                ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Rotate_UV_ER2GR_Met                                ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! Check prerequisites
       if(Check_prereq_conditions.eqv..true.) &
@@ -3818,7 +4012,7 @@
 !     MR_dum3d_metH is then regridded onto MR_dum3d_compH
 !
 !     Takes as input :: istep :: specified the met step
-!     Sets  : MR_dum3d_compH
+!     Sets  : MR_dum3d_compH and MR_dum3d_compP
 !
 !##############################################################################
 
@@ -3831,10 +4025,11 @@
       integer             :: i,j,k
       real(kind=sp),dimension(:,:),allocatable :: tmp_regrid2d_sp
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------      MR_Regrid_MetP_to_CompGrid                            ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Regrid_MetP_to_CompGrid                            ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
       ! Check prerequisites
       if(Check_prereq_conditions.eqv..true.) &
       call MR_Check_Prerequsites(.true.,  &  ! CALLED_MR_Allocate_FullMetFileList    (this check is needed)
@@ -3843,34 +4038,58 @@
                                  .true.,  &  ! CALLED_MR_Initialize_Met_Grids        (this check is needed)
                                  .true.)     ! CALLED_MR_Set_Met_Times               (this check is needed)
 
-      ! convert MR_dum3d_MetP to MR_dum3d_metH
-      call MR_Regrid_MetP_to_MetH(istep)
+      if(MR_useCompH)then
+        ! convert MR_dum3d_MetP to MR_dum3d_metH
+        call MR_Regrid_MetP_to_MetH(istep)
+      endif
 
         ! Now we have MR_dum3d_metH; interpolate onto computational grid
         !  Since MR_dum3d_metH and MR_dum3d_compH have the same z-coordinate, we only
-        !  need to do 2d regridding on each k-slice
+        !  need to do 2d regridding on each k-slice or each p-slice
       allocate(tmp_regrid2d_sp(nx_comp,ny_comp));tmp_regrid2d_sp(:,:)=0.0_sp
 
-      do k=1,nz_comp
-        if(MR_iwindformat.eq.1.or.MR_iwindformat.eq.2)then
-          !NOTE: This will not work for multi-site sonde data
-          MR_dum3d_compH(:,:,k) = MR_dum3d_metH(1,1,k)
-          cycle
-        endif
-        call MR_Regrid_Met2Comp(nx_submet,ny_submet, MR_dum3d_metH(1:nx_submet,1:ny_submet,k),       &
-                                nx_comp,  ny_comp,   tmp_regrid2d_sp(1:nx_comp,1:ny_comp))
-
-        do i = 1,nx_comp
-          do j = 1,ny_comp
-            if(isnan(tmp_regrid2d_sp(i,j)))tmp_regrid2d_sp(i,j)=0.0_sp
+      if(MR_useCompH)then
+        ! Regridding to CompH
+        do k=1,nz_comp
+          if(MR_iwindformat.eq.1.or.MR_iwindformat.eq.2)then
+            !NOTE: This will not work for multi-site sonde data
+            MR_dum3d_compH(:,:,k) = MR_dum3d_metH(1,1,k)
+            cycle
+          endif
+          call MR_Regrid_Met2Comp(nx_submet,ny_submet, MR_dum3d_metH(1:nx_submet,1:ny_submet,k),       &
+                                  nx_comp,  ny_comp,   tmp_regrid2d_sp(1:nx_comp,1:ny_comp))
+  
+          do i = 1,nx_comp
+            do j = 1,ny_comp
+              if(isnan(tmp_regrid2d_sp(i,j)))tmp_regrid2d_sp(i,j)=0.0_sp
+            enddo
           enddo
+          MR_dum3d_compH(:,:,k) = tmp_regrid2d_sp(:,:)
         enddo
-        MR_dum3d_compH(:,:,k) = tmp_regrid2d_sp(:,:)
-      enddo
+      endif
+
+      if(MR_useCompP)then
+        ! Regridding to CompP
+        do k=1,np_fullmet
+          if(MR_iwindformat.eq.1.or.MR_iwindformat.eq.2)then
+            !NOTE: This will not work for multi-site sonde data
+            MR_dum3d_compP(:,:,k) = MR_dum3d_metP(1,1,k)
+            cycle
+          endif
+          call MR_Regrid_Met2Comp(nx_submet,ny_submet, MR_dum3d_metP(1:nx_submet,1:ny_submet,k),       &
+                                  nx_comp,  ny_comp, tmp_regrid2d_sp(1:nx_comp,1:ny_comp))
+          do i = 1,nx_comp
+            do j = 1,ny_comp
+              if(isnan(tmp_regrid2d_sp(i,j)))tmp_regrid2d_sp(i,j)=0.0_sp
+            enddo
+          enddo
+          MR_dum3d_compP(:,:,k) = tmp_regrid2d_sp(:,:)
+        enddo
+      endif
 
       deallocate(tmp_regrid2d_sp)
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       return
 
@@ -3902,9 +4121,11 @@
       integer :: i,j,k
       integer :: kc,knext
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------      MR_Regrid_MetP_to_MetH                                ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Regrid_MetP_to_MetH                                ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! Check prerequisites
       if(Check_prereq_conditions.eqv..true.) &
@@ -4003,9 +4224,11 @@
       integer             :: i,j
       real(kind=sp),dimension(:,:),allocatable :: tmp_regrid2d_sp
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------      MR_Regrid_Met2d_to_Comp2d                             ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Regrid_Met2d_to_Comp2d                             ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! Check prerequisites
       if(Check_prereq_conditions.eqv..true.) &

@@ -138,6 +138,7 @@ EXEC = \
  tools/MetTraj_F \
  tools/MetTraj_B \
  tools/MetCheck  \
+ tools/probe_Met \
  tools/makegfsncml \
  $(GRIBTOOL)
 
@@ -197,6 +198,9 @@ tools/MetTraj_B: tools/MetTraj.F90 makefile libMetReader.a
 tools/MetCheck: tools/MetCheck.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/MetCheck.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) MetCheck.o $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB) -o tools/MetCheck
+tools/probe_Met: tools/probe_Met.f90 makefile libMetReader.a
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/probe_Met.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) probe_Met.o $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB) -o tools/probe_Met
 tools/makegfsncml: tools/makegfsncml.f90 makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) -c tools/makegfsncml.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) makegfsncml.o  $(LIBS) $(nclib) -o tools/makegfsncml
