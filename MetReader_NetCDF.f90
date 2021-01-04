@@ -926,7 +926,9 @@
         yUR_fullmet = y_fullmet_sp(ny_fullmet)
       endif
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Read_Met_DimVars_netcdf
 
@@ -2014,7 +2016,9 @@
       endif
  800  format(i7,i7,3f12.2)
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Read_Met_Times_netcdf
 !##############################################################################
@@ -3147,7 +3151,9 @@
       MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_met_loc) =  &
       MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_met_loc) * Met_var_conversion_factor(ivar)
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Read_MetP_Variable_netcdf
 

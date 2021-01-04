@@ -2229,7 +2229,10 @@
           stop 1
         endif
       endif
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       CALLED_MR_Allocate_FullMetFileList = .true.
 
@@ -2386,7 +2389,9 @@
 
       CALLED_MR_Read_Met_DimVars = .true.
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Read_Met_DimVars
 
@@ -2472,7 +2477,9 @@
 
       CALLED_MR_Set_CompProjection = .true.
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       return
 
@@ -2641,7 +2648,9 @@
 
       CALLED_MR_Initialize_Met_Grids = .true.
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Initialize_Met_Grids
 
@@ -2680,7 +2689,10 @@
       else
         MR_jacob(1:nx,1:ny) = 1.0_sp
       endif
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Set_SigmaAlt_Scaling
 
@@ -3117,7 +3129,9 @@
 
       CALLED_MR_Set_Met_Times = .true.
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Set_Met_Times
 
@@ -3227,7 +3241,9 @@
         endif
       endif
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Read_HGT_arrays
 
@@ -3287,7 +3303,9 @@
 
       end select
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Read_3d_MetP_Variable
 
@@ -3426,7 +3444,9 @@
         enddo ! j
       enddo  ! i
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       return
 
@@ -3545,7 +3565,9 @@
 
       deallocate(tmp_regrid2d_sp)
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       return
 
@@ -3658,7 +3680,9 @@
 
       deallocate(tmp_regrid2d_sp)
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       return
 
@@ -3720,7 +3744,9 @@
 
       end select
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Read_2d_Met_Variable
 
@@ -3785,7 +3811,9 @@
 
       deallocate(tmp_regrid2d_sp)
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       return
 
@@ -3901,7 +3929,9 @@
         endif
       endif
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Rotate_UV_GR2ER_Met
 
@@ -3999,7 +4029,9 @@
         enddo
       enddo
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Rotate_UV_ER2GR_Comp
 
@@ -4089,7 +4121,9 @@
 
       deallocate(tmp_regrid2d_sp)
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       return
 
@@ -4198,7 +4232,9 @@
         enddo ! j
       enddo  ! i
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       return
 
@@ -4255,7 +4291,9 @@
 
       deallocate(tmp_regrid2d_sp)
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       return
 
