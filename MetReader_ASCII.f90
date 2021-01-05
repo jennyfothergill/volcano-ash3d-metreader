@@ -655,6 +655,7 @@
         !p_fullmet_Vz_sp = p_fullmet_sp
         !p_fullmet_RH_sp = p_fullmet_sp
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
+        allocate(z_approx(np_fullmet))
         do k=1,np_fullmet
           ! Calculate heights for US Std Atmos while pressures are still in mbars
           ! or hPa
@@ -1200,7 +1201,6 @@
           ! or hPa
           z_approx(k) = MR_Z_US_StdAtm(p_fullmet_sp(k))
         enddo
-
       else
         ! Neither MR_iwind.eq.1.and.MR_iwindformat.eq.1 nor 
         !         MR_iwind.eq.1.and.MR_iwindformat.eq.2
