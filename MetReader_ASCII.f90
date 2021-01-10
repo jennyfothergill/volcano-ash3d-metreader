@@ -427,6 +427,8 @@
             endif
             if(Snd_Have_Coord)then
               if(Met_iprojflag.eq.1)then
+                ! We are using a Lon/Lat grid.  No need to read anything
+                ! else on this line.
                 IsLatLon_MetGrid  = .true.
                 IsGlobal_MetGrid  = .false.
                 IsRegular_MetGrid = .false.
@@ -439,26 +441,40 @@
                 Met_k0            =  0.933_8
                 Met_Re            =  6371.229_8
               else
-                ! Try to read the projection line
-                indx1 = index(linebuffer,' 0 ')
-                indx2 = index(linebuffer,'#')
-                if(indx2.gt.0)then
-                  call PJ_Set_Proj_Params(linebuffer(indx1:indx2-1))
+                ! Grid in not Lon/Lat
+                ! First try to read the projection code
+                read(linebuffer,*,iostat=ioerr) rvalue1,ivalue1, &
+                                                ivalue2, ivalue3
+                if(ioerr.eq.0)then
+                  Met_iprojflag = ivalue3
+                  if(Met_iprojflag.ne.0)then
+                    ! we have a geographic projection
+                    ! Try to read the full projection line
+                    indx1 = index(linebuffer,' 0 ')
+                    indx2 = index(linebuffer,'#')
+                    if(indx2.gt.0)then
+                      call PJ_Set_Proj_Params(linebuffer(indx1:indx2-1))
+                    else
+                      call PJ_Set_Proj_Params(linebuffer(indx1:))
+                    endif
+                    IsLatLon_MetGrid  = .false.
+                    IsGlobal_MetGrid  = .false.
+                    IsRegular_MetGrid = .false.
+                    Met_iprojflag = PJ_iprojflag
+                    Met_k0        = PJ_k0
+                    Met_Re        = PJ_radius_earth
+                    Met_lam0      = PJ_lam0
+                    Met_lam1      = PJ_lam1
+                    Met_lam2      = PJ_lam2
+                    Met_phi0      = PJ_phi0
+                    Met_phi1      = PJ_phi1
+                    Met_phi2      = PJ_phi2
+                  endif
                 else
-                  call PJ_Set_Proj_Params(linebuffer(indx1:))
+                  ! If we have a cartesian grid, but no projection code,
+                  ! assume no geographic projection
+                  Met_iprojflag=0
                 endif
-                IsLatLon_MetGrid  = .false.
-                IsGlobal_MetGrid  = .false.
-                IsRegular_MetGrid = .false.
-                Met_iprojflag = PJ_iprojflag
-                Met_k0        = PJ_k0
-                Met_Re        = PJ_radius_earth
-                Met_lam0      = PJ_lam0
-                Met_lam1      = PJ_lam1
-                Met_lam2      = PJ_lam2
-                Met_phi0      = PJ_phi0
-                Met_phi1      = PJ_phi1
-                Met_phi2      = PJ_phi2
               endif
             endif
             ! Finished projection parameters,

@@ -1463,7 +1463,10 @@
           Map_Case = 5
         else
           ! Projections are the same type, test individual parameters
-          if(Comp_iprojflag.eq.1)then
+          if(Comp_iprojflag.eq.0)then
+            ! Both Comp and Met are non-geographic, cartesian grids
+            Map_Case = 2
+          elseif(Comp_iprojflag.eq.1)then
             ! Polar stereographic
             dum1 = abs(Comp_lam0 - Met_lam0)
             dum2 = abs(Comp_phi0 - Met_phi0)
