@@ -149,7 +149,7 @@
         read(arg,*)infile
         inquire( file=infile, exist=IsThere )
         if(.not.IsThere)then
-          write(6,*)"ERROR: Cannot file input file"
+          write(6,*)"ERROR: Cannot find input file"
           stop 1
         endif
         write(*,*)"infile = ",infile
