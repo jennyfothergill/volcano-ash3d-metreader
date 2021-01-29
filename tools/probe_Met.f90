@@ -32,9 +32,9 @@
 !     same, but adding u,v,t
 !      probe_Met 2020061000_5.f006.nc 1 0 190.055 52.8222 T 4 1 2 3 5 4 20 2
 !    To probe a NAM 91 grid over AK in nc format with a LL coordinate, use:
-!      probe_Met nam.tm06.grib2 1 1 190.055 52.8222 F 4 1 2 3 5 4 20 3
+!      probe_Met nam.tm06.grib2 1 1 190.055 52.8222 F 4 1 2 3 5 4 13 3
 !     with a projected coordinate:
-!      probe_Met nam.tm06.grib2 1 0 -1363.94 -3758.61 F 4 1 2 3 5 4 20 3
+!      probe_Met nam.tm06.grib2 1 0 -1363.94 -3758.61 F 4 1 2 3 5 4 13 3
 !    To  probe the NCEP 2.5-degree data (or other iw=5), we need the
 !    full date
 !      probe_Met 2020061000_5.f006.nc 1 1 190.055 52.8222 T 1 1 4 20 2 2018 1 1 0.0
@@ -417,7 +417,7 @@
 
       enddo
 
-      open(unit=20,file='GFS_prof.dat')
+      open(unit=20,file='NWP_prof.dat')
       do i = 1,np_fullmet
         write(20,*)p_fullmet_sp(i),outvars(:,i)
       enddo

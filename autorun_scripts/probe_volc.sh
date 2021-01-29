@@ -30,28 +30,36 @@ INSTALLDIR="/opt/USGS"
 if [ $# -eq 0 ]
   then
   echo "No arguments supplied"
-  echo "Usage: autorun_gfs.sh Resolution FCpackage"
-  echo "       where Resolution = 1p00, 0p50, or 0p25"
+  echo "Usage: probe_volc.sh product FCpackage"
+  echo "       where Resolution = gfs1p00, gfs0p50, gfs0p25, or nam091"
   echo "             FCpackage  = 0, 6, 12, 18 or 24"
   exit
 fi
 
-GFS=$1
+PROD=$1
 FC=$2
 
-case ${GFS} in
- 0p25)
+case ${PROD} in
+ gfs0p25)
   echo "GFS 0.25 degree"
   ;;
- 0p50)
+ gfs0p50)
   echo "GFS 0.50 degree"
+  HourMax=198
+  HourStep=3
   ;;
- 1p00)
+ gfs1p00)
   echo "GFS 1.00 degree"
   ;;
+ nam091)
+  echo "NAM 2.95 km"
+  HourMax=34
+  #HourMax=1
+  HourStep=1
+  ;;
  *)
-  echo "GFS product not recognized"
-  echo "Valid values: 0p25, 0p50, 1p00"
+  echo "Product not recognized"
+  echo "Valid values: gfs0p25, gfs0p50, gfs1p00, nam092"
   exit
 esac
 
@@ -77,20 +85,17 @@ case ${FC} in
   FChourR="24.0"
   ;;
  *)
-  echo "GFS forecast package not recognized"
+  echo "Forecast package not recognized"
   echo "Valid values: 0, 6, 12, 18, 24"
   exit
 esac
 
-HourMax=198
-HourStep=3
-
 yearmonthday=`date -u +%Y%m%d`
 # Here you can over-ride the date if need be
-yearmonthday="20200610"
+#yearmonthday="20200626"
 
 echo "------------------------------------------------------------"
-echo "running probe_volc ${GFS} ${yearmonthday} ${FChour} script"
+echo "running probe_volc ${PROD} ${yearmonthday} ${FChour} script"
 echo "------------------------------------------------------------"
 
 SCRIPTDIR="${INSTALLDIR}/bin/autorun_scripts"
@@ -100,8 +105,13 @@ volc=`cat ${SONDEDIR}/volc.dat | cut -d' ' -f1`
 lon=`cat  ${SONDEDIR}/volc.dat | cut -d' ' -f2`
 lat=`cat  ${SONDEDIR}/volc.dat | cut -d' ' -f3`
 echo "$volc $lon $lat"
-mkdir -p ${SONDEDIR}/${volc}/${yearmonthday}
-cd ${SONDEDIR}/${volc}/${yearmonthday}
+#mkdir -p ${SONDEDIR}/${volc}/${yearmonthday}
+#cd ${SONDEDIR}/${volc}/${yearmonthday}
+mkdir -p ${SONDEDIR}/${volc}/temp
+cd ${SONDEDIR}/${volc}/temp
+
+rm -f probe.log
+touch probe.log
 t=0
 while [ "$t" -le ${HourMax} ]
 do
@@ -113,11 +123,40 @@ do
       hour="$t"
   fi
 
-  ln -s /data/WindFiles/gfs/gfs.${yearmonthday}${FChour}/${yearmonthday}${FChour}.f${hour}.nc .
-  echo "${INSTALLDIR}/bin/probe_Met ${yearmonthday}${FChour}.f${hour}.nc 1 0 $lon $lat T 4 1 2 3 5 4 20 2"
-  ${INSTALLDIR}/bin/probe_Met ${yearmonthday}${FChour}.f${hour}.nc 1 0 $lon $lat T 4 1 2 3 5 4 20 2
-  mv GFS_prof.dat ${volc}_${yearmonthday}_${hour}.dat
-  rm ${yearmonthday}${FChour}.f${hour}.nc
+  case ${PROD} in
+   gfs0p50)
+    ARGS="1 0 $lon $lat T 4 1 2 3 5 4 20 2"
+    WINDPATH=/data/WindFiles/gfs/gfs.${yearmonthday}${FChour}
+    WINDFILE=${yearmonthday}${FChour}.f${hour}.nc
+    CLOUD="ncks -C -d lon,${lon} -d lat,${lat} -H -Q -s '%f ' -v Total_cloud_cover_isobaric ${WINDFILE} > Cloud.dat"
+    ;;
+   nam091)
+    hour=`echo "${hour}" | cut -c2-3`
+    ARGS="1 1 $lon $lat F 4 1 2 3 5 4 13 3"
+    WINDPATH=/data/WindFiles/nam/091/${yearmonthday}_${FChour}
+    WINDFILE=nam.t00z.alaskanest.hiresf${hour}.tm00.loc.grib2
+    CLOUD="touch Cloud.dat"
+    ;;
+   *)
+    echo "Product not recognized"
+    echo "Valid values: gfs0p25, gfs0p50, gfs1p00, nam092"
+    exit
+  esac
+
+
+  ln -s ${WINDPATH}/${WINDFILE} .
+  echo "${INSTALLDIR}/bin/probe_Met ${WINDFILE} ${ARGS}"
+  ${INSTALLDIR}/bin/probe_Met ${WINDFILE} ${ARGS}
+  HourOffset=`echo "${FChour} + ${t}"  | bc`
+  NewYYYYMMDD=`date -d"${yearmonthday} +${HourOffset} hour" -u +%Y%m%d`
+  Newhour=`date -d"${yearmonthday} +${HourOffset} hour" -u +%H`
+  mkdir -p ${SONDEDIR}/${volc}/${NewYYYYMMDD}
+  mv NWP_prof.dat ${SONDEDIR}/${volc}/${NewYYYYMMDD}/${volc}_${PROD}_phuvt_${NewYYYYMMDD}_${Newhour}.dat
+  #ncks -C -d lon,${lon} -d lat,${lat} -H -Q -s '%f ' -v Total_cloud_cover_isobaric ${WINDFILE} > Cloud.dat
+  ${CLOUD}
+  mv Cloud.dat ${SONDEDIR}/${volc}/${NewYYYYMMDD}/${volc}_${PROD}_cloud_${NewYYYYMMDD}_${Newhour}.dat
+  rm ${WINDFILE}
+  #echo "$t : Mapping ${WINDFILE} to ${volc}_gfs_phuvt_${NewYYYYMMDD}_${Newhour}.dat" >> probe.log
   t=$((t+${HourStep}))
 done
 

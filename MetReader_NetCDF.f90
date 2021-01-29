@@ -1470,18 +1470,23 @@
       integer :: nSTAT
       integer :: ncid
       integer :: time_var_id = 0
+      integer :: gph_var_id  = 0
       integer :: reftime_var_id
       integer :: t_dim_id
       integer :: x_dim_id,y_dim_id,x_var_id,y_var_id
       integer :: reftimedimID
       integer :: var_ndims
       integer,dimension(:),allocatable :: var_dimIDs
+      integer :: gph_ndims
+      integer,dimension(NF90_MAX_VAR_DIMS) :: gph_DimIDs
+
       integer :: reftimedimlen
       real(kind=sp),dimension(:),allocatable :: filetime_in_sp
       character(len=19) :: Timestr_WRF
 
       integer            :: var_xtype
-      character(len=NF90_MAX_NAME)  :: invar
+      character(len=NF90_MAX_NAME) :: invar
+      character(len=NF90_MAX_NAME) :: indim
       integer            :: xtype, length, attnum
       character(len=31)  :: tstring2
       !real(kind=8)       :: HS_hours_since_baseyear !,HS_HourOfDay
@@ -1804,7 +1809,51 @@
               write(MR_global_error,*)'Exiting'
               stop 1
             endif
+
+
+
+
             ! Find the id of the time dimension
+            !   First, search for the GPH variable and check its
+            !   dimensions
+            nSTAT = nf90_inq_varid(ncid,Met_var_NC_names(1),gph_var_id)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_varid GPH: ',nf90_strerror(nSTAT)
+              write(MR_global_error,*)"    Could not find variable: ",Met_var_NC_names(1)
+              write(MR_global_log  ,*)'MR ERROR: inq_varid GPH: ',nf90_strerror(nSTAT)
+              stop 1
+            endif
+            nSTAT = nf90_inquire_variable(ncid, gph_var_id, ndims = gph_ndims)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_var GPH: ',nf90_strerror(nSTAT)
+              write(MR_global_error,*)"    Could not inquire variable: ",Met_var_NC_names(1)
+              write(MR_global_log  ,*)'MR ERROR: inq_var GPH: ',nf90_strerror(nSTAT)
+              stop 1
+            endif
+            nSTAT = nf90_inquire_variable(ncid, gph_var_id, dimids = gph_DimIDs(:gph_ndims))
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_var GPH: ',nf90_strerror(nSTAT)
+              write(MR_global_error,*)"    Could not inquire variable: ",Met_var_NC_names(1)
+              write(MR_global_log  ,*)'MR ERROR: inq_var GPH: ',nf90_strerror(nSTAT)
+              stop 1
+            endif
+            if(gph_ndims.lt.4)then
+              write(MR_global_error,*)'MR ERROR:'
+              write(MR_global_error,*)&
+                'GPH variable does not have 4 dimensions.'
+              write(MR_global_error,*)&
+                'Expecting time, level, y, x'
+              stop 1
+            endif
+            nSTAT = nf90_inquire_dimension(ncid,gph_DimIDs(1),indim)
+            Met_dim_names(4)= trim(adjustl(indim))
+            nSTAT = nf90_inquire_dimension(ncid,gph_DimIDs(2),indim)
+            Met_dim_names(3)= trim(adjustl(indim))
+            nSTAT = nf90_inquire_dimension(ncid,gph_DimIDs(3),indim)
+            Met_dim_names(2)= trim(adjustl(indim))
+            nSTAT = nf90_inquire_dimension(ncid,gph_DimIDs(4),indim)
+            Met_dim_names(1)= trim(adjustl(indim))
+
             nSTAT = nf90_inq_dimid(ncid,trim(ADJUSTL(Met_dim_names(1))),t_dim_id)
             if(nSTAT.ne.NF90_NOERR)then
               write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
