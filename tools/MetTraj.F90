@@ -71,8 +71,7 @@
 !     TEST READ COMMAND LINE ARGUMENTS
       nargs = command_argument_count()
       if (nargs.lt.6) then
-        write(MR_global_info,*)&
-          "Enter lon,lat,YYYY MM DD HH (FC_hours nlev lev1 lev2 ...)"
+        write(MR_global_info,*)"Enter lon,lat,YYYY MM DD HH (FC_hours nlev lev1 lev2 ...)"
         stop 1
       else
         call get_command_argument(1, arg, status)
@@ -107,14 +106,12 @@
               write(MR_global_info,*)"ntraj must be positive."
               stop 1
             elseif(ntraj.gt.9)then
-              write(MR_global_info,*)&
-                "ERROR: ntraj is currently limited to 9"
+              write(MR_global_info,*)"ERROR: ntraj is currently limited to 9"
               stop 1
             endif
             allocate(OutputLevels(ntraj))
             if(nargs-8.lt.ntraj)then
-              write(MR_global_info,*)&
-                "ERROR:  There are not enough arguments for ",&
+              write(MR_global_info,*)"ERROR:  There are not enough arguments for ",&
                         ntraj," levels"
             elseif(nargs-8.gt.ntraj)then
               write(MR_global_info,*)"WARNING:  There are more trajectory levels given than needed"
@@ -148,8 +145,7 @@
         write(MR_global_info,*)"Calculating ",ntraj," trajectories:"
         do i=1,ntraj
           tmp_4 = real(OutputLevels(i),kind=4)
-          write(MR_global_info,*)i," at ",tmp_4,&
-                "km (",tmp_4*3280.8_4," ft)."
+          write(MR_global_info,*)i," at ",tmp_4,"km (",tmp_4*3280.8_4," ft)."
         enddo
 
       endif
@@ -207,6 +203,9 @@
       do i=1,nxmax
         lon_grid(i) = real(inlon - 0.5*(nxmax-1) * dx + (i-1) * dx,kind=4)
       enddo
+      if(lon_grid(1).lt.0.0)then
+        lon_grid(:) = lon_grid(:) + 360.0
+      endif 
       ! We can specify the longitude grid with no problems, but the latitude
       ! grid might be padded up across the pole.  We need to set the cap at
       ! an extreme point (89 degrees N or S)

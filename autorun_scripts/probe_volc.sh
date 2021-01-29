@@ -92,7 +92,7 @@ esac
 
 yearmonthday=`date -u +%Y%m%d`
 # Here you can over-ride the date if need be
-#yearmonthday="20200626"
+#yearmonthday="20210128"
 
 echo "------------------------------------------------------------"
 echo "running probe_volc ${PROD} ${yearmonthday} ${FChour} script"
@@ -101,6 +101,7 @@ echo "------------------------------------------------------------"
 SCRIPTDIR="${INSTALLDIR}/bin/autorun_scripts"
 
 SONDEDIR="/data/WindFiles/sonde"
+SONDEDIR="/data/www/vsc-ash.wr.usgs.gov/sonde"
 volc=`cat ${SONDEDIR}/volc.dat | cut -d' ' -f1`
 lon=`cat  ${SONDEDIR}/volc.dat | cut -d' ' -f2`
 lat=`cat  ${SONDEDIR}/volc.dat | cut -d' ' -f3`
@@ -152,8 +153,8 @@ do
   Newhour=`date -d"${yearmonthday} +${HourOffset} hour" -u +%H`
   mkdir -p ${SONDEDIR}/${volc}/${NewYYYYMMDD}
   mv NWP_prof.dat ${SONDEDIR}/${volc}/${NewYYYYMMDD}/${volc}_${PROD}_phuvt_${NewYYYYMMDD}_${Newhour}.dat
-  #ncks -C -d lon,${lon} -d lat,${lat} -H -Q -s '%f ' -v Total_cloud_cover_isobaric ${WINDFILE} > Cloud.dat
-  ${CLOUD}
+  ncks -C -d lon,${lon} -d lat,${lat} -H -Q -s '%f ' -v Total_cloud_cover_isobaric ${WINDFILE} > Cloud.dat
+  #${CLOUD}
   mv Cloud.dat ${SONDEDIR}/${volc}/${NewYYYYMMDD}/${volc}_${PROD}_cloud_${NewYYYYMMDD}_${Newhour}.dat
   rm ${WINDFILE}
   #echo "$t : Mapping ${WINDFILE} to ${volc}_gfs_phuvt_${NewYYYYMMDD}_${Newhour}.dat" >> probe.log
