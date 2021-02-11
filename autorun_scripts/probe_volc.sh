@@ -102,64 +102,79 @@ SCRIPTDIR="${INSTALLDIR}/bin/autorun_scripts"
 
 SONDEDIR="/data/WindFiles/sonde"
 SONDEDIR="/data/www/vsc-ash.wr.usgs.gov/sonde"
-volc=`cat ${SONDEDIR}/volc.dat | cut -d' ' -f1`
-lon=`cat  ${SONDEDIR}/volc.dat | cut -d' ' -f2`
-lat=`cat  ${SONDEDIR}/volc.dat | cut -d' ' -f3`
-echo "$volc $lon $lat"
-#mkdir -p ${SONDEDIR}/${volc}/${yearmonthday}
-#cd ${SONDEDIR}/${volc}/${yearmonthday}
-mkdir -p ${SONDEDIR}/${volc}/temp
-cd ${SONDEDIR}/${volc}/temp
+vfile=${SONDEDIR}/volcs.dat
+nvolc=`wc -l ${vfile} | cut -d' ' -f1`
+echo $nvolc
 
-rm -f probe.log
-touch probe.log
-t=0
-while [ "$t" -le ${HourMax} ]
+for (( iv=1;iv<=${nvolc};iv++ ))
 do
-  if [ "$t" -le 9 ]; then
-      hour="00$t"
-   elif [ "$t" -le 99 ]; then
-      hour="0$t"
-   else
-      hour="$t"
-  fi
+  volc=`head -n ${iv} ${vfile} | tail -1 | cut -f1 -d':'`
+  lon=`head -n ${iv} ${vfile} | tail -1 | cut -f2 -d':'`
+  lat=`head -n ${iv} ${vfile} | tail -1 | cut -f3 -d':'`
 
-  case ${PROD} in
-   gfs0p50)
-    ARGS="1 0 $lon $lat T 4 1 2 3 5 4 20 2"
-    WINDPATH=/data/WindFiles/gfs/gfs.${yearmonthday}${FChour}
-    WINDFILE=${yearmonthday}${FChour}.f${hour}.nc
-    CLOUD="ncks -C -d lon,${lon} -d lat,${lat} -H -Q -s '%f ' -v Total_cloud_cover_isobaric ${WINDFILE} > Cloud.dat"
-    ;;
-   nam091)
-    hour=`echo "${hour}" | cut -c2-3`
-    ARGS="1 1 $lon $lat F 4 1 2 3 5 4 13 3"
-    WINDPATH=/data/WindFiles/nam/091/${yearmonthday}_${FChour}
-    WINDFILE=nam.t00z.alaskanest.hiresf${hour}.tm00.loc.grib2
-    CLOUD="touch Cloud.dat"
-    ;;
-   *)
-    echo "Product not recognized"
-    echo "Valid values: gfs0p25, gfs0p50, gfs1p00, nam092"
-    exit
-  esac
-
-
-  ln -s ${WINDPATH}/${WINDFILE} .
-  echo "${INSTALLDIR}/bin/probe_Met ${WINDFILE} ${ARGS}"
-  ${INSTALLDIR}/bin/probe_Met ${WINDFILE} ${ARGS}
-  HourOffset=`echo "${FChour} + ${t}"  | bc`
-  NewYYYYMMDD=`date -d"${yearmonthday} +${HourOffset} hour" -u +%Y%m%d`
-  Newhour=`date -d"${yearmonthday} +${HourOffset} hour" -u +%H`
-  mkdir -p ${SONDEDIR}/${volc}/${NewYYYYMMDD}
-  mv NWP_prof.dat ${SONDEDIR}/${volc}/${NewYYYYMMDD}/${volc}_${PROD}_phuvt_${NewYYYYMMDD}_${Newhour}.dat
-  ncks -C -d lon,${lon} -d lat,${lat} -H -Q -s '%f ' -v Total_cloud_cover_isobaric ${WINDFILE} > Cloud.dat
-  #${CLOUD}
-  mv Cloud.dat ${SONDEDIR}/${volc}/${NewYYYYMMDD}/${volc}_${PROD}_cloud_${NewYYYYMMDD}_${Newhour}.dat
-  rm ${WINDFILE}
-  #echo "$t : Mapping ${WINDFILE} to ${volc}_gfs_phuvt_${NewYYYYMMDD}_${Newhour}.dat" >> probe.log
-  t=$((t+${HourStep}))
+  #volc=`cat ${SONDEDIR}/volc.dat | cut -d' ' -f1`
+  #lon=`cat  ${SONDEDIR}/volc.dat | cut -d' ' -f2`
+  #lat=`cat  ${SONDEDIR}/volc.dat | cut -d' ' -f3`
+  echo "$volc $lon $lat"
+  #mkdir -p ${SONDEDIR}/${volc}/${yearmonthday}
+  #cd ${SONDEDIR}/${volc}/${yearmonthday}
+  mkdir -p ${SONDEDIR}/${volc}/temp
+  cd ${SONDEDIR}/${volc}/temp
+  
+  rm -f probe.log
+  touch probe.log
+  t=0
+  while [ "$t" -le ${HourMax} ]
+  do
+    if [ "$t" -le 9 ]; then
+        hour="00$t"
+     elif [ "$t" -le 99 ]; then
+        hour="0$t"
+     else
+        hour="$t"
+    fi
+  
+    case ${PROD} in
+     gfs0p50)
+      ARGS="1 0 $lon $lat T 4 1 2 3 5 4 20 2"
+      WINDPATH=/data/WindFiles/gfs/gfs.${yearmonthday}${FChour}
+      WINDFILE=${yearmonthday}${FChour}.f${hour}.nc
+      CLOUD="ncks -C -d lon,${lon} -d lat,${lat} -H -Q -s '%f ' -v Total_cloud_cover_isobaric ${WINDFILE} > Cloud.dat"
+      ;;
+     nam091)
+      hour=`echo "${hour}" | cut -c2-3`
+      ARGS="1 1 $lon $lat F 4 1 2 3 5 4 13 3"
+      WINDPATH=/data/WindFiles/nam/091/${yearmonthday}_${FChour}
+      WINDFILE=nam.t00z.alaskanest.hiresf${hour}.tm00.loc.grib2
+      CLOUD="touch Cloud.dat"
+      ;;
+     *)
+      echo "Product not recognized"
+      echo "Valid values: gfs0p25, gfs0p50, gfs1p00, nam092"
+      exit
+    esac
+  
+  
+    ln -s ${WINDPATH}/${WINDFILE} .
+    echo "${INSTALLDIR}/bin/probe_Met ${WINDFILE} ${ARGS}"
+    ${INSTALLDIR}/bin/probe_Met ${WINDFILE} ${ARGS}
+    HourOffset=`echo "${FChour} + ${t}"  | bc`
+    NewYYYYMMDD=`date -d"${yearmonthday} +${HourOffset} hour" -u +%Y%m%d`
+    Newhour=`date -d"${yearmonthday} +${HourOffset} hour" -u +%H`
+    mkdir -p ${SONDEDIR}/${volc}/${NewYYYYMMDD}
+    mv NWP_prof.dat ${SONDEDIR}/${volc}/${NewYYYYMMDD}/${volc}_${PROD}_phuvt_${NewYYYYMMDD}_${Newhour}.dat
+    ncks -C -d lon,${lon} -d lat,${lat} -H -Q -s '%f ' -v Total_cloud_cover_isobaric ${WINDFILE} > Cloud.dat
+    #${CLOUD}
+    mv Cloud.dat ${SONDEDIR}/${volc}/${NewYYYYMMDD}/${volc}_${PROD}_cloud_${NewYYYYMMDD}_${Newhour}.dat
+    rm ${WINDFILE}
+    #echo "$t : Mapping ${WINDFILE} to ${volc}_gfs_phuvt_${NewYYYYMMDD}_${Newhour}.dat" >> probe.log
+    t=$((t+${HourStep}))
+  done
+  
+  cd ${SONDEDIR}/
 done
+
+ls -l */* > tree.txt
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "finished probe_volc script"
