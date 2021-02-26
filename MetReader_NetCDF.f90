@@ -1500,7 +1500,7 @@
       integer,dimension(8)  :: values
       integer               :: Current_Year,nt_tst
       character(len=130)    :: Z_infile
-      character(len=1)      :: answer          !for debugging
+      !character(len=1)      :: answer          !for debugging
       !integer               :: HS_YearOfEvent
       !integer               :: HS_MonthOfEvent
       !integer               :: HS_DayOfEvent
@@ -2478,6 +2478,7 @@
       integer :: np_met_loc
       character(len=130) :: infile
       character(len=71)  :: invar
+      character(len=40)  :: fileposstr
 
       integer :: ncid       = 0
       integer :: nSTAT      = 0
@@ -2596,8 +2597,11 @@
 
       invar = Met_var_NC_names(ivar)
 
+      write(fileposstr,'(a9,i4,a9,i4,a10,i4)')"  step = ",istep,&
+                         ", file = ",iw,&
+                         ", slice = ",iwstep
       write(MR_global_info,*)"Reading ",trim(adjustl(invar))," from file : ",&
-                trim(adjustl(infile)),"   step, file, slice = ",istep,iw,iwstep
+                trim(adjustl(infile)),fileposstr
       nSTAT = nf90_open(trim(adjustl(infile)),NF90_NOWRITE,ncid)
 
       if(nSTAT.ne.NF90_NOERR)then

@@ -79,7 +79,7 @@
       integer             :: inyear,inmonth,inday
       real(kind=8)        :: inhour
 
-      character(len=100)  :: WINDROOT = '/data/WindFiles'
+      !character(len=100)  :: WINDROOT = '/data/WindFiles'
       integer             :: nxmax,nymax,nzmax !,nsize
       real(kind=4),dimension(:)    ,allocatable :: lon_grid
       real(kind=4),dimension(:)    ,allocatable :: lat_grid

@@ -920,6 +920,7 @@
 
       logical :: Use_GRIB_Index = .false.
       integer :: fn_idx
+      character(len=40)  :: fileposstr
 
       if(.not.Met_var_IsAvailable(ivar))then
         write(MR_global_error,*)&
@@ -1201,10 +1202,12 @@
       !  Grib2 without index file
       if(MR_GRIB_Version.eq.1)then
         if(Use_GRIB_Index)then
+          write(fileposstr,'(a9,i4,a9,i4,a10,i4)')"  step = ",istep,&
+                         ", file = ",iw,&
+                         ", slice = ",iwstep
           write(MR_global_info,*)"Reading ",trim(adjustl(invar)),&
                 " from file : ",&
-                trim(adjustl(index_file)),&
-                "   step, file, slice = ",istep,iw,iwstep
+                trim(adjustl(index_file)),fileposstr
 
           call codes_index_read(idx,index_file)
           call codes_grib_multi_support_on()
