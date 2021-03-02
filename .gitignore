@@ -1,2 +1,1 @@
-src/*.o
-src/*.mod
+*.o
