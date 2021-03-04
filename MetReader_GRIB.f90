@@ -25,15 +25,17 @@
       subroutine MR_Read_Met_DimVars_GRIB
 
       use MetReader
-      use grib_api
+      use eccodes
       use projection
 
       implicit none
 
-      integer, parameter :: sp        = 4 ! single precision
-      integer, parameter :: dp        = 8 ! double precision
+      integer, parameter :: sp         = 4 ! single precision
+      integer, parameter :: dp         = 8 ! double precision
+      integer, parameter :: MAXGRIBREC = 10000
 
       integer :: i, j, k
+      integer :: ir
       real(kind=sp) :: xLL_fullmet
       real(kind=sp) :: yLL_fullmet
       real(kind=sp) :: xUR_fullmet
@@ -43,6 +45,7 @@
       integer            :: iret
       integer            :: igrib
       integer            :: iw
+      integer,dimension(MAXGRIBREC) :: igribv
 
       integer          :: ivar,iivar
       integer          :: idx
@@ -63,12 +66,15 @@
       character(len=20) :: dum_str
       real(kind=dp) :: x_start,y_start
       real(kind=dp) :: Lon_start,Lat_start
-      real(kind=dp),dimension(:),allocatable     :: lats,lons,values
+      !real(kind=dp),dimension(:),allocatable     :: lats,lons,values
+      real(kind=dp),dimension(:),allocatable     :: values
       real(kind=dp), parameter :: tol = 1.0e-3_dp
 
       integer(kind=4)  :: typeOfFirstFixedSurface
       integer            :: count1=0
         ! Stores values of keys read from grib file
+      character(len=6) :: grb_shortName
+      character(len=36):: grb_longName
       character(len=4) :: grb_typeSfc
       integer(kind=4)  :: grb_discipline
       integer(kind=4)  :: grb_parameterCategory
@@ -85,28 +91,43 @@
       logical :: ReadGrid
       integer(kind=4) :: kk,tmp1
       integer :: stat
+      logical :: IsNewLevel
+      integer :: iz
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                MR_Read_Met_DimVars_GRIB                    ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)&
+         "----------------------------------------",&
+         "----------------------------------------"
+        write(MR_global_production,*)&
+         "----------                ",&
+         "MR_Read_Met_DimVars_GRIB                    ----------"
+        write(MR_global_production,*)&
+         "----------------------------------------",&
+         "----------------------------------------"
+      endif
 
         !---------------------------------------------------------------------------------
         ! Checking for dimension length and values for x,y,t,p
         !   Assume all files have the same format
 
       if(MR_iwind.eq.5)then
-        write(MR_global_error,*)"MR ERROR : GRIB reader not implemented for multi-timestep files."
-        write(MR_global_error,*)"         iwind=5 files are all multi-step"
+        write(MR_global_error,*)&
+         "MR ERROR : ",&
+         "GRIB reader not implemented for multi-timestep files."
+        write(MR_global_error,*)&
+          "         iwind=5 files are all multi-step"
         stop 1
       else
-        write(MR_global_production,*)"Opening grib file to find version number"
+        write(MR_global_production,*)&
+          "Opening grib file to find version number"
         iw = 1
-        call grib_open_file(ifile,trim(ADJUSTL(MR_windfiles(iw))),'R')
-        call grib_new_from_file(ifile,igrib,iret)
 
-        call grib_get(igrib,'editionNumber',MR_GRIB_Version)
-        call grib_release(igrib)
-        call grib_close_file(ifile)
+        call codes_open_file(ifile,trim(ADJUSTL(MR_windfiles(iw))),'R')
+        call codes_new_from_file(ifile,igrib,CODES_PRODUCT_GRIB,iret)
+        call codes_get(igrib,'editionNumber',MR_GRIB_Version)
+        call codes_release(igrib)
+        call codes_close_file(ifile)
+
       endif
       write(MR_global_production,*)"Grib version = ",MR_GRIB_Version
       !---------------------------------------------------------------------------------
@@ -120,33 +141,43 @@
       ! Finally sort the pressure values and evaluate the distinct pressure coordinates
       grib_file_path  = adjustl(trim(MR_windfiles(1)))
 
-      call grib_open_file(ifile,grib_file_path,'R')
-      ! Loop on all the messages in a file.
-      call grib_new_from_file(ifile,igrib,iret)
-      count1=0
-      zcount(:)     = 0
-      zlev_dum(:,:) = 0
+      call codes_open_file(ifile,grib_file_path,'R')
+
+      count1=1
+      call codes_new_from_file(ifile,igribv(count1),CODES_PRODUCT_GRIB,iret)
+
       do while (iret/=GRIB_END_OF_FILE)
         count1=count1+1
-        if(count1.eq.1)then
+        if (count1.gt.MAXGRIBREC) then
+          write(MR_global_error,*)"ERROR: too many grib messages"
+          stop 1
+        endif
+        call codes_new_from_file(ifile,igribv(count1),CODES_PRODUCT_GRIB,iret)
+      enddo
+      count1=count1-1
+      zcount(:)     = 0
+      zlev_dum(:,:) = 0
+      do ir = 1,count1
+        if(ir.eq.1)then
           ! For the first record, get the x,y grid info
           ReadGrid = .false.
-          call grib_get(igrib,'Ni',nx_fullmet)
-          call grib_get(igrib,'Nj',ny_fullmet)
+          call codes_get(igribv(ir),'Ni',nx_fullmet)
+          call codes_get(igribv(ir),'Nj',ny_fullmet)
           allocate(x_fullmet_sp(0:nx_fullmet+1))
           allocate(y_fullmet_sp(ny_fullmet))
           allocate(MR_dx_met(nx_fullmet))
           allocate(MR_dy_met(ny_fullmet))
 
-          call grib_get(igrib,'gridType',dum_str)
-          call grib_get(igrib,'latitudeOfFirstGridPointInDegrees',dum_dp)
+          call codes_get(igribv(ir),'gridType',dum_str)
+          call codes_get(igribv(ir),'latitudeOfFirstGridPointInDegrees',dum_dp)
+
           Lat_start = dum_dp
-          call grib_get(igrib,'longitudeOfFirstGridPointInDegrees',dum_dp)
+          call codes_get(igribv(ir),'longitudeOfFirstGridPointInDegrees',dum_dp)
           Lon_start = dum_dp
 
           dum_int = 0
           Met_Re =  6371.229_8
-          call grib_get(igrib,'shapeOfTheEarth',dum_int)
+          call codes_get(igribv(ir),'shapeOfTheEarth',dum_int)
           if (dum_int.eq.0)then
               ! 0  Earth assumed spherical with radius = 6,367,470.0 m
             Met_Re =  6367.470_8
@@ -183,38 +214,36 @@
             Lat_start = y_start
             Lon_start = x_start
 
-            call grib_get(igrib,'numberOfPoints',numberOfPoints)
-            allocate(lats(numberOfPoints))
-            allocate(lons(numberOfPoints))
+            call codes_get(igribv(ir),'numberOfPoints',numberOfPoints)
             allocate(values(numberOfPoints))
-            call grib_get_data(igrib,lats,lons,values)
-            do j=1,ny_fullmet
-              do i=1,nx_fullmet
-                idx = (j-1)*nx_fullmet + i
-                x_fullmet_sp(i) = real(lons(idx),kind=sp)
-                y_fullmet_sp(j) = real(lats(idx),kind=sp)
-              enddo
-            enddo
+            call codes_get(igribv(ir),'values',values)
             ReadGrid = .true.
-            deallocate(lats)
-            deallocate(lons)
             deallocate(values)
-            call grib_get(igrib,'latitudeOfLastGridPointInDegrees',dum_dp)
+            call codes_get(igribv(ir),'latitudeOfLastGridPointInDegrees',dum_dp)
             if(Lat_start.gt.dum_dp)then
               y_inverted = .true.
             else
               y_inverted = .false.
             endif
-            call grib_get(igrib,'longitudeOfLastGridPointInDegrees',dum_dp)
+            call codes_get(igribv(ir),&
+                  'longitudeOfLastGridPointInDegrees',dum_dp)
             if(Lon_start.gt.dum_dp)then
               x_inverted = .true.
             else
               x_inverted = .false.
             endif
-            call grib_get(igrib,'iDirectionIncrementInDegrees',dum_dp)
+            call codes_get(igribv(ir),'iDirectionIncrementInDegrees',dum_dp)
             dx_met_const = real(dum_dp,kind=4)
-            call grib_get(igrib,'jDirectionIncrementInDegrees',dum_dp)
+            call codes_get(igribv(ir),'jDirectionIncrementInDegrees',dum_dp)
             dy_met_const = real(dum_dp,kind=4)
+            do i=1,nx_fullmet
+              x_fullmet_sp(i) = real(Lat_start,kind=sp)+ &
+                                 (i-1)* dx_met_const
+            enddo
+            do j=1,ny_fullmet
+              y_fullmet_sp(j) = real(Lon_start,kind=sp)+ &
+                                 (j-1)* dy_met_const
+            enddo
             x_fullmet_sp(0) = x_fullmet_sp(1)-dx_met_const
             x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(nx_fullmet)+dx_met_const
           elseif(index(dum_str,'regular_gg').ne.0)then
@@ -222,29 +251,22 @@
             Lat_start = y_start
             Lon_start = x_start
 
-            call grib_get(igrib,'numberOfPoints',numberOfPoints)
-            allocate(lats(numberOfPoints))
-            allocate(lons(numberOfPoints))
+            call codes_get(igribv(ir),'numberOfPoints',numberOfPoints)
             allocate(values(numberOfPoints))
-            call grib_get_data(igrib,lats,lons,values)
-            do j=1,ny_fullmet
-              do i=1,nx_fullmet
-                idx = (j-1)*nx_fullmet + i
-                x_fullmet_sp(i) = real(lons(idx),kind=sp)
-                y_fullmet_sp(j) = real(lats(idx),kind=sp)
-              enddo
-            enddo
+            call codes_get(igribv(ir),'values',values)
+            write(MR_global_error,*)&
+                  "ERROR: Need to fix grid reading for gg grids."
+            stop 1
             ReadGrid = .true.
-            deallocate(lats)
-            deallocate(lons)
             deallocate(values)
-            call grib_get(igrib,'latitudeOfLastGridPointInDegrees',dum_dp)
+            call codes_get(igribv(ir),'latitudeOfLastGridPointInDegrees',dum_dp)
             if(Lat_start.gt.dum_dp)then
               y_inverted = .true.
             else
               y_inverted = .false.
             endif
-            call grib_get(igrib,'longitudeOfLastGridPointInDegrees',dum_dp)
+            call codes_get(igribv(ir),&
+                  'longitudeOfLastGridPointInDegrees',dum_dp)
             if(Lon_start.gt.dum_dp)then
               x_inverted = .true.
             else
@@ -256,7 +278,7 @@
           elseif(index(dum_str,'polar_stereographic').ne.0)then
             IsLatLon_MetGrid = .false.
             Met_iprojflag     = 1
-            call grib_get(igrib,'orientationOfTheGridInDegrees',dum_dp)
+            call codes_get(igribv(ir),'orientationOfTheGridInDegrees',dum_dp)
             Met_lam0 = dum_dp
             Met_phi0 = 90.0_8
             Met_k0   =  0.933_8
@@ -265,9 +287,9 @@
           elseif(index(dum_str,'albers').ne.0)then
             IsLatLon_MetGrid = .false.
             Met_iprojflag     = 2
-            write(MR_global_error,*)"MR ERROR: Alber Equal Area not implemented"
+            write(MR_global_error,*)&
+              "MR ERROR: Alber Equal Area not implemented"
             stop 1
-
           elseif(index(dum_str,'UTM').ne.0)then
             IsLatLon_MetGrid = .false.
             Met_iprojflag     = 3
@@ -276,13 +298,13 @@
           elseif(index(dum_str,'lambert').ne.0)then
             IsLatLon_MetGrid = .false.
             Met_iprojflag     = 4
-            call grib_get(igrib,'LoVInDegrees',dum_dp)
+            call codes_get(igribv(ir),'LoVInDegrees',dum_dp)
             Met_lam0 = dum_dp
-            call grib_get(igrib,'LaDInDegrees',dum_dp)
+            call codes_get(igribv(ir),'LaDInDegrees',dum_dp)
             Met_phi0 = dum_dp
-            call grib_get(igrib,'Latin1InDegrees',dum_dp)
+            call codes_get(igribv(ir),'Latin1InDegrees',dum_dp)
             Met_phi1 = dum_dp
-            call grib_get(igrib,'Latin2InDegrees',dum_dp)
+            call codes_get(igribv(ir),'Latin2InDegrees',dum_dp)
             Met_phi2 = dum_dp
             Met_k0   =  0.933_8
             Met_Re   =  6371.229_8
@@ -290,27 +312,27 @@
             IsLatLon_MetGrid = .false.
             Met_iprojflag     = 5
             Met_lam0 = Lon_start
-            call grib_get(igrib,'LaDInDegrees',dum_dp)
+            call codes_get(igribv(ir),'LaDInDegrees',dum_dp)
             Met_phi0 = dum_dp
             Met_k0   =  0.933_8
             Met_Re   =  6371.229_8
           else
-            write(MR_global_error,*)'MR ERROR: Cannot determine the projection from the GRIB file.'
+            write(MR_global_error,*)&
+         'MR ERROR: Cannot determine the projection from the GRIB file.'
             stop 1
           endif
           ! Override for the case of NARR
           if (MR_iwindformat.eq.3)Met_Re = 6367.470_8
 
-
           if(.not.IsLatLon_MetGrid)then
-            call grib_get(igrib,'DxInMetres',dum_int,stat)
+            call codes_get(igribv(ir),'DxInMetres',dum_int,stat)
             if(stat.ne.0)then
-              call grib_get(igrib,'DiInMetres',dum_int,stat)
+              call codes_get(igribv(ir),'DiInMetres',dum_int,stat)
             endif
             dx_met_const = real(dum_int,kind=4)/1000.0_sp
-            call grib_get(igrib,'DyInMetres',dum_int,stat)
+            call codes_get(igribv(ir),'DyInMetres',dum_int,stat)
             if(stat.ne.0)then
-              call grib_get(igrib,'DjInMetres',dum_int,stat)
+              call codes_get(igribv(ir),'DjInMetres',dum_int,stat)
             endif
             dy_met_const = real(dum_int,kind=4)/1000.0_sp
 
@@ -342,7 +364,6 @@
           enddo
           MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
 
-
           ! We need to check if this is a regular grid
           IsRegular_MetGrid = .true.
           do i = 1,nx_fullmet-1
@@ -357,14 +378,16 @@
           enddo
 
         endif ! count1.eq.1
+        ! End of block reading the first record for grid info
 
         if(MR_GRIB_Version.eq.1)then
-          call grib_get(igrib,'indicatorOfTypeOfLevel',grb_typeSfc)
+          call codes_get(igribv(ir),'indicatorOfTypeOfLevel',grb_typeSfc)
           ! for populating z-levels, we are only concerned with specific level types
           if(index(grb_typeSfc,'pl').ne.0.or. & ! Isobaric surface  (Pa)
              index(grb_typeSfc,'105').ne.0)then  ! Specified height level above ground  (m)
-            call grib_get(igrib,'indicatorOfParameter',grb_parameterNumber)
-            call grib_get(igrib,'table2Version',grb_Table)
+            call codes_get(igribv(ir),'indicatorOfParameter',grb_parameterNumber)
+            call codes_get(igribv(ir),'table2Version',grb_Table)
+
             ! Loop through all the variables and see if we have a match with this grib record
             do ivar = 1,MR_MAXVARS
               if (.not.Met_var_IsAvailable(ivar)) cycle
@@ -373,22 +396,31 @@
               if(iv_ParamN.eq.grb_parameterNumber.and.       &
                    iv_typeSfc.eq.grb_typeSfc)then
                 ! This is one we are tracking, log the level
-                call grib_get(igrib,'level',grb_level)
-                !call grib_get(igrib,'scaledValueOfFirstFixedSurface',grb_scaledValueOfFirstFixedSurface)
+                call codes_get(igribv(ir),'level',grb_level)
                 zcount(ivar) = zcount(ivar) + 1
                 zlev_dum(ivar,zcount(ivar)) = grb_level * 100
               endif
             enddo
           endif
         elseif(MR_GRIB_Version.eq.2)then
-          call grib_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
+          typeOfFirstFixedSurface            = -1
+          grb_discipline                     = -1
+          grb_parameterCategory              = -1
+          grb_parameterNumber                = -1
+          grb_scaledValueOfFirstFixedSurface = -1
+          call codes_get(igribv(ir),'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
           ! for populating z-levels, we are only concerned with specific level types
           if(typeOfFirstFixedSurface.eq.100.or. & ! Isobaric surface  (Pa)
              typeOfFirstFixedSurface.eq.103.or. & ! Specified height level above ground  (m)
              typeOfFirstFixedSurface.eq.106)then  ! Depth below land surface  (m)
-            call grib_get(igrib,'discipline',              grb_discipline)
-            call grib_get(igrib,'parameterCategory',       grb_parameterCategory)
-            call grib_get(igrib,'parameterNumber',         grb_parameterNumber)
+            call codes_get(igribv(ir),'discipline',        grb_discipline)
+            call codes_get(igribv(ir),'parameterCategory', grb_parameterCategory)
+            call codes_get(igribv(ir),'parameterNumber',   grb_parameterNumber)
+            call codes_get(igribv(ir),'shortName',         grb_shortName)
+            call codes_get(igribv(ir),'cfNameECMF',        grb_longName)
+            call codes_get(igribv(ir),&
+                 'scaledValueOfFirstFixedSurface',&
+                 grb_scaledValueOfFirstFixedSurface)
 
             ! Loop through all the variables and see if we have a match with this grib record
             do ivar = 1,MR_MAXVARS
@@ -402,18 +434,32 @@
                  iv_paramN.eq.grb_parameterNumber.and.  &
                  iv_typeSf.eq.typeOfFirstFixedSurface)then
                 ! This is one we are tracking, log the level
-                call grib_get(igrib,'scaledValueOfFirstFixedSurface',grb_scaledValueOfFirstFixedSurface)
-                zcount(ivar) = zcount(ivar) + 1
-                zlev_dum(ivar,zcount(ivar)) = grb_scaledValueOfFirstFixedSurface
+                call codes_get(igribv(ir),&
+                     'scaledValueOfFirstFixedSurface',&
+                     grb_scaledValueOfFirstFixedSurface)
+
+                ! Double-check that this isn't a duplicate record
+                IsNewLevel = .true.
+                do iz = 1,zcount(ivar)
+                  if (zlev_dum(ivar,iz).eq.grb_scaledValueOfFirstFixedSurface) then
+                    IsNewLevel = .false.
+                    exit
+                  endif
+                enddo
+                if (IsNewLevel) then
+                  zcount(ivar) = zcount(ivar) + 1
+                  zlev_dum(ivar,zcount(ivar)) = grb_scaledValueOfFirstFixedSurface
+                endif
               endif
             enddo
           endif
-        endif !MR_GRIB_Version.eq.1
-        call grib_release(igrib)
-        call grib_new_from_file(ifile,igrib,iret)
+        endif !MR_GRIB_Version.eq.1 or .eq.2
       enddo
-      call grib_release(igrib)
-      call grib_close_file(ifile)
+
+      do ir = 1,count1
+        call codes_release(igribv(ir))
+      enddo
+      call codes_close_file(ifile)
 
       maxdimlen = maxval(zcount(:))
       nlev_coords_detected = 1
@@ -526,14 +572,17 @@
       endif
 
       write(MR_global_production,*)" Found these levels"
-      write(MR_global_production,*)"  VaribleID    LevelIdx       dimID      length"
+      write(MR_global_production,*)&
+        "  VaribleID    LevelIdx       dimID      length"
       do ivar = 1,MR_MAXVARS
         if (Met_var_IsAvailable(ivar))then 
           if(Met_var_zdim_idx(ivar).eq.0)then
-            write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),0,0
+            write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),0,0,&
+                                         trim(adjustl(Met_var_GRIB_names(ivar)))
           else
             write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),0,&
-                                         nlevs_fullmet(Met_var_zdim_idx(ivar))
+                                         nlevs_fullmet(Met_var_zdim_idx(ivar)),&
+                                         trim(adjustl(Met_var_GRIB_names(ivar)))
           endif
         endif
       enddo
@@ -581,7 +630,9 @@
         yUR_fullmet = y_fullmet_sp(ny_fullmet)
       endif
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)&
+       "----------------------------------------",&
+       "----------------------------------------"
 
       end subroutine MR_Read_Met_DimVars_GRIB
 
@@ -608,7 +659,7 @@
       subroutine MR_Read_Met_Times_GRIB
 
       use MetReader
-      use grib_api
+      use eccodes
 
       implicit none
 
@@ -644,9 +695,11 @@
         end function HS_hours_since_baseyear
       END INTERFACE
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                MR_Read_Met_Times_GRIB                      ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                MR_Read_Met_Times_GRIB                      ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       if(.not.Met_dim_IsAvailable(1))then
         write(MR_global_error,*)"MR ERROR: Time dimension is required and not listed"
@@ -710,23 +763,23 @@
             nt_fullmet = 1
             write(MR_global_info,*)"  Assuming all NWP files have the same number of steps."
             write(MR_global_info,*)"   For grib, assume one time step per file."
-            write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"files"
+            write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"file(s)"
             write(MR_global_info,*)"                              ",nt_fullmet,"step(s) each"
             allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
           endif
 
-          call grib_open_file(ifile,trim(ADJUSTL(MR_windfiles(iw))),'R')
-          call grib_new_from_file(ifile,igrib,iret)
+          call codes_open_file(ifile,trim(ADJUSTL(MR_windfiles(iw))),'R')
+          call codes_new_from_file(ifile,igrib,CODES_PRODUCT_GRIB,iret)
+          if(iw.eq.1) &
+            call codes_get(igrib,'editionNumber',MR_GRIB_Version)
+          call codes_get(igrib,'dataDate',dataDate)
+          call codes_get(igrib,'dataTime',dataTime)
 
-          if(iw.eq.1)call grib_get(igrib,'editionNumber',MR_GRIB_Version)
-
-          call grib_get(igrib,'dataDate',dataDate)
-          call grib_get(igrib,'dataTime',dataTime)
           if(MR_GRIB_Version.eq.1)then
             ! The only grib1 files we deal with are reanalysis files with no FC time
             forecastTime = 0
           else
-            call grib_get(igrib,'forecastTime',forecastTime)
+            call codes_get(igrib,'forecastTime',forecastTime)
           endif
 
           itstart_year  = int(dataDate/10000)
@@ -739,8 +792,8 @@
           write(MR_global_info,2100)"Ref time = ",itstart_year,itstart_month,itstart_day, &
                                      itstart_hour,itstart_min,itstart_sec
 
-          call grib_release(igrib)
-          call grib_close_file(ifile)
+          call codes_release(igrib)
+          call codes_close_file(ifile)
 
           filestart_hour = real(itstart_hour,kind=sp) + &
                            real(itstart_min,kind=sp)/60.0_sp      + &
@@ -767,7 +820,9 @@
         enddo
       enddo
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      write(MR_global_production,*)&
+       "--------------------------------------",&
+       "------------------------------------------"
 
       end subroutine MR_Read_Met_Times_GRIB
 !##############################################################################
@@ -785,7 +840,7 @@
       subroutine MR_Read_MetP_Variable_GRIB(ivar,istep)
 
       use MetReader
-      use grib_api
+      use eccodes
 
       implicit none
 
@@ -865,12 +920,17 @@
 
       logical :: Use_GRIB_Index = .false.
       integer :: fn_idx
+      character(len=40)  :: fileposstr
 
       if(.not.Met_var_IsAvailable(ivar))then
-        write(MR_global_error,*)"MR ERROR:  Variable not available for this windfile"
-        write(MR_global_error,*)"             ivar = ",ivar
-        write(MR_global_error,*)"            vname = ",Met_var_GRIB_names(ivar)
-        write(MR_global_error,*)"             iwf  = ",MR_iwindformat
+        write(MR_global_error,*)&
+          "MR ERROR:  Variable not available for this windfile"
+        write(MR_global_error,*)&
+          "             ivar = ",ivar
+        write(MR_global_error,*)& 
+          "            vname = ",Met_var_GRIB_names(ivar)
+        write(MR_global_error,*)&
+          "             iwf  = ",MR_iwindformat
         stop 1
       endif
 
@@ -904,7 +964,8 @@
       iwstep = MR_MetStep_tindex(istep)
 
       if(Met_var_GRIB_names(ivar).eq."")then
-        write(MR_global_error,*)"Variable ",ivar," not available for MR_iwindformat = ",&
+        write(MR_global_error,*)"Variable ",ivar,&
+                  " not available for MR_iwindformat = ",&
                   MR_iwindformat
         stop 1
       endif
@@ -982,8 +1043,8 @@
           write(index_file,126)trim(adjustl(MR_MetStep_File(istep))), &
                            "pgrbanl_mean_",MR_iwind5_year(istep), &
                            "_VVEL_pres.nc"
-          write(*,*)"+++++++++++++++++++++++++++++++++++++++++++"
-          write(*,*)"  NEED TO FIX THIS Vz"
+          write(MR_global_error,*)"+++++++++++++++++++++++++++++++++++++++++++"
+          write(MR_global_error,*)"  NEED TO FIX THIS Vz"
           np_met_loc = np_fullmet
         elseif(ivar.eq.5)then
           write(index_file,125)trim(adjustl(MR_MetStep_File(istep))), &
@@ -1006,8 +1067,8 @@
           write(index_file,127)trim(adjustl(MR_MetStep_File(istep))), &
                            "pgrbanl_mean_",MR_iwind5_year(istep), &
                            "_RH_pres.nc"
-          write(*,*)"+++++++++++++++++++++++++++++++++++++++++++"
-          write(*,*)"  NEED TO FIX THIS : RH"
+          write(MR_global_error,*)"+++++++++++++++++++++++++++++++++++++++++++"
+          write(MR_global_error,*)"  NEED TO FIX THIS : RH"
           np_met_loc = np_fullmet
         elseif(ivar.eq.44)then
           write(index_file,129)trim(adjustl(MR_MetStep_File(istep))), &
@@ -1018,7 +1079,8 @@
                            "sflxgrbfg_mean_",MR_iwind5_year(istep), &
                            "_CPRAT_sfc.nc"
         else
-          write(MR_global_error,*)"MR ERROR : Requested variable not available."
+          write(MR_global_error,*)&
+            "MR ERROR : Requested variable not available."
           stop 1
         endif
         index_file = trim(adjustl(index_file))
@@ -1037,9 +1099,11 @@
         if(ivar.eq.4)then      ! Vertical_velocity_pressure_isobaric
           np_met_loc = nlevs_fullmet(idx)
           if(MR_GRIB_Version.eq.1)then
-            p_met_loc(1:np_met_loc)  = int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx))/100.0_sp)
+            p_met_loc(1:np_met_loc)  = &
+              int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx))/100.0_sp)
           else
-            p_met_loc(1:np_met_loc)  = int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx)))
+            p_met_loc(1:np_met_loc)  = &
+              int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx)))
           endif
         elseif(ivar.eq.10)then ! Planetary_Boundary_Layer_Height_surface
           np_met_loc = 1
@@ -1078,9 +1142,11 @@
         elseif(ivar.eq.30)then ! Relative_humidity_isobaric
           np_met_loc = nlevs_fullmet(idx)
           if(MR_GRIB_Version.eq.1)then
-            p_met_loc(1:np_met_loc)  = int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx))/100.0_sp)
+            p_met_loc(1:np_met_loc)  = &
+              int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx))/100.0_sp)
           else
-            p_met_loc(1:np_met_loc)  = int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx)))
+            p_met_loc(1:np_met_loc)  = &
+              int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx)))
           endif
         elseif(ivar.eq.40.or.ivar.eq.41.or.ivar.eq.42.or.ivar.eq.43)then ! categorical precip
           np_met_loc = 1
@@ -1091,17 +1157,22 @@
         else
           np_met_loc = nlevs_fullmet(idx)
           if(MR_GRIB_Version.eq.1)then
-            p_met_loc(1:np_met_loc)  = int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx))/100.0_sp)
+            p_met_loc(1:np_met_loc)  = &
+              int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx))/100.0_sp)
           else
-            p_met_loc(1:np_met_loc)  = int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx)))
+            write(MR_global_info,*)"np_met_loc",np_met_loc
+            write(MR_global_info,*)idx
+            write(MR_global_info,*)nlevs_fullmet
+            p_met_loc(1:np_met_loc)  = &
+              int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx)))
           endif
         endif
         allocate(full_values(nx_fullmet,ny_fullmet,np_met_loc))
           ! Files are listed directly, not through directories (as in MR_iwindformat=25,27)
         grib_file_path  = trim(adjustl(MR_MetStep_File(istep)))
         fn_idx = index(MR_MetStep_File(istep), '/' , BACK=.true.)
-        grib_file = MR_MetStep_File(istep)(fn_idx+1:)
-        index_file      = trim(adjustl(MR_MetStep_File(istep))) // ".index"
+        grib_file  = MR_MetStep_File(istep)(fn_idx+1:)
+        index_file = trim(adjustl(MR_MetStep_File(istep))) // ".index"
       endif
       invar = Met_var_GRIB_names(ivar)
 
@@ -1131,57 +1202,64 @@
       !  Grib2 without index file
       if(MR_GRIB_Version.eq.1)then
         if(Use_GRIB_Index)then
-          write(MR_global_info,*)"Reading ",trim(adjustl(invar))," from file : ",&
-                trim(adjustl(index_file)),"   step, file, slice = ",istep,iw,iwstep
+          write(fileposstr,'(a9,i4,a9,i4,a10,i4)')"  step = ",istep,&
+                         ", file = ",iw,&
+                         ", slice = ",iwstep
+          write(MR_global_info,*)"Reading ",trim(adjustl(invar)),&
+                " from file : ",&
+                trim(adjustl(index_file)),fileposstr
 
-          call grib_index_read(idx,index_file)
-          call grib_multi_support_on()
+          call codes_index_read(idx,index_file)
+          call codes_grib_multi_support_on()
 
             ! get the number of distinct values of all the keys in the index
-          call grib_index_get_size(idx,'indicatorOfParameter',parameterNumberSize)
-          call grib_index_get_size(idx,'level',levelSize)
+          call codes_index_get_size(idx,'indicatorOfParameter',parameterNumberSize)
+          call codes_index_get_size(idx,'level',levelSize)
 
             ! allocate the array to contain the list of distinct values
           allocate(parameterNumber_idx(parameterNumberSize))
           allocate(level_idx(levelSize))
 
             ! get the list of distinct key values from the index
-          call grib_index_get(idx,'indicatorOfParameter',parameterNumber_idx)
-          call grib_index_get(idx,'level',level_idx)
+          call codes_index_get(idx,'indicatorOfParameter',parameterNumber_idx)
+          call codes_index_get(idx,'level',level_idx)
 
           ! Start marching throught the index file and look for the match with the 
           ! keys
           count1=0
           do l=1,parameterNumberSize
-            call grib_index_select(idx,'indicatorOfParameter',parameterNumber_idx(l))
+            call codes_index_select(idx,'indicatorOfParameter',parameterNumber_idx(l))
 
             do i=1,levelSize
-              call grib_index_select(idx,'level',level_idx(i))
-              call grib_new_from_index(idx,igrib, iret)
+              call codes_index_select(idx,'level',level_idx(i))
+              call codes_new_from_index(idx,igrib, iret)
+
               do while (iret /= GRIB_END_OF_INDEX)
                 count1=count1+1
-                call grib_get(igrib,'indicatorOfTypeOfLevel',grb_typeSfc)
+                call codes_get(igrib,'indicatorOfTypeOfLevel',grb_typeSfc)
 
                 if( parameterNumber_idx(l)           .eq. iv_paramN .and. &
                     grb_typeSfc(1:3)        .eq. iv_typeSfc) then
-                  call grib_get(igrib,'numberOfPoints',numberOfPoints)
-                  call grib_get(igrib,'Ni',Ni)
-                  call grib_get(igrib,'Nj',Nj)
+                  call codes_get(igrib,'numberOfPoints',numberOfPoints)
+                  call codes_get(igrib,'Ni',Ni)
+                  call codes_get(igrib,'Nj',Nj)
                   if(nx_fullmet.ne.Ni)then
-                    write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                    write(MR_global_error,*)&
+                      "MR ERROR:  Grid is not the expected size"
                     write(MR_global_error,*)"nx_fullmet = ",nx_fullmet
                     write(MR_global_error,*)"Ni         = ",Ni
                     stop 1
                   endif
                   if(ny_fullmet.ne.Nj)then
-                    write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                    write(MR_global_error,*)&
+                      "MR ERROR:  Grid is not the expected size"
                     write(MR_global_error,*)"ny_fullmet = ",ny_fullmet
                     write(MR_global_error,*)"Nj         = ",Nj
                     stop 1
                   endif
                   allocate(values(numberOfPoints))
                   allocate(slice(Ni,Nj))
-                  call grib_get(igrib,'values',values)
+                  call codes_get(igrib,'values',values)
                   do m = 1,Nj
                     rstrt = (m-1)*Ni + 1
                     rend  = m*Ni
@@ -1192,7 +1270,7 @@
                   ! There is no guarantee that grib levels are in order so...
                   ! Now loop through the pressure values for this variable and put
                   ! this slice at the correct level.
-                  call grib_get(igrib,'level',grb_level)
+                  call codes_get(igrib,'level',grb_level)
                   do kk = 1,np_met_loc
                     if(p_met_loc(kk).eq.grb_level)then
                       full_values(:,:,kk) = real(slice(:,:),kind=sp)
@@ -1202,11 +1280,10 @@
                   deallocate(slice)
                 endif
 
-                call grib_release(igrib)
-                call grib_new_from_index(idx,igrib, iret)
+                call codes_release(igrib)
+                call codes_new_from_index(idx,igrib, iret)
               enddo ! while
-              call grib_release(igrib)
-
+              call codes_release(igrib)
             enddo ! loop on level
           enddo ! loop on marsParam
 
@@ -1219,10 +1296,10 @@
           write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
                     trim(adjustl(grib_file_path))!,nx_submet,ny_submet,np_met_loc
           ifile=5
-          call grib_open_file(ifile,grib_file_path,'R')
+          call codes_open_file(ifile,grib_file_path,'R')
 
           !     turn on support for multi fields messages */
-          call grib_multi_support_on()
+          call codes_grib_multi_support_on()
 
           ! Loop on all the messages in a file.
           call grib_new_from_file(ifile,igrib,iret)
@@ -1231,29 +1308,32 @@
           do while (iret/=GRIB_END_OF_FILE)
             count1=count1+1
 
-            call grib_get(igrib,'indicatorOfParameter',grb_parameterNumber)
-            call grib_get(igrib,'indicatorOfTypeOfLevel',grb_typeSfc)
+            call codes_get(igrib,'indicatorOfParameter',grb_parameterNumber)
+            call codes_get(igrib,'indicatorOfTypeOfLevel',grb_typeSfc)
 
             if ( grb_parameterNumber  .eq. iv_paramN .and. &
                  grb_typeSfc(1:3)     .eq. iv_typeSfc) then
-              call grib_get(igrib,'numberOfPoints',numberOfPoints)
-              call grib_get(igrib,'Ni',Ni)
-              call grib_get(igrib,'Nj',Nj)
+              call codes_get(igrib,'numberOfPoints',numberOfPoints)
+              call codes_get(igrib,'Ni',Ni)
+              call codes_get(igrib,'Nj',Nj)
+
               if(nx_fullmet.ne.Ni)then
-                write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                write(MR_global_error,*)&
+                  "MR ERROR:  Grid is not the expected size"
                 write(MR_global_error,*)"nx_fullmet = ",nx_fullmet
                 write(MR_global_error,*)"Ni         = ",Ni
                 stop 1
               endif
               if(ny_fullmet.ne.Nj)then
-                write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                write(MR_global_error,*)&
+                  "MR ERROR:  Grid is not the expected size"
                 write(MR_global_error,*)"ny_fullmet = ",ny_fullmet
                 write(MR_global_error,*)"Nj         = ",Nj
                 stop 1
               endif
               allocate(values(numberOfPoints))
               allocate(slice(Ni,Nj))
-              call grib_get(igrib,'values',values)
+              call codes_get(igrib,'values',values)
               do m = 1,Nj
                 rstrt = (m-1)*Ni + 1
                 rend  = m*Ni
@@ -1264,7 +1344,7 @@
                ! There is no guarantee that grib levels are in order so...
                ! Now loop through the pressure values for this variable and put
                ! this slice at the correct level.
-               call grib_get(igrib,'level',grb_level)
+               call codes_get(igrib,'level',grb_level)
                do kk = 1,np_met_loc
                  if(p_met_loc(kk).eq.grb_level)then
                    full_values(:,:,kk) = real(slice(:,:),kind=sp)
@@ -1273,11 +1353,11 @@
                enddo
                deallocate(slice)
             endif
-            call grib_release(igrib)
-            call grib_new_from_file(ifile,igrib, iret)
+            call codes_release(igrib)
+            call codes_new_from_file(ifile,igrib, iret)
 
           enddo
-          call grib_close_file(ifile)
+          call codes_close_file(ifile)
 
         endif
 
@@ -1285,16 +1365,16 @@
         if(Use_GRIB_Index)then
           write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
                     trim(adjustl(index_file))
-          call grib_index_read(idx,index_file)
-          call grib_multi_support_on()
-    
+          call codes_index_read(idx,index_file)
+          call codes_grib_multi_support_on()
+
             ! get the number of distinct values of all the keys in the index
-          call grib_index_get_size(idx,'discipline',disciplineSize)
-          call grib_index_get_size(idx,'parameterCategory',parameterCategorySize)
-          call grib_index_get_size(idx,'parameterNumber',parameterNumberSize)
-          call grib_index_get_size(idx,'scaledValueOfFirstFixedSurface',levelSize)
-          call grib_index_get_size(idx,'forecastTime',forecastTimeSize)
-          
+          call codes_index_get_size(idx,'discipline',disciplineSize)
+          call codes_index_get_size(idx,'parameterCategory',parameterCategorySize)
+          call codes_index_get_size(idx,'parameterNumber',parameterNumberSize)
+          call codes_index_get_size(idx,'scaledValueOfFirstFixedSurface',levelSize)
+          call codes_index_get_size(idx,'forecastTime',forecastTimeSize)
+
             ! allocate the array to contain the list of distinct values
           allocate(discipline_idx(disciplineSize))
           allocate(parameterCategory_idx(parameterCategorySize))
@@ -1303,59 +1383,60 @@
           allocate(forecastTime_idx(forecastTimeSize))
           
             ! get the list of distinct key values from the index
-          call grib_index_get(idx,'discipline',discipline_idx)
-          call grib_index_get(idx,'parameterCategory',parameterCategory_idx)
-          call grib_index_get(idx,'parameterNumber',parameterNumber_idx)
-          call grib_index_get(idx,'scaledValueOfFirstFixedSurface',level_idx)
-          call grib_index_get(idx,'forecastTime',forecastTime_idx)
-    
+          call codes_index_get(idx,'discipline',discipline_idx)
+          call codes_index_get(idx,'parameterCategory',parameterCategory_idx)
+          call codes_index_get(idx,'parameterNumber',parameterNumber_idx)
+          call codes_index_get(idx,'scaledValueOfFirstFixedSurface',level_idx)
+          call codes_index_get(idx,'forecastTime',forecastTime_idx)
+
           ! Start marching throught the index file and look for the match with the 
           ! keys
           count1=0
           do l=1,disciplineSize
-            call grib_index_select(idx,'discipline',discipline_idx(l))
-        
+            call codes_index_select(idx,'discipline',discipline_idx(l))
             do j=1,parameterCategorySize
-              call grib_index_select(idx,'parameterCategory',parameterCategory_idx(j))
-        
+              call codes_index_select(idx,'parameterCategory',parameterCategory_idx(j))
               do k=1,parameterNumberSize
-                call grib_index_select(idx,'parameterNumber',parameterNumber_idx(k))
-        
+                call codes_index_select(idx,'parameterNumber',parameterNumber_idx(k))
                 do i=1,levelSize
-                  call grib_index_select(idx,'level',level_idx(i))
-                  call grib_index_select(idx,'scaledValueOfFirstFixedSurface',level_idx(i))
-   
+                  call codes_index_select(idx,'level',level_idx(i))
+                  call codes_index_select(idx,&
+                         'scaledValueOfFirstFixedSurface',level_idx(i))
+
                   do t=1,forecastTimeSize
-                    call grib_index_select(idx,'forecastTime',forecastTime_idx(t))
-                    call grib_new_from_index(idx,igrib, iret)
+                    call codes_index_select(idx,'forecastTime',forecastTime_idx(t))
+                    call codes_new_from_index(idx,igrib, iret)
+
                     do while (iret /= GRIB_END_OF_INDEX)
                       count1=count1+1
     
-            call grib_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
+            call codes_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
 
             if ( discipline_idx(l)       .eq. iv_discpl .and. &
                  parameterCategory_idx(j).eq. iv_paramC .and. &
                  parameterNumber_idx(k)  .eq. iv_paramN .and. &
                  typeOfFirstFixedSurface .eq. iv_typeSf) then
-  
-              call grib_get(igrib,'numberOfPoints',numberOfPoints)
-              call grib_get(igrib,'Ni',Ni)
-              call grib_get(igrib,'Nj',Nj)
+              call codes_get(igrib,'numberOfPoints',numberOfPoints)
+              call codes_get(igrib,'Ni',Ni)
+              call codes_get(igrib,'Nj',Nj)
+
               if(nx_fullmet.ne.Ni)then
-                write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                write(MR_global_error,*)&
+                  "MR ERROR:  Grid is not the expected size"
                 write(MR_global_error,*)"nx_fullmet = ",nx_fullmet
                 write(MR_global_error,*)"Ni         = ",Ni
                 stop 1
               endif
               if(ny_fullmet.ne.Nj)then
-                write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                write(MR_global_error,*)&
+                  "MR ERROR:  Grid is not the expected size"
                 write(MR_global_error,*)"ny_fullmet = ",ny_fullmet
                 write(MR_global_error,*)"Nj         = ",Nj
                 stop 1
               endif
               allocate(values(numberOfPoints))
               allocate(slice(Ni,Nj))
-                call grib_get(igrib,'values',values)
+                call codes_get(igrib,'values',values)
                 do m = 1,Nj
                   rstrt = (m-1)*Ni + 1
                   rend  = m*Ni
@@ -1374,64 +1455,66 @@
                enddo
                deallocate(slice)
              endif
-        
+
                       call grib_release(igrib)
                       call grib_new_from_index(idx,igrib, iret)
                     enddo
-                    call grib_release(igrib)
-        
+                    call codes_release(igrib)
                   enddo ! loop on forecastTime
                 enddo ! loop on level
               enddo ! loop on parameterNumber
             enddo ! loop on parameterCategory
           enddo ! loop on discipline
-        
-          call grib_index_release(idx)
+
+          call codes_index_release(idx)
         else
           ! We don't have/(can't make) the index file so scan all messages of the
           ! grib2 file
           write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
                     trim(adjustl(grib_file_path))
           ifile=5
-          call grib_open_file(ifile,grib_file_path,'R')
-        
+          call codes_open_file(ifile,grib_file_path,'R')
+
           !     turn on support for multi fields messages */
-          call grib_multi_support_on()
-        
+          call codes_grib_multi_support_on()
+
           ! Loop on all the messages in a file.
-          call grib_new_from_file(ifile,igrib,iret)
+          call codes_new_from_file(ifile,igrib,CODES_PRODUCT_GRIB,iret)
           count1=0
           do while (iret/=GRIB_END_OF_FILE)
             count1=count1+1
-            call grib_get(igrib,'discipline',              grb_discipline)
-            call grib_get(igrib,'parameterCategory',       grb_parameterCategory)
-            call grib_get(igrib,'parameterNumber',         grb_parameterNumber)
-            call grib_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
-            call grib_get(igrib,'scaledValueOfFirstFixedSurface',grb_level)
-            call grib_get(igrib,'scaledValueOfFirstFixedSurface',grb_scaledValueOfFirstFixedSurface)
- 
+            call codes_get(igrib,'discipline',              grb_discipline)
+            call codes_get(igrib,'parameterCategory',       grb_parameterCategory)
+            call codes_get(igrib,'parameterNumber',         grb_parameterNumber)
+            call codes_get(igrib,'typeOfFirstFixedSurface', typeOfFirstFixedSurface)
+            call codes_get(igrib,'scaledValueOfFirstFixedSurface',grb_level)
+            call codes_get(igrib,'scaledValueOfFirstFixedSurface',grb_scaledValueOfFirstFixedSurface)
+
             if ( grb_discipline              .eq. iv_discpl .and. &
                  grb_parameterCategory       .eq. iv_paramC .and. &
                  grb_parameterNumber         .eq. iv_paramN .and. &
                  typeOfFirstFixedSurface     .eq. iv_typeSf) then
-              call grib_get(igrib,'numberOfPoints',numberOfPoints)
-              call grib_get(igrib,'Ni',Ni)
-              call grib_get(igrib,'Nj',Nj)
+              call codes_get(igrib,'numberOfPoints',numberOfPoints)
+              call codes_get(igrib,'Ni',Ni)
+              call codes_get(igrib,'Nj',Nj)
+
               if(nx_fullmet.ne.Ni)then
-                write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                write(MR_global_error,*)&
+                  "MR ERROR:  Grid is not the expected size"
                 write(MR_global_error,*)"nx_fullmet = ",nx_fullmet
                 write(MR_global_error,*)"Ni         = ",Ni
                 stop 1
               endif
               if(ny_fullmet.ne.Nj)then
-                write(MR_global_error,*)"MR ERROR:  Grid is not the expected size"
+                write(MR_global_error,*)&
+                  "MR ERROR:  Grid is not the expected size"
                 write(MR_global_error,*)"ny_fullmet = ",ny_fullmet
                 write(MR_global_error,*)"Nj         = ",Nj
                 stop 1
               endif
               allocate(values(numberOfPoints))
               allocate(slice(Ni,Nj))
-              call grib_get(igrib,'values',values)
+              call codes_get(igrib,'values',values)
               do m = 1,Nj
                 rstrt = (m-1)*Ni + 1
                 rend  = m*Ni
@@ -1451,10 +1534,10 @@
                enddo
                deallocate(slice)
             endif
-            call grib_release(igrib)
-            call grib_new_from_file(ifile,igrib, iret)
+            call codes_release(igrib)
+            call codes_new_from_file(ifile,igrib,CODES_PRODUCT_GRIB,iret)
           enddo
-          call grib_close_file(ifile)
+          call codes_close_file(ifile)
         endif ! Use_GRIB_index
       endif ! MR_GRIB_Version eq 1 or 2
 
@@ -1658,7 +1741,8 @@
               if(abs(del_H).gt.MR_EPS_SMALL)then
                 dpdz  = del_P/del_H
               else
-                write(MR_global_error,*)'MR ERROR: failed to calculate dpdz'
+                write(MR_global_error,*)&
+                  'MR ERROR: failed to calculate dpdz'
                 write(MR_global_error,*)i,j,k,del_P,del_H
                 write(MR_global_error,*)MR_geoH_metP_last(i,j,:)
                 stop 1

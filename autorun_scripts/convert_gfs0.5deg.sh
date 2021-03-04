@@ -23,8 +23,32 @@
 #   get_gfs0.5deg.sh YYYYMMDD HR
 
 # Please edit these variables to match your system and location of netcdf-java
-JAVAHOME="/usr/local/bin/"
-NCJv="~/ncj/netcdfAll-4.5.jar"
+#JAVA="/usr/local/bin/"
+#NCJv="~/ncj/netcdfAll-4.5.jar"
+rc=0
+echo "Looking for latest netcdfAll in ~/ncj/"
+ls -1r ~/ncj/netcdfAll*.jar
+rc=$((rc + $?))
+if [[ "$rc" -gt 0 ]] ; then
+  echo "Error: Could not find netcdfAll in ~/ncj/ rc=$rc"
+  echo "Please make sure to put netcdfAll-[].jar in ~/ncj or specify the path."
+  echo "The latest version can be downloaded from"
+  echo "  https://www.unidata.ucar.edu/downloads/netcdf-java/"
+  exit 1
+fi
+NCJv=`ls -1r ~/ncj/netcdfAll*.jar | head -n 1`
+echo "Found $NCJv"
+
+echo "Looking for java"
+which java
+rc=$((rc + $?))
+if [[ "$rc" -gt 0 ]] ; then
+  echo "Error: Could not find java in your path rc=$rc"
+  exit 1
+fi
+JAVA=`which java`
+echo "Found ${JAVA}"
+
 WINDROOT="/data/WindFiles"
 
 yearmonthday=$1
@@ -74,7 +98,7 @@ do
   then
      echo "Converting ${gfsfile} to ${netcdffile}"
      echo "java -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out ${netcdffile} -IsLargeFile"
-     ${JAVAHOME}java -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out ${netcdffile} -IsLargeFile
+     ${JAVA} -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out ${netcdffile} -IsLargeFile
      if [[ $? -ne 0 ]]; then
           exit 1
      fi

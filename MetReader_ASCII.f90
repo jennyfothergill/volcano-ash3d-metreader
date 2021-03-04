@@ -162,9 +162,11 @@
         end function HS_hours_since_baseyear
       END INTERFACE
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                MR_Read_Met_DimVars_ASCII_1d                  ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                MR_Read_Met_DimVars_ASCII_1d                  ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
 !------------------------------------------------------------------------------
 !    MR_iwind.eq.1
@@ -425,6 +427,8 @@
             endif
             if(Snd_Have_Coord)then
               if(Met_iprojflag.eq.1)then
+                ! We are using a Lon/Lat grid.  No need to read anything
+                ! else on this line.
                 IsLatLon_MetGrid  = .true.
                 IsGlobal_MetGrid  = .false.
                 IsRegular_MetGrid = .false.
@@ -437,26 +441,40 @@
                 Met_k0            =  0.933_8
                 Met_Re            =  6371.229_8
               else
-                ! Try to read the projection line
-                indx1 = index(linebuffer,' 0 ')
-                indx2 = index(linebuffer,'#')
-                if(indx2.gt.0)then
-                  call PJ_Set_Proj_Params(linebuffer(indx1:indx2-1))
+                ! Grid in not Lon/Lat
+                ! First try to read the projection code
+                read(linebuffer,*,iostat=ioerr) rvalue1,ivalue1, &
+                                                ivalue2, ivalue3
+                if(ioerr.eq.0)then
+                  Met_iprojflag = ivalue3
+                  if(Met_iprojflag.ne.0)then
+                    ! we have a geographic projection
+                    ! Try to read the full projection line
+                    indx1 = index(linebuffer,' 0 ')
+                    indx2 = index(linebuffer,'#')
+                    if(indx2.gt.0)then
+                      call PJ_Set_Proj_Params(linebuffer(indx1:indx2-1))
+                    else
+                      call PJ_Set_Proj_Params(linebuffer(indx1:))
+                    endif
+                    IsLatLon_MetGrid  = .false.
+                    IsGlobal_MetGrid  = .false.
+                    IsRegular_MetGrid = .false.
+                    Met_iprojflag = PJ_iprojflag
+                    Met_k0        = PJ_k0
+                    Met_Re        = PJ_radius_earth
+                    Met_lam0      = PJ_lam0
+                    Met_lam1      = PJ_lam1
+                    Met_lam2      = PJ_lam2
+                    Met_phi0      = PJ_phi0
+                    Met_phi1      = PJ_phi1
+                    Met_phi2      = PJ_phi2
+                  endif
                 else
-                  call PJ_Set_Proj_Params(linebuffer(indx1:))
+                  ! If we have a cartesian grid, but no projection code,
+                  ! assume no geographic projection
+                  Met_iprojflag=0
                 endif
-                IsLatLon_MetGrid  = .false.
-                IsGlobal_MetGrid  = .false.
-                IsRegular_MetGrid = .false.
-                Met_iprojflag = PJ_iprojflag
-                Met_k0        = PJ_k0
-                Met_Re        = PJ_radius_earth
-                Met_lam0      = PJ_lam0
-                Met_lam1      = PJ_lam1
-                Met_lam2      = PJ_lam2
-                Met_phi0      = PJ_phi0
-                Met_phi1      = PJ_phi1
-                Met_phi2      = PJ_phi2
               endif
             endif
             ! Finished projection parameters,
@@ -653,11 +671,11 @@
         !p_fullmet_Vz_sp = p_fullmet_sp
         !p_fullmet_RH_sp = p_fullmet_sp
         MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp)
+        allocate(z_approx(np_fullmet))
         do k=1,np_fullmet
           ! Calculate heights for US Std Atmos while pressures are still in mbars
           ! or hPa
           z_approx(k) = MR_Z_US_StdAtm(p_fullmet_sp(k))
-          write(*,*)k,p_fullmet_sp(k),z_approx(k)
         enddo
  
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1085,7 +1103,7 @@
               il = 0  ! counter for the number of data lines read
               iil = 1 ! index for which mandatory pressure level we are currently at
               ! Plan to read up to MAX_ROWS
-              write(*,*)"==================================================================="
+              write(MR_global_production,*)"==================================================================="
               do while (il.ne.MAX_ROWS.and. &  ! Assume there are no more than MAX_ROWS of data
                         iil.le.16)             ! Do not bother reading past 10 hPa
                 if (abs(pres_Snd_tmp(iil)-rvalue1).lt.0.1_sp) then
@@ -1099,7 +1117,7 @@
                     real(WindVelocity(iil)*sin(pi + DEG2RAD*WindDirection(iil)),kind=sp)
                   MR_SndVars_metP(iloc,itime,4,iil) = &
                   real(WindVelocity(iil)*cos(pi + DEG2RAD*WindDirection(iil)),kind=sp)
-                  write(*,*)MR_SndVars_metP(iloc,itime,1,iil),&
+                  write(MR_global_production,*)MR_SndVars_metP(iloc,itime,1,iil),&
                             MR_SndVars_metP(iloc,itime,2,iil),&
                             MR_SndVars_metP(iloc,itime,3,iil),&
                             MR_SndVars_metP(iloc,itime,4,iil),&
@@ -1115,7 +1133,7 @@
                   read(linebuffer,150,iostat=ioerr)rvalue1, ivalue2, rvalue3, ivalue4, ivalue5
                 endif
               enddo
-              write(*,*)"==================================================================="
+              write(MR_global_production,*)"==================================================================="
 
    150  format(1x,f7.1,i7,f7.1,21x,i7,i7)
    151  format(45x,i2,i2,i2,1x,i2)
@@ -1199,7 +1217,6 @@
           ! or hPa
           z_approx(k) = MR_Z_US_StdAtm(p_fullmet_sp(k))
         enddo
-
       else
         ! Neither MR_iwind.eq.1.and.MR_iwindformat.eq.1 nor 
         !         MR_iwind.eq.1.and.MR_iwindformat.eq.2
@@ -1271,9 +1288,11 @@
       integer, parameter :: sp        = 4 ! single precision
       integer, parameter :: dp        = 8 ! double precision
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                          MR_Set_MetComp_Grids_ASCII_1d     ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                          MR_Set_MetComp_Grids_ASCII_1d     ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       if(MR_iwind.eq.1.and.MR_iwindformat.eq.1.or.&
          MR_iwind.eq.1.and.MR_iwindformat.eq.2)then
@@ -1430,7 +1449,7 @@
         enddo
       else
         ! W is typically not provided
-        write(*,*)"Attempting to read unavailalble variable: ",ivar
+        write(MR_global_production,*)"Attempting to read unavailalble variable: ",ivar
         MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_fullmet) = 0.0_sp
       endif
 

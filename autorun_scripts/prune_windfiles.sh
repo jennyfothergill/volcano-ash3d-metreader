@@ -26,7 +26,7 @@ echo `date`
 echo "------------------------------------------------------------"
 
 GFS_retain=17
-PUFF_retain=17
+PUFF_retain=2
 NAM196_retain=0
 NAM091_retain=0
 MetProf_retain=30

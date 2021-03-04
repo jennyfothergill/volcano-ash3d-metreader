@@ -38,9 +38,11 @@
       logical :: IsTruncatedDim
       character(len=130)   :: infile
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                MR_Read_Met_DimVars_netcdf                  ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                MR_Read_Met_DimVars_netcdf                  ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       if(MR_iwind.eq.5)then
         ! For the case where variables are in different files, we will just hard-code the
@@ -806,9 +808,11 @@
         do ivar = 1,MR_MAXVARS
           if (Met_var_IsAvailable(ivar))then
             if(Met_var_zdim_idx(ivar).eq.0)then
-              write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),Met_var_zdim_ncid(ivar),0
+              write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),&
+                                           Met_var_zdim_ncid(ivar),0
             else
-              write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),Met_var_zdim_ncid(ivar),&
+              write(MR_global_production,*)ivar,Met_var_zdim_idx(ivar),&
+                                           Met_var_zdim_ncid(ivar),&
                                            nlevs_fullmet(Met_var_zdim_idx(ivar))
             endif
           endif
@@ -922,7 +926,9 @@
         yUR_fullmet = y_fullmet_sp(ny_fullmet)
       endif
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Read_Met_DimVars_netcdf
 
@@ -1464,18 +1470,23 @@
       integer :: nSTAT
       integer :: ncid
       integer :: time_var_id = 0
+      integer :: gph_var_id  = 0
       integer :: reftime_var_id
       integer :: t_dim_id
       integer :: x_dim_id,y_dim_id,x_var_id,y_var_id
       integer :: reftimedimID
       integer :: var_ndims
       integer,dimension(:),allocatable :: var_dimIDs
+      integer :: gph_ndims
+      integer,dimension(NF90_MAX_VAR_DIMS) :: gph_DimIDs
+
       integer :: reftimedimlen
       real(kind=sp),dimension(:),allocatable :: filetime_in_sp
       character(len=19) :: Timestr_WRF
 
       integer            :: var_xtype
-      character(len=NF90_MAX_NAME)  :: invar
+      character(len=NF90_MAX_NAME) :: invar
+      character(len=NF90_MAX_NAME) :: indim
       integer            :: xtype, length, attnum
       character(len=31)  :: tstring2
       !real(kind=8)       :: HS_hours_since_baseyear !,HS_HourOfDay
@@ -1489,7 +1500,7 @@
       integer,dimension(8)  :: values
       integer               :: Current_Year,nt_tst
       character(len=130)    :: Z_infile
-      character(len=1)      :: answer          !for debugging
+      !character(len=1)      :: answer          !for debugging
       !integer               :: HS_YearOfEvent
       !integer               :: HS_MonthOfEvent
       !integer               :: HS_DayOfEvent
@@ -1520,9 +1531,11 @@
         end function HS_DayOfEvent
       END INTERFACE
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                MR_Read_Met_Times_netcdf                    ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                MR_Read_Met_Times_netcdf                    ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       if(.not.Met_dim_IsAvailable(1))then
         write(MR_global_error,*)"MR ERROR: Time dimension is required and not listed"
@@ -1726,7 +1739,7 @@
                 stop 1
               endif
               write(MR_global_info,*)"  Assuming all NWP files have the same number of steps."
-              write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"files"
+              write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"file(s)"
               write(MR_global_info,*)"                              ",nt_fullmet,"step(s) each"
               allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
               MR_windfile_stephour(:,:) = 0.0_dp
@@ -1796,7 +1809,51 @@
               write(MR_global_error,*)'Exiting'
               stop 1
             endif
+
+
+
+
             ! Find the id of the time dimension
+            !   First, search for the GPH variable and check its
+            !   dimensions
+            nSTAT = nf90_inq_varid(ncid,Met_var_NC_names(1),gph_var_id)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_varid GPH: ',nf90_strerror(nSTAT)
+              write(MR_global_error,*)"    Could not find variable: ",Met_var_NC_names(1)
+              write(MR_global_log  ,*)'MR ERROR: inq_varid GPH: ',nf90_strerror(nSTAT)
+              stop 1
+            endif
+            nSTAT = nf90_inquire_variable(ncid, gph_var_id, ndims = gph_ndims)
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_var GPH: ',nf90_strerror(nSTAT)
+              write(MR_global_error,*)"    Could not inquire variable: ",Met_var_NC_names(1)
+              write(MR_global_log  ,*)'MR ERROR: inq_var GPH: ',nf90_strerror(nSTAT)
+              stop 1
+            endif
+            nSTAT = nf90_inquire_variable(ncid, gph_var_id, dimids = gph_DimIDs(:gph_ndims))
+            if(nSTAT.ne.NF90_NOERR)then
+              write(MR_global_error,*)'MR ERROR: inq_var GPH: ',nf90_strerror(nSTAT)
+              write(MR_global_error,*)"    Could not inquire variable: ",Met_var_NC_names(1)
+              write(MR_global_log  ,*)'MR ERROR: inq_var GPH: ',nf90_strerror(nSTAT)
+              stop 1
+            endif
+            if(gph_ndims.lt.4)then
+              write(MR_global_error,*)'MR ERROR:'
+              write(MR_global_error,*)&
+                'GPH variable does not have 4 dimensions.'
+              write(MR_global_error,*)&
+                'Expecting time, level, y, x'
+              stop 1
+            endif
+            nSTAT = nf90_inquire_dimension(ncid,gph_DimIDs(1),indim)
+            Met_dim_names(4)= trim(adjustl(indim))
+            nSTAT = nf90_inquire_dimension(ncid,gph_DimIDs(2),indim)
+            Met_dim_names(3)= trim(adjustl(indim))
+            nSTAT = nf90_inquire_dimension(ncid,gph_DimIDs(3),indim)
+            Met_dim_names(2)= trim(adjustl(indim))
+            nSTAT = nf90_inquire_dimension(ncid,gph_DimIDs(4),indim)
+            Met_dim_names(1)= trim(adjustl(indim))
+
             nSTAT = nf90_inq_dimid(ncid,trim(ADJUSTL(Met_dim_names(1))),t_dim_id)
             if(nSTAT.ne.NF90_NOERR)then
               write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
@@ -2008,7 +2065,9 @@
       endif
  800  format(i7,i7,3f12.2)
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Read_Met_Times_netcdf
 !##############################################################################
@@ -2306,9 +2365,11 @@
       real(kind=sp):: dum_sp
       integer :: ivar
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                MR_Set_Met_Dims_Template_netcdf             ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                MR_Set_Met_Dims_Template_netcdf             ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! To set up the grid, we assume that the grid is the same for all
       ! windfiles.  There is no checking if this is actually the case.
@@ -2417,6 +2478,7 @@
       integer :: np_met_loc
       character(len=130) :: infile
       character(len=71)  :: invar
+      character(len=40)  :: fileposstr
 
       integer :: ncid       = 0
       integer :: nSTAT      = 0
@@ -2443,9 +2505,11 @@
       real(kind=sp) :: pp
       integer       :: idx
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------                MR_Read_MetP_Variable_netcdf                ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                MR_Read_MetP_Variable_netcdf                ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       if(.not.Met_var_IsAvailable(ivar))then
         write(MR_global_error,*)"MR ERROR:  Variable not available for this windfile"
@@ -2533,8 +2597,11 @@
 
       invar = Met_var_NC_names(ivar)
 
+      write(fileposstr,'(a9,i4,a9,i4,a10,i4)')"  step = ",istep,&
+                         ", file = ",iw,&
+                         ", slice = ",iwstep
       write(MR_global_info,*)"Reading ",trim(adjustl(invar))," from file : ",&
-                trim(adjustl(infile)),"   step, file, slice = ",istep,iw,iwstep
+                trim(adjustl(infile)),fileposstr
       nSTAT = nf90_open(trim(adjustl(infile)),NF90_NOWRITE,ncid)
 
       if(nSTAT.ne.NF90_NOERR)then
@@ -3137,7 +3204,9 @@
       MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_met_loc) =  &
       MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_met_loc) * Met_var_conversion_factor(ivar)
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Read_MetP_Variable_netcdf
 

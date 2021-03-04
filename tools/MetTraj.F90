@@ -203,6 +203,9 @@
       do i=1,nxmax
         lon_grid(i) = real(inlon - 0.5*(nxmax-1) * dx + (i-1) * dx,kind=4)
       enddo
+      if(lon_grid(1).lt.0.0_4)then
+        lon_grid(:) = lon_grid(:) + 360.0_4
+      endif 
       ! We can specify the longitude grid with no problems, but the latitude
       ! grid might be padded up across the pole.  We need to set the cap at
       ! an extreme point (89 degrees N or S)
@@ -235,12 +238,12 @@
 
       IsLatLon  = .true.
       iprojflag = 1
-      lambda0   = -105.0
-      phi0      = 90.0
-      phi1      = 90.0
-      phi2      = 90.0
-      k0        = 0.933
-      radius_earth = 6371.229
+      lambda0   = -105.0_8
+      phi0      = 90.0_8
+      phi1      = 90.0_8
+      phi2      = 90.0_8
+      k0        = 0.933_8
+      radius_earth = 6371.229_8
       call MR_Set_CompProjection(IsLatLon,iprojflag,lambda0,phi0,phi1,phi2,&
                                  k0,radius_earth)
       write(MR_global_info,*)"Setting up wind grids"
@@ -527,10 +530,10 @@
       allocate(dvxdt(nx_submet,ny_submet,ntraj))
       allocate(dvydt(nx_submet,ny_submet,ntraj))
 
-      lonmin = 360.0
-      lonmax =   0.0
-      latmin =  90.0
-      latmax = -90.0
+      lonmin = 360.0_8
+      lonmax =   0.0_8
+      latmin =  90.0_8
+      latmax = -90.0_8
 
        ! Load the full sub-grid for all times
         ! First load the Met grids for Geopotential

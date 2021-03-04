@@ -55,7 +55,10 @@
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 4 262.5 38.5 38.5 38.5 6371.229    #Proj flags and params  
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .false.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
         Met_iprojflag     = 4
         Met_lam0          =  262.5_8
@@ -87,8 +90,11 @@
         !  radius      =  6367.47 : earth radius for spherical earth
         ! 0 4 -107.0 50.0 50.0 50.0 6367.47    #Proj flags and params  
 
-        isGridRelative = .false.
-        MR_Reannalysis = .true.
+        IsLatLon_MetGrid  = .false.   
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .false.
+        MR_Reannalysis    = .true.
 
         Met_iprojflag     = 4
         Met_lam0          =  -107.0_8
@@ -254,7 +260,10 @@
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 1 -150.0 90.0 0.933 6371.229    #Proj flags and params
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .false.   
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
         Met_iprojflag     = 1
         Met_lam0          = -150.0_8
@@ -287,7 +296,10 @@
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 1 -105.0 90.0 0.933 6371.229    #Proj flags and params
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .false.   
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
         Met_iprojflag     = 1
         Met_lam0          = -105.0_8
@@ -359,7 +371,10 @@
         !   800.00  2480.60
         ! 0 5 198.475 20.0 0.933 6371.229    #Proj flags and params
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .false.   
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
         Met_iprojflag     = 5
         Met_lam0          = 198.475_8
@@ -413,7 +428,10 @@
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 1 -150.0 90.0 0.933 6371.229    #Proj flags and params
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .false.   
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
         Met_iprojflag     = 1
         Met_lam0          = -150.0_8
@@ -444,7 +462,10 @@
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 4 265.0 25.0 25.0 25.0 6371.229    #Proj flags and params                               
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .false.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
         Met_iprojflag     = 4
         Met_lam0          =  265.0_8
@@ -477,7 +498,10 @@
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 4 265.0 25.0 25.0 25.0 6371.229    #Proj flags and params  
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .false.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
         Met_iprojflag     = 4
         Met_lam0          =  265.0_8
@@ -509,7 +533,10 @@
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 1 -135.0 90.0 0.933 6371.229    #Proj flags and params
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .false.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
         Met_iprojflag     = 1
         Met_lam0          = -135.0_8
@@ -539,7 +566,10 @@
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 4 265.0 25.0 25.0 25.0 6371.229    #Proj flags and params  
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .false.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
         Met_iprojflag     = 4
         Met_lam0          =  265.0_8
@@ -572,7 +602,10 @@
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 4 -107.0 50.0 50.0 50.0 6371.229    #Proj flags and params  
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .false.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
         Met_iprojflag     = 4
         Met_lam0          =  -107.0_8
@@ -604,7 +637,10 @@
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 4 265.0 25.0 25.0 25.0 6371.229    #Proj flags and params  
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .false.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
         Met_iprojflag     = 4
         Met_lam0          =  265.0_8
@@ -636,7 +672,10 @@
         !  radius      =  6371.229 : earth radius for spherical earth
         ! 0 1 -135.0 90.0 0.933 6371.229    #Proj flags and params
 
-        isGridRelative = .true.
+        IsLatLon_MetGrid  = .false.
+        IsGlobal_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        isGridRelative    = .true.
 
         Met_iprojflag     = 1
         Met_lam0          = -135.0_8
@@ -668,6 +707,7 @@
 !           MR_dum3d_metP(nx_submet,ny_submet,np_fullmet)
 !           MR_dum3d_metH(nx_submet,ny_submet,nz_comp)
 !           MR_dum2d_comp(nx_comp,ny_comp)
+!           MR_dum3d_compP(nx_comp,ny_comp,np_fullmet)
 !           MR_dum3d_compH(nx_comp,ny_comp,nz_comp)
 !           CompPoint_on_subMet_idx
 !           bilin_map_wgt
@@ -710,9 +750,11 @@
         end subroutine
       END INTERFACE
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                 MR_Set_MetComp_Grids                       ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                 MR_Set_MetComp_Grids                       ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       call MR_Set_Comp2Met_Map
 
@@ -952,7 +994,7 @@
               if(cond1.and.cond2) jstart = j
             enddo
           elseif(IsGlobal_MetGrid)then
-              ! There are some special cases where the met grid is global, but do not
+              ! There are some special cases where the met grid is global, but does not
               ! have values at the poles (e.g. ERA and NAVGEMHA).  There are occasional
               ! instances where we need values between the extreme lat value and the pole
             jstart = 1
@@ -1232,7 +1274,8 @@
          Map_Case.eq.4.or. & ! Met is projected, but Comp is Lat/Lon
          Map_Case.eq.5)then  ! Met Grid and Comp grids have different projections
         write(MR_global_info,*)"  Setting up arrays for rotating vectors on comp grid."
-        allocate(MR_dum3d_compH_2(nx_comp,ny_comp,nz_comp))
+        if(MR_useCompH)allocate(MR_dum3d_compH_2(nx_comp,ny_comp,nz_comp))
+        if(MR_useCompP)allocate(MR_dum3d_compP_2(nx_comp,ny_comp,np_fullmet))
         allocate(theta_Comp(nx_comp,ny_comp))
         if(Map_Case.eq.3.or.Map_Case.eq.5)then
           ! We only need to calculate inverse projections if the comp grid is projected.
@@ -1266,6 +1309,7 @@
       allocate(MR_dum3d_metH(nx_submet,ny_submet,nz_comp))
       allocate(MR_dum2d_comp_int(nx_comp,ny_comp))
       allocate(MR_dum2d_comp(nx_comp,ny_comp))
+      allocate(MR_dum3d_compP(nx_comp,ny_comp,np_fullmet))
       allocate(MR_dum3d_compH(nx_comp,ny_comp,nz_comp))
       !  The only 3d met data that persists locally is Geopotential Height.
       !  This is needed for interpolating the other variables onto a Cartesian
@@ -1342,9 +1386,9 @@
         enddo
 
       endif
-      write(MR_global_info,*)"Finished MR_Set_MetComp_Grids"
-      write(MR_global_info,*)" "
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      !write(MR_global_info,*)"Finished MR_Set_MetComp_Grids"
+      !write(MR_global_info,*)" "
+      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       end subroutine MR_Set_MetComp_Grids
 
@@ -1384,9 +1428,11 @@
       real(kind=dp) :: x_in ,y_in
       real(kind=dp) :: x_out,y_out
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      write(MR_global_production,*)"----------                          MR_Set_Comp2Met_Map               ----------"
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.1)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                          MR_Set_Comp2Met_Map               ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       ! We now have the full definition of the Met grid and the Comp grid
       ! Figure out if we need to do any remapping
@@ -1417,7 +1463,10 @@
           Map_Case = 5
         else
           ! Projections are the same type, test individual parameters
-          if(Comp_iprojflag.eq.1)then
+          if(Comp_iprojflag.eq.0)then
+            ! Both Comp and Met are non-geographic, cartesian grids
+            Map_Case = 2
+          elseif(Comp_iprojflag.eq.1)then
             ! Polar stereographic
             dum1 = abs(Comp_lam0 - Met_lam0)
             dum2 = abs(Comp_phi0 - Met_phi0)
@@ -1601,7 +1650,7 @@
         enddo
       endif ! Map_Case
 
-      write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
 
       end subroutine MR_Set_Comp2Met_Map
 
@@ -1636,9 +1685,11 @@
 
       real(kind=sp),dimension(:,:),allocatable :: wrk_loc
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------      MR_Regrid_Met2Comp                                    ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Regrid_Met2Comp                                    ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       if(IsPeriodic_CompGrid)then
         nx_max = nx1+1
@@ -1737,9 +1788,11 @@
 
       logical :: found_interv
 
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
-      !write(MR_global_production,*)"----------      MR_Regrid_P2H_linear                                  ----------"
-      !write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      if(MR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------      MR_Regrid_P2H_linear                                  ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       var_comp = -9999.0_sp
       ! Loop over all comp points
