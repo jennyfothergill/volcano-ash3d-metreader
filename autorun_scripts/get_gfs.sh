@@ -111,7 +111,7 @@ while [ "$t" -le ${HourMax} ]; do
       hour="$t"
   fi
   INFILE=${FilePre}${hour}
-  fileURL=${SERVER}/gfs.${yearmonthday}/${FChour}/$INFILE
+  fileURL=${SERVER}/gfs.${yearmonthday}/${FChour}/atmos/$INFILE
   echo "wget ${fileURL}"
   time wget ${fileURL}
   ${INSTALLDIR}/bin/gen_GRIB_index $INFILE
