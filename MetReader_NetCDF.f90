@@ -5,6 +5,7 @@
       use MetReader
       use netcdf
       use projection
+
       implicit none
 
       integer, parameter :: sp        = 4 ! single precision
@@ -288,7 +289,6 @@
           IsLatLon_MetGrid  = .true.
           IsGlobal_MetGrid  = .true.
           IsRegular_MetGrid = .false.
-
           allocate(MR_dx_met(nx_fullmet))
           allocate(MR_dy_met(ny_fullmet))
           do i = 1,nx_fullmet
@@ -341,7 +341,6 @@
             MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
           enddo
           MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
-
         else
           stop 1
         endif
@@ -362,33 +361,23 @@
           maxdimlen = 0
           infile = adjustl(trim(MR_windfiles(1)))
           nSTAT=nf90_open(adjustl(trim(infile)),NF90_NOWRITE, ncid)
-          if(nSTAT.ne.NF90_NOERR) then
-            write(MR_global_error,*)'MR ERROR: open NC file: ',nf90_strerror(nSTAT)
-            write(MR_global_log  ,*)'MR ERROR: open NC file: ',nf90_strerror(nSTAT)
-            write(MR_global_error,*)'Exiting'
-            stop 1
-          endif
+          if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_open")
           do ivar = 1,MR_MAXVARS
             if (.not.Met_var_IsAvailable(ivar)) cycle  ! Only look at variables that are available
             if (Met_var_ndim(ivar).ne.4) cycle         !  and only ones with a 'level' dimension
             invar = Met_var_NC_names(ivar)
             nSTAT = nf90_inq_varid(ncid,invar,in_var_id)  ! get the var_id for this named variable
             if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR WARNING: inq_varid: ',invar,nf90_strerror(nSTAT)
+              call MR_NC_check_status(nSTAT,0,"inq_varid")
               write(MR_global_error,*)'  Cannot find variable ',invar
               write(MR_global_error,*)'  Setting Met_var_IsAvailable to .false.'
-              write(MR_global_log  ,*)'MR WARNING: inq_varid: ',invar,nf90_strerror(nSTAT)
               Met_var_IsAvailable(ivar) = .false.
               cycle
             endif
             nSTAT = nf90_inquire_variable(ncid, in_var_id, invar, &
                       xtype = var_xtype, &
                       ndims = var_ndims)   ! get the number of dimensions
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              stop 1
-            endif
+            if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable")
             if (var_ndims.ne.Met_var_ndim(ivar))then
               write(MR_global_error,*)'MR ERROR: The actual number of dimensions differs from'
               write(MR_global_error,*)'          what is expected'
@@ -400,52 +389,35 @@
             allocate(var_dimIDs(var_ndims))
             nSTAT = nf90_inquire_variable(ncid, in_var_id, invar, &
                       dimids = var_dimIDs(:var_ndims))
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              stop 1
-            endif
+            if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable")
     
             ! 3-d transient variables should be in the COORDS convention (time, level, y, x)
             !                                                                4      3  2  1
-            ! if ivar = 1 (Geopotential Height), then get the info on x,y and t too
+            ! if ivar = 1 (Geopotential Height), then take this opportunity to get all
+            ! the info on the dimensions for x,y and time.  We will assume these
+            ! are the same for all variables.  Pressure levels will be read
+            ! separately since they do differ among variables.
             if(ivar.eq.1)then
               i_dim = 1  ! get x info
               nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
                            name =  dimname, &
                            len = dimlen)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-                stop 1
-              endif
+              if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension X")
               if(index(dimname,Met_dim_names(4)).ne.0)then
                 nx_fullmet = dimlen
                 xdim_id    = var_dimIDs(i_dim)
               endif
               nSTAT = nf90_inq_varid(ncid,dimname,var_id) ! get the variable associated with this dim
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-                stop 1
-              endif
+              if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable X")
               ! Check if we need to read into a float or a double
               nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = var_xtype)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-                stop 1
-              endif
+              if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable X")
               allocate(x_fullmet_sp(0:nx_fullmet+1))
               if(var_xtype.eq.NF90_FLOAT)then
                 allocate(dum1d_sp(dimlen))
                 nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
                        start = (/1/),count = (/dimlen/))
-                if(nSTAT.ne.NF90_NOERR)then
-                  write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                  write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                  stop 1
-                endif
+                if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var X flt")
                 ! copy to local variable
                 x_fullmet_sp(1:nx_fullmet) = dum1d_sp(1:nx_fullmet)
                 deallocate(dum1d_sp)
@@ -453,11 +425,7 @@
                 allocate(dum1d_dp(dimlen))
                 nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
                        start = (/1/),count = (/dimlen/))
-                if(nSTAT.ne.NF90_NOERR)then
-                  write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                  write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                  stop 1
-                endif
+                if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var X dbl")
                 ! copy to local variable
                 x_fullmet_sp(1:nx_fullmet) = real(dum1d_dp(1:nx_fullmet),kind=sp)
                 deallocate(dum1d_dp)
@@ -469,15 +437,12 @@
               nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
                                              "units",xtype, length, attnum)
               if(nSTAT.ne.NF90_NOERR)then
+                call MR_NC_check_status(nSTAT,0,"nf90_Inquire_Attribute")
                 write(MR_global_error,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
                 write(MR_global_log  ,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
               else
                 nSTAT = nf90_get_att(ncid, var_id,"units",ustring)
-                if(nSTAT.ne.NF90_NOERR) then
-                  write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                  write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                  stop 1
-                endif
+                call MR_NC_check_status(nSTAT,1,"nf90_get_att X units")
                 if(index(ustring,'km').gt.0.or.&
                    index(ustring,'kilo').gt.0)then
                   ! This is a projected grid
@@ -514,39 +479,23 @@
               nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
                            name =  dimname, &
                            len = dimlen)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension Y")
               if(index(dimname,Met_dim_names(3)).ne.0)then
                 ny_fullmet = dimlen
                 ydim_id    = var_dimIDs(i_dim)
               endif
 
               nSTAT = nf90_inq_varid(ncid,dimname,var_id) ! get the variable associated with this dim
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_inq_varid Y")
               ! Check if we need to read into a float or a double
               nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = var_xtype)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable Y")
               allocate(y_fullmet_sp(ny_fullmet))
               if(var_xtype.eq.NF90_FLOAT)then
                 allocate(dum1d_sp(dimlen))
                 nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
                        start = (/1/),count = (/dimlen/))
-                if(nSTAT.ne.NF90_NOERR)then
-                  write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                  write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                  stop 1
-                endif
+                call MR_NC_check_status(nSTAT,1,"nf90_get_var Y flt")
                 ! copy to local variable
                 y_fullmet_sp(1:ny_fullmet) = dum1d_sp(1:ny_fullmet)
                 deallocate(dum1d_sp)
@@ -554,31 +503,24 @@
                 allocate(dum1d_dp(dimlen))
                 nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
                        start = (/1/),count = (/dimlen/))
-                if(nSTAT.ne.NF90_NOERR)then
-                  write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                  write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                  stop 1
-                endif
+                call MR_NC_check_status(nSTAT,1,"nf90_get_var Y dbl")
                 ! copy to local variable
                 y_fullmet_sp(1:ny_fullmet) = real(dum1d_dp(1:ny_fullmet),kind=sp)
                 deallocate(dum1d_dp)
               else
-                write(MR_global_error,*)'MR ERROR: Cannot recognize variable type for x'
+                write(MR_global_error,*)'MR ERROR: Cannot recognize variable type for y'
                 stop 1
               endif
               ! Check the units
               nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
                                              "units",xtype, length, attnum)
               if(nSTAT.ne.NF90_NOERR)then
+                call MR_NC_check_status(nSTAT,0,"nf90_Inquire_Attribute Y units")
                 write(MR_global_error,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
                 write(MR_global_log  ,*)'MR WARNING: cannot file units ',dimname,nf90_strerror(nSTAT)
               else
                 nSTAT = nf90_get_att(ncid, var_id,"units",ustring)
-                if(nSTAT.ne.NF90_NOERR) then
-                  write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                  write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                  stop 1
-                endif
+                call MR_NC_check_status(nSTAT,1,"nf90_get_att Y units")
                 if(index(ustring,'km').gt.0.or.&
                    index(ustring,'kilo').gt.0)then
                   ! This is a projected grid
@@ -621,27 +563,25 @@
               nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
                            name =  dimname, &
                            len = dimlen)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension time")
               if(index(dimname,Met_dim_names(1)).ne.0)then
                 nt_fullmet = dimlen
                 tdim_id    = var_dimIDs(i_dim)
               endif
   
-            endif
-            ! Now checking level coordinates (pressure, height, depth); third dimension
+            endif ! ivar.eq.1
+            ! Dimension variables for x,y,time were read while reading GPH, but
+            ! we need the level information for all variables.
+            ! Now checking level coordinates (pressure, height, depth);
+            ! This is the third dimension for COORD compliant netcdf files.
             i_dim = 3
             nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
                          name =  dimname, & 
                          len = dimlen)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension P")
+            ! Here is the master list of the known level names. For each
+            ! variable, we check if the 'level' coordinate is new or already
+            ! noted in this file, building an indexed list
             nSTAT = nf90_inq_varid(ncid,dimname,var_id)
             if(nSTAT.eq.NF90_NOERR.and. &   ! This first condition excludes dims with no vars
                (index(dimname,'lev').ne.0.or.&
@@ -679,11 +619,12 @@
                 endif
               endif
             else
+              call MR_NC_check_status(nSTAT,0,"nf90_inq_varid")
               write(MR_global_error,*)'MR ERROR: level coordinate is not in pos. 3 for ',invar
               write(MR_global_error,*)'          Expected one of: lev, isobaric, pressure,'
               write(MR_global_error,*)'            height, depth, lv_ISBL1, bottom_top,'
               write(MR_global_error,*)'            bottom_top_stag, soil_layers_stag'
-              write(MR_global_error,*)'          Instead, found: ',Met_dim_names(2)
+              write(MR_global_error,*)'          Instead, found: ',dimname
               write(MR_global_log  ,*)'MR ERROR: level coordinate is not in pos. 3 for ',invar
               stop 1
             endif
@@ -702,31 +643,20 @@
               nSTAT = nf90_inquire_dimension(ncid,Met_var_zdim_ncid(ivar), &
                          name =  dimname, &
                          len = dimlen)
+              call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension level")
               idx = Met_var_zdim_idx(ivar)
               nlevs_fullmet(idx) = dimlen
               ! Now inquire and populate the dimension variable info
               nSTAT = nf90_inq_varid(ncid,dimname,var_id)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_varid ',dimname,nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_inq_varid level")
               ! Check if we need to read into a float or a double
               nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = var_xtype)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_variable: ',dimname,nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable level")
               if(var_xtype.eq.NF90_FLOAT)then
                 allocate(dum1d_sp(dimlen))
                 nSTAT = nf90_get_var(ncid,var_id,dum1d_sp, &
                        start = (/1/),count = (/dimlen/))
-                if(nSTAT.ne.NF90_NOERR)then
-                  write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                  write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                  stop 1
-                endif
+                call MR_NC_check_status(nSTAT,1,"nf90_get_var level flt")
                 ! copy to local variable
                 levs_fullmet_sp(idx,1:nlevs_fullmet(idx)) = dum1d_sp(1:nlevs_fullmet(idx))
                 deallocate(dum1d_sp)
@@ -734,11 +664,7 @@
                 allocate(dum1d_dp(dimlen))
                 nSTAT = nf90_get_var(ncid,var_id,dum1d_dp, &
                        start = (/1/),count = (/dimlen/))
-                if(nSTAT.ne.NF90_NOERR)then
-                  write(MR_global_error,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                  write(MR_global_log  ,*)'MR ERROR: get_var ',dimname,nf90_strerror(nSTAT)
-                  stop 1
-                endif
+                call MR_NC_check_status(nSTAT,1,"nf90_get_var level dbl")
                 ! copy to local variable
                 levs_fullmet_sp(idx,1:nlevs_fullmet(idx)) = real(dum1d_dp(1:nlevs_fullmet(idx)),kind=sp)
                 deallocate(dum1d_dp)
@@ -746,18 +672,16 @@
               ! Check the units
               nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
                                              "units",xtype, length, attnum)
+              call MR_NC_check_status(nSTAT,0,"nf90_Inquire_Attribute level units")
               if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR WARNING: cannot find dim units ',dimname,nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR WARNING: cannot find dim units ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_error,*)'MR ERROR: cannot find dim units ',dimname,nf90_strerror(nSTAT)
+                write(MR_global_log  ,*)'MR ERROR: cannot find dim units ',dimname,nf90_strerror(nSTAT)
                 IsPressureDimension = .false.
                 stop 1
               else
                 nSTAT = nf90_get_att(ncid, var_id,"units",ustring)
-                if(nSTAT.ne.NF90_NOERR) then
-                  write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                  write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                  stop 1
-                endif
+                call MR_NC_check_status(nSTAT,1,"nf90_get_att level units")
+
                 ! Note: the variables below are single-valued, not arrays on ivar
                 !       If a pressure is found, the assumption here is that all pressure coordinates will
                 !       be given in the same units (hPa or Pa) and the same orientations (bot to top, or
@@ -795,14 +719,11 @@
 
           ! Close file
           nSTAT = nf90_close(ncid)
-          if(nSTAT.ne.NF90_NOERR)then
-             write(MR_global_error,*)'MR ERROR: close file: ',nf90_strerror(nSTAT)
-             write(MR_global_log  ,*)'MR ERROR: close file: ',nf90_strerror(nSTAT)
-             stop 1
-          endif
-        endif ! MR_iwindformat.eq.50
+          call MR_NC_check_status(nSTAT,1,"nf90_close")
+        endif ! else part of (MR_iwindformat.eq.50)
         !-----------------------------------------
 
+        ! Now report on what we've found
         write(MR_global_production,*)" Found these levels"
         write(MR_global_production,*)"  VaribleID    LevelIdx       dimID      length"
         do ivar = 1,MR_MAXVARS
@@ -837,7 +758,14 @@
           enddo
           deallocate(p_fullmet_sp)
         endif
-  
+ 
+        ! The native vertical coordinate used in MetReader is that used for GPH.
+        ! Here we check each of the vertical coordinates and note how they
+        ! compare with that of GPH, assigning the followin codes:
+        !  1 = same dim length: assume one-to-one mapping
+        !  2 = fewer levels: truncated version of GPH (doesn't extend as hight)
+        !  3 = fewer levels: missing levels requiring interpolation
+        !  4 = more values than that of GPH
         levs_code(1:nlev_coords_detected) = 0
         levs_code(1) = 1                       ! The first var checked (GPH) should have a one-to-one mapping
         ! Check how each of the pressure coordinates map onto the GPH grid
@@ -882,7 +810,7 @@
         idx = Met_var_zdim_idx(1)
         p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
   
-      endif ! MR_iwind.eq.5
+      endif ! else part of (MR_iwind.eq.5)
       !---------------------------------------------------------------------------------
 
       if(MR_iwindformat.eq.0)then
@@ -994,101 +922,45 @@
 
       real(kind=dp) :: lat_in,lon_in
 
-        ! MAP_PROJ - Model projection  1=Lambert, 2=polar stereographic, 
-        !                              3=mercator, 6=lat-lon
+        ! MAP_PROJ - Model projection  1 = Lambert
+        !                              2 = polar stereographic
+        !                              3 = mercator
+        !                              6 = lat-lon
 
         ! First set spatial (x/y) grid
         ! Open first windfile and assume all grids are the same
 
       write(MR_global_info,*)"About to open first WRF file : ",MR_windfiles(1)
       nSTAT=nf90_open(adjustl(trim(MR_windfiles(1))),NF90_NOWRITE, ncid)
-      if(nSTAT.ne.NF90_NOERR) then
-        write(MR_global_error,*)'MR ERROR: open WRF file: ',nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: open WRF file: ',nf90_strerror(nSTAT)
-        write(MR_global_error,*)'Exiting'
-        stop 1
-      endif
+      call MR_NC_check_status(nSTAT,1,"nf90_open WRF file")
       
-      Met_dim_names(1) = "Time"       ! time
-      Met_dim_names(2) = "bottom_top"      ! pressure (24 levels 10 -> 1000)
+      Met_dim_names(1) = "Time"             ! time
+      Met_dim_names(2) = "bottom_top"       ! pressure (24 levels 10 -> 1000)
       Met_dim_names(3) = "south_north"      ! y        (90.0 -> -90.0)
-      Met_dim_names(4) = "west_east"      ! x        (0.0 -> 378.0)
-      Met_dim_names(5) = "bottom_top_stag"      ! Stag in Z (pressure coordinate for Vz)
-      Met_dim_names(6) = "west_east_stag"       ! Stag in x
-      Met_dim_names(7) = "south_north_stag"     ! Stag in y
+      Met_dim_names(4) = "west_east"        ! x        (0.0 -> 378.0)
+      Met_dim_names(5) = "bottom_top_stag"  ! Stag in Z (pressure coordinate for Vz)
+      Met_dim_names(6) = "west_east_stag"   ! Stag in x
+      Met_dim_names(7) = "south_north_stag" ! Stag in y
 
       ! Get dim ids and sizes
       nSTAT = nf90_inq_dimid(ncid,Met_dim_names(1),t_dim_id)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_dimid Time: ',nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_dimid Time: ',nf90_strerror(nSTAT)
-        stop 1
-      endif
+      call MR_NC_check_status(nSTAT,1,"nf90_inq_dimid Time")
       nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,name=name_dum,len=nt_fullmet)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: Inquire_Dimension Time: ', &
-                             nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension Time: ', &
-                             nf90_strerror(nSTAT)
-        stop 1
-      endif 
+      call MR_NC_check_status(nSTAT,1,"nf90_Inquire_Dimension Time")
       nSTAT = nf90_inq_dimid(ncid,Met_dim_names(4),x_dim_id)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_dimid x: ',nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_dimid x: ',nf90_strerror(nSTAT)
-        stop 1
-      endif
-
+      call MR_NC_check_status(nSTAT,1,"nf90_inq_dimid X")
       nSTAT = nf90_Inquire_Dimension(ncid,x_dim_id,name=name_dum,len=nx_fullmet)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: Inquire_Dimension x: ', &
-                             nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension x: ', &
-                             nf90_strerror(nSTAT)
-        stop 1
-      endif
-
+      call MR_NC_check_status(nSTAT,1,"nf90_Inquire_Dimension X")
       nSTAT = nf90_inq_dimid(ncid,Met_dim_names(3),y_dim_id)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_dimid y: ',nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_dimid y: ',nf90_strerror(nSTAT)
-        stop 1
-      endif
-
+      call MR_NC_check_status(nSTAT,1,"nf90_inq_dimid Y")
       nSTAT = nf90_Inquire_Dimension(ncid,y_dim_id,name=name_dum,len=ny_fullmet)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: Inquire_Dimension y: ', &   
-                             nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension y: ', &
-                             nf90_strerror(nSTAT)
-        stop 1
-      endif
-
+      call MR_NC_check_status(nSTAT,1,"nf90_Inquire_Dimension Y")
       nSTAT = nf90_inq_dimid(ncid,Met_dim_names(2),z_dim_id)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_dimid z: ',nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_dimid z: ',nf90_strerror(nSTAT)
-        stop 1
-      endif
-
+      call MR_NC_check_status(nSTAT,1,"nf90_inq_dimid level")
       nSTAT = nf90_Inquire_Dimension(ncid,z_dim_id,name=name_dum,len=neta_fullmet)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: Inquire_Dimension z: ', &
-                             nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension z: ', &
-                             nf90_strerror(nSTAT)
-        stop 1
-      endif
-
+      call MR_NC_check_status(nSTAT,1,"nf90_Inquire_Dimension level")
       nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "MAP_PROJ", Map_Proj)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: get_att MAP_PROJ: ', &
-                             nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: get_att MAP_PROJ: ', &
-                             nf90_strerror(nSTAT)
-        stop 1
-      endif
-
+      call MR_NC_check_status(nSTAT,1,"nf90_get_att MAP_PROJ")
       if(Map_Proj.eq.1)then
          ! Lambert
          !   truelat1
@@ -1099,41 +971,17 @@
         write(MR_global_info,*)"  WRF projection detected: Lambert Conformal"
 
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "DX", WRF_dx)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_att DX: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_att DX: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att DX")
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "DY", WRF_dy)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_att DY: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_att DY: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att DY")
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "CEN_LAT", Cen_Lat)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_att CEN_LAT: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_att CEN_LAT: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att CEN_LAT")
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "STAND_LON", Stand_Lon)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_att STAND_LON: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_att STAND_LON: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att STAND_LON")
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "TRUELAT1", Truelat1)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_att TRUELAT1: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_att TRUELAT1: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att TRUELAT1")
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "TRUELAT2", Truelat2)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_att TRUELAT2: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_att TRUELAT2: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att TRUELAT2")
 
           ! convert dx, dy to km
         IsLatLon_MetGrid  = .false.
@@ -1147,34 +995,19 @@
         allocate(dum3d_sp(nx_fullmet,ny_fullmet,1))
 
         nSTAT = nf90_inq_varid(ncid,"XLONG",lon_var_id)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: inq_varid XLONG: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: inq_varid XLONG: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_inq_varid XLONG")
         nSTAT = nf90_inq_varid(ncid,"XLAT",lat_var_id)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: inq_varid XLAT: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: inq_varid XLAT: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_inq_varid XLAT")
 
         nSTAT = nf90_get_var(ncid,lon_var_id,dum3d_sp, &
                start = (/1,1,1/),count = (/nx_fullmet,ny_fullmet,1/))
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_var XLONG: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_var XLONG: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
-           Met_Proj_lon(:,:) = dum3d_sp(:,:,1)
+        call MR_NC_check_status(nSTAT,1,"nf90_get_var XLONG")
+        Met_Proj_lon(:,:) = dum3d_sp(:,:,1)
+
         nSTAT = nf90_get_var(ncid,lat_var_id,dum3d_sp, &
                start = (/1,1,1/),count = (/nx_fullmet,ny_fullmet,1/))
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_var XLAT: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_var XLAT: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
-           Met_Proj_lat(:,:) = dum3d_sp(:,:,1)
+        call MR_NC_check_status(nSTAT,1,"nf90_get_var XLAT")
+        Met_Proj_lat(:,:) = dum3d_sp(:,:,1)
 
         ! In the example WRF files, x and y projected values are not actually
         ! provided, so we recreate them here using the coordinates if the LL
@@ -1232,41 +1065,17 @@
         write(MR_global_info,*)"  WRF projection detected: Mercator"
 
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "DX", WRF_dx)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_att DX: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_att DX: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att DX")
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "DY", WRF_dy)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_att DY: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_att DY: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att DY")
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "CEN_LAT", Cen_Lat)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_att CEN_LAT: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_att CEN_LAT: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att CEN_LAT")
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "STAND_LON", Stand_Lon)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_att STAND_LON: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_att STAND_LON: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att STAND_LON")
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "TRUELAT1", Truelat1)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_att TRUELAT1: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_att TRUELAT1: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att TRUELAT1")
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "TRUELAT2", Truelat2)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_att TRUELAT2: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_att TRUELAT2: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att TRUELAT2")
 
           ! convert dx, dy to km
         IsLatLon_MetGrid  = .false.
@@ -1280,34 +1089,18 @@
         allocate(dum3d_sp(nx_fullmet,ny_fullmet,1))
 
         nSTAT = nf90_inq_varid(ncid,"XLONG",lon_var_id)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: inq_varid XLONG: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: inq_varid XLONG: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_inq_varid XLONG")
         nSTAT = nf90_inq_varid(ncid,"XLAT",lat_var_id)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: inq_varid XLAT: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: inq_varid XLAT: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_inq_varid XLAT")
 
         nSTAT = nf90_get_var(ncid,lon_var_id,dum3d_sp, &
                start = (/1,1,1/),count = (/nx_fullmet,ny_fullmet,1/))
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_var XLONG: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_var XLONG: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
-           Met_Proj_lon(:,:) = dum3d_sp(:,:,1)
+        call MR_NC_check_status(nSTAT,1,"nf90_get_var XLONG")
+        Met_Proj_lon(:,:) = dum3d_sp(:,:,1)
         nSTAT = nf90_get_var(ncid,lat_var_id,dum3d_sp, &
                start = (/1,1,1/),count = (/nx_fullmet,ny_fullmet,1/))
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: get_var XLAT: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: get_var XLAT: ',nf90_strerror(nSTAT)
-          stop 1
-        endif
-           Met_Proj_lat(:,:) = dum3d_sp(:,:,1)
+        call MR_NC_check_status(nSTAT,1,"nf90_get_var XLAT")
+        Met_Proj_lat(:,:) = dum3d_sp(:,:,1)
 
         ! In the example WRF files, x and y projected values are not actually
         ! provided, so we recreate them here using the coordinates if the LL
@@ -1376,61 +1169,41 @@
       ! To populate a place-holder p_fullmet_sp, read the full pressure grid and
       ! copy a representative column
       nSTAT = nf90_inq_varid(ncid,"PB",PB_var_id)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_varid PB: ',nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_varid PB: ',nf90_strerror(nSTAT)
-        stop 1
-      endif
+      call MR_NC_check_status(nSTAT,1,"nf90_inq_varid PB")
 
       nSTAT = nf90_get_var(ncid,PB_var_id,dum4d_sp, &
              start = (/1,1,1,1/),count = (/nx_fullmet,ny_fullmet,neta_fullmet,1/))
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: get_var PB: ',nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: get_var PB: ',nf90_strerror(nSTAT)
-        stop 1
-      endif
-         p_fullmet_sp(:) = dum4d_sp(1,1,:,1)
+      call MR_NC_check_status(nSTAT,1,"nf90_get_var PB")
+      p_fullmet_sp(:) = dum4d_sp(1,1,:,1)
       nSTAT = nf90_inq_varid(ncid,"P",Ppert_var_id)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_varid P: ',nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_varid P: ',nf90_strerror(nSTAT)
-        stop 1
-      endif
+      call MR_NC_check_status(nSTAT,1,"nf90_inq_varid P")
       nSTAT = nf90_get_var(ncid,Ppert_var_id,dum4d_sp, &
              start = (/1,1,1,1/),count = (/nx_fullmet,ny_fullmet,neta_fullmet,1/))
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: get_var P: ',nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: get_var P: ',nf90_strerror(nSTAT)
-        stop 1
-      endif
+      call MR_NC_check_status(nSTAT,1,"nf90_get_var P")
       p_fullmet_sp(:) = p_fullmet_sp(:) + dum4d_sp(1,1,:,1)
       MR_Max_geoH_metP_predicted = MR_Z_US_StdAtm(p_fullmet_sp(np_fullmet)/100.0_sp) 
       !p_fullmet_sp    = p_fullmet_sp    * 100.0_sp   ! convert from hPa to Pa
 
-       x_inverted = .false.
-       y_inverted = .false.
-       z_inverted = .false.
+      x_inverted = .false.
+      y_inverted = .false.
+      z_inverted = .false.
 
-       ! Close file
-       nSTAT = nf90_close(ncid)
-       if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: close WRF file: ',nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: close WRF file: ',nf90_strerror(nSTAT)
-          stop 1
-       endif
+      ! Close file
+      nSTAT = nf90_close(ncid)
+      call MR_NC_check_status(nSTAT,1,"nf90_close WRF file")
 
-       nlev_coords_detected = 1
-       allocate(nlevs_fullmet(nlev_coords_detected))
-       nlevs_fullmet(1) = np_fullmet
-       allocate(levs_code(nlev_coords_detected))
-       levs_code(1) = 1
-       allocate(levs_fullmet_sp(nlev_coords_detected,np_fullmet))
-       levs_fullmet_sp(1,1:np_fullmet) = p_fullmet_sp(1:np_fullmet)
+      nlev_coords_detected = 1
+      allocate(nlevs_fullmet(nlev_coords_detected))
+      nlevs_fullmet(1) = np_fullmet
+      allocate(levs_code(nlev_coords_detected))
+      levs_code(1) = 1
+      allocate(levs_fullmet_sp(nlev_coords_detected,np_fullmet))
+      levs_fullmet_sp(1,1:np_fullmet) = p_fullmet_sp(1:np_fullmet)
 
-       Met_var_zdim_idx(:)  = 1
-       !Met_var_zdim_ncid(ivar) = var_dimIDs(i_dim)
+      Met_var_zdim_idx(:)  = 1
+      !Met_var_zdim_ncid(ivar) = var_dimIDs(i_dim)
 
-       end subroutine MR_Get_WRF_grid
+      end subroutine MR_Get_WRF_grid
 
 !##############################################################################
 !
@@ -1552,25 +1325,25 @@
 
         ! Here the branch for when MR_iwindformat = 25 or 27
         ! First copy path read in to slot 2
-        MR_iw5_root = MR_windfiles(1)
+        !MR_iw5_root = MR_windfiles(1)
  110    format(a50,a1,i4,a1)
         write(MR_windfiles(1),110)trim(ADJUSTL(MR_iw5_root)),'/', &
                                    MR_Comp_StartYear,'/'
         if(MR_iwindformat.eq.25)then
           iwf_int = 6.0_dp
-          iwf_tot = 8784.0_dp
+          iwf_tot = MR_iw5_hours_per_file
         elseif(MR_iwindformat.eq.26)then
           iwf_int = 6.0_dp
-          iwf_tot = 744.0_dp
+          iwf_tot = MR_iw5_hours_per_file
         elseif(MR_iwindformat.eq.27)then
           iwf_int = 6.0_dp
-          iwf_tot = 8784.0_dp
+          iwf_tot = MR_iw5_hours_per_file
         elseif(MR_iwindformat.eq.29)then
           iwf_int = 1.0_dp
-          iwf_tot = 24.0_dp
+          iwf_tot = MR_iw5_hours_per_file
         elseif(MR_iwindformat.eq.30)then
           iwf_int = 3.0_dp
-          iwf_tot = 744.0_dp
+          iwf_tot = MR_iw5_hours_per_file
         endif
         nt_fullmet = 1
         do iw = 1,MR_iwindfiles
@@ -1600,6 +1373,7 @@
           call MR_Set_iwind5_filenames(MR_Comp_StartHour+(iw-1)*iwf_tot,1,Z_infile)
           nSTAT = nf90_open(trim(ADJUSTL(Z_infile)),NF90_NOWRITE,ncid)
           if(nSTAT.ne.NF90_NOERR)then
+            call MR_NC_check_status(nSTAT,0,"nf90_open")
             if(iw.eq.1)then
               ! Do a hard stop if we can't even read the first file
               write(MR_global_error,*)'MR ERROR: nf90_open: ',nf90_strerror(nSTAT)
@@ -1616,74 +1390,51 @@
             endif
           endif
           nSTAT = nf90_inq_dimid(ncid,Met_dim_names(1),t_dim_id)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-            write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(1)
-            write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-            stop 1
-          endif
+          call MR_NC_check_status(nSTAT,1,"nf90_inq_dimid time")
           nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,len=nt_tst)
-          if(nSTAT.ne.NF90_NOERR)then
-            write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-            write(MR_global_error,*)"    Could not dimension length: "
-            write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-            stop 1
-          endif
+          call MR_NC_check_status(nSTAT,1,"nf90_Inquire_Dimension time")
           if(iw.eq.1.and.(MR_iwindformat.eq.29.or.&
                           MR_iwindformat.eq.30))then
             ! Normally we would populate the x and y arrays in MR_Read_Met_DimVars_netcdf, but
             ! for Gaussian grids, it is easier to just read the grids directly.  We will do
             ! this now while we have the Geopotential Height file open.  
             nSTAT = nf90_inq_dimid(ncid,Met_dim_names(3),y_dim_id)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_dimid lat: ',nf90_strerror(nSTAT)
-              write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(3)
-              write(MR_global_log  ,*)'MR ERROR: inq_dimid lat: ',nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_inq_dimid Y (lat)")
             nSTAT = nf90_Inquire_Dimension(ncid,y_dim_id,len=ny_fullmet)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_dimid lat: ',nf90_strerror(nSTAT)
-              write(MR_global_error,*)"    Could not dimension length: "
-              write(MR_global_log  ,*)'MR ERROR: inq_dimid lat: ',nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_Inquire_Dimension Y (lat)")
             allocate(y_fullmet_sp(ny_fullmet))
             allocate(dum1d_dp(ny_fullmet))
             nSTAT = nf90_inq_varid(ncid,Met_dim_names(3),y_var_id)
+            call MR_NC_check_status(nSTAT,1,"nf90_inq_varid Y (lat)")
             nSTAT = nf90_get_var(ncid,y_var_id,dum1d_dp, &
                      start = (/1/),count = (/ny_fullmet/))
+            call MR_NC_check_status(nSTAT,1,"nf90_get_var Y (lat)")
             y_fullmet_sp(1:ny_fullmet) = real(dum1d_dp(1:ny_fullmet),kind=sp)
             y_inverted = .true.
             deallocate(dum1d_dp)
 
             nSTAT = nf90_inq_dimid(ncid,Met_dim_names(4),x_dim_id)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_dimid lon: ',nf90_strerror(nSTAT)
-              write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(4)
-              write(MR_global_log  ,*)'MR ERROR: inq_dimid lon: ',nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_inq_dimid X (lon)")
             nSTAT = nf90_Inquire_Dimension(ncid,x_dim_id,len=nx_fullmet)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_dimid lon: ',nf90_strerror(nSTAT)
-              write(MR_global_error,*)"    Could not dimension length: "
-              write(MR_global_log  ,*)'MR ERROR: inq_dimid lon: ',nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_Inquire_Dimension X (lon)")
             allocate(x_fullmet_sp(0:nx_fullmet+1))
             allocate(dum1d_dp(nx_fullmet))
             nSTAT = nf90_inq_varid(ncid,Met_dim_names(4),x_var_id)
+            call MR_NC_check_status(nSTAT,1,"nf90_inq_varid X (lon)")
             nSTAT = nf90_get_var(ncid,x_var_id,dum1d_dp, &
                      start = (/1/),count = (/nx_fullmet/))
+            call MR_NC_check_status(nSTAT,1,"nf90_get_var X (lon)")
             x_fullmet_sp(1:nx_fullmet) = real(dum1d_dp(1:nx_fullmet),kind=sp)
             x_inverted = .false.
-            x_fullmet_sp(0)            = x_fullmet_sp(nx_fullmet)-360.0_sp
-            x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(1)          +360.0_sp
+            x_fullmet_sp(0)            = 2.0_sp*x_fullmet_sp(1)-x_fullmet_sp(2)
+            x_fullmet_sp(nx_fullmet+1) = 2.0_sp*x_fullmet_sp(nx_fullmet) - &
+                                                x_fullmet_sp(nx_fullmet-1)
             deallocate(dum1d_dp)
 
-          endif
+          endif ! iwf = 29 or 30
           nSTAT = nf90_close(ncid)
+          call MR_NC_check_status(nSTAT,1,"nf90_close")
+
            ! Set this (and subsequent) iw to the current number of timesteps
           MR_windfiles_nt_fullmet(iw:) = nt_tst
           if(nt_tst.gt.nt_fullmet) nt_fullmet = nt_tst
@@ -1713,6 +1464,7 @@
           ! Loop through all the windfiles
           do iw = 1,MR_iwindfiles
             nSTAT = nf90_open(trim(ADJUSTL(MR_windfiles(iw))),NF90_NOWRITE,ncid)
+            call MR_NC_check_status(nSTAT,0,"nf90_open WRF")
             if(nSTAT.ne.NF90_NOERR)then
               write(MR_global_error,*)'MR ERROR: nf90_open to read header:', &
                              nf90_strerror(nSTAT)
@@ -1723,39 +1475,20 @@
             if(iw.eq.1)then
               ! Find the id of the time dimension
               nSTAT = nf90_inq_dimid(ncid,trim(ADJUSTL(Met_dim_names(1))),t_dim_id)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-                write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(1)
-                write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_inq_dimid time")
               ! Get length of time dimension and allocate MR_windfile_stephour
               nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,len=nt_fullmet)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: Inquire_Dimension time: ', &
-                                   nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension time: ', &
-                                   nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_Inquire_Dimension time")
               write(MR_global_info,*)"  Assuming all NWP files have the same number of steps."
               write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"file(s)"
               write(MR_global_info,*)"                              ",nt_fullmet,"step(s) each"
               allocate(MR_windfile_stephour(MR_iwindfiles,nt_fullmet))
               MR_windfile_stephour(:,:) = 0.0_dp
               nSTAT = nf90_inq_varid(ncid,"Times",time_var_id)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_varid:',"Times",nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_varid:',"Times",nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_inq_varid Times")
               nSTAT = nf90_inquire_variable(ncid, time_var_id, invar, &
                   xtype = var_xtype)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_variable:',"Times",nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_variable:',"Times",nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable Times")
               allocate(filetime_in_sp(nt_fullmet))
               if(nt_fullmet.gt.1)then
                 write(MR_global_error,*)"MR ERROR: Currently WRF files are expected to only have one"
@@ -1767,18 +1500,10 @@
             nSTAT = nf90_get_var(ncid,time_var_id,Timestr_WRF,&
                            start = (/1,1/),       &
                            count = (/19,1/))
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: get_var:',"Times",nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: get_var:',"Times",nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_get_var Times")
 
             nSTAT = nf90_close(ncid)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: Could not close file',nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: Could not close file:',nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_close WRF")
 
             read(Timestr_WRF,121)itstart_year,itstart_month,itstart_day, &
                               itstart_hour,itstart_min,itstart_sec
@@ -1802,6 +1527,7 @@
             ! in the 'units' attribute of the time variable
             write(MR_global_info,*)iw,trim(ADJUSTL(MR_windfiles(iw)))
             nSTAT = nf90_open(trim(ADJUSTL(MR_windfiles(iw))),NF90_NOWRITE,ncid)
+            call MR_NC_check_status(nSTAT,0,"nf90_open")
             if(nSTAT.ne.NF90_NOERR)then
               write(MR_global_error,*)'MR ERROR: nf90_open to read header:', &
                              nf90_strerror(nSTAT)
@@ -1810,33 +1536,15 @@
               stop 1
             endif
 
-
-
-
             ! Find the id of the time dimension
             !   First, search for the GPH variable and check its
             !   dimensions
             nSTAT = nf90_inq_varid(ncid,Met_var_NC_names(1),gph_var_id)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_varid GPH: ',nf90_strerror(nSTAT)
-              write(MR_global_error,*)"    Could not find variable: ",Met_var_NC_names(1)
-              write(MR_global_log  ,*)'MR ERROR: inq_varid GPH: ',nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_inq_varid GPH")
             nSTAT = nf90_inquire_variable(ncid, gph_var_id, ndims = gph_ndims)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_var GPH: ',nf90_strerror(nSTAT)
-              write(MR_global_error,*)"    Could not inquire variable: ",Met_var_NC_names(1)
-              write(MR_global_log  ,*)'MR ERROR: inq_var GPH: ',nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable GPH")
             nSTAT = nf90_inquire_variable(ncid, gph_var_id, dimids = gph_DimIDs(:gph_ndims))
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_var GPH: ',nf90_strerror(nSTAT)
-              write(MR_global_error,*)"    Could not inquire variable: ",Met_var_NC_names(1)
-              write(MR_global_log  ,*)'MR ERROR: inq_var GPH: ',nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable GPH")
             if(gph_ndims.lt.4)then
               write(MR_global_error,*)'MR ERROR:'
               write(MR_global_error,*)&
@@ -1846,31 +1554,24 @@
               stop 1
             endif
             nSTAT = nf90_inquire_dimension(ncid,gph_DimIDs(1),indim)
+            call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension X")
             Met_dim_names(4)= trim(adjustl(indim))
             nSTAT = nf90_inquire_dimension(ncid,gph_DimIDs(2),indim)
+            call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension Y")
             Met_dim_names(3)= trim(adjustl(indim))
             nSTAT = nf90_inquire_dimension(ncid,gph_DimIDs(3),indim)
+            call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension level")
             Met_dim_names(2)= trim(adjustl(indim))
             nSTAT = nf90_inquire_dimension(ncid,gph_DimIDs(4),indim)
+            call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension Time")
             Met_dim_names(1)= trim(adjustl(indim))
 
             nSTAT = nf90_inq_dimid(ncid,trim(ADJUSTL(Met_dim_names(1))),t_dim_id)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-              write(MR_global_error,*)"    Could not find dimension: ",Met_dim_names(1)
-              write(MR_global_log  ,*)'MR ERROR: inq_dimid time: ',nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_inq_dimid Time")
             if(iw.eq.1)then
               ! Get length of time dimension and allocate MR_windfile_stephour
               nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,len=nt_fullmet)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: Inquire_Dimension time: ', &
-                                   nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension time: ', &
-                                   nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension Time")
               write(MR_global_info,*)"  Assuming all NWP files have the same number of steps."
               write(MR_global_info,*)"   Allocating time arrays for ",MR_iwindfiles,"files"
               write(MR_global_info,*)"                              ",nt_fullmet,"step(s) each"
@@ -1879,47 +1580,32 @@
 
             ! get variable id for time
             nSTAT = nf90_inq_varid(ncid,trim(ADJUSTL(Met_dim_names(1))),time_var_id)
-            if(nSTAT.ne.NF90_NOERR) then
-              write(MR_global_error,*)'MR ERROR: inq_varid:',"time",nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_varid:',"time",nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_inq_varid Time")
             ! We need the reftime for this file, check time variable for 'units'
             nSTAT = nf90_Inquire_Attribute(ncid, time_var_id,&
                                            "units",xtype, length, attnum)
             if(nSTAT.eq.0)then
               TimeHasUnitsAttr = .true.
               nSTAT = nf90_get_att(ncid, time_var_id,"units",tstring2)
-              if(nSTAT.ne.NF90_NOERR) then
-                write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_get_att time units")
               reftimedimlen = 31  ! set the length to the full amount
             else
+              ! if the call to check units above failed, issue a warning
+              call MR_NC_check_status(nSTAT,0,"nf90_Inquire_Attribute")
+              write(MR_global_log  ,*)'  Trying to read GRIB_orgReferenceTime'
               ! Try GRIB_orgReferenceTime
               nSTAT = nf90_Inquire_Attribute(ncid, time_var_id,&
                                              "GRIB_orgReferenceTime",xtype, length, attnum)
-              if(nSTAT.ne.NF90_NOERR) then
-                write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                stop 1
-              endif
-              if(nSTAT.eq.0)then
-                nSTAT = nf90_get_att(ncid, time_var_id,"GRIB_orgReferenceTime",tstring2)
-                if(nSTAT.ne.NF90_NOERR) then
-                  write(MR_global_error,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                  write(MR_global_log  ,*)'MR ERROR: get_att:',"time",nf90_strerror(nSTAT)
-                  stop 1
-                endif
-                TimeHasUnitsAttr = .true.
-              else
-                TimeHasUnitsAttr = .false.
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_Inquire_Attribute Time GRIB_orgReferenceTime")
+              nSTAT = nf90_get_att(ncid, time_var_id,"GRIB_orgReferenceTime",tstring2)
+              call MR_NC_check_status(nSTAT,1,"nf90_get_att Time GRIB_orgReferenceTime")
+
+              TimeHasUnitsAttr = .true.
             endif
 
             if(TimeHasUnitsAttr)then
               if(index(tstring2,'since').ne.0)then
+                ! loop over the first 26 characters looking for 'since'
                 do i=1,26
                   ! try to parse
                   !  time:units = "Hour since 2016-01-11T00:00:00Z" ;
@@ -1943,6 +1629,7 @@
               ! Time variable does not have units attribute
               ! Try variable 'reftime'
               nSTAT = nf90_inq_varid(ncid,'reftime',reftime_var_id)
+              call MR_NC_check_status(nSTAT,0,"nf90_inq_varid reftime")
               if(nSTAT.ne.NF90_NOERR)then
                 write(MR_global_error,*)"MR ERROR:  Could not read time:units or reftime"
                 write(MR_global_error,*)"        Windfile start time is not defined."
@@ -1953,11 +1640,13 @@
               allocate(var_dimIDs(1))
               nSTAT = nf90_inquire_variable(ncid, reftime_var_id, invar, &
                         dimids = var_dimIDs(:var_ndims))
+              call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable reftime")
               reftimedimID = var_dimIDs(1)
               nSTAT = nf90_inquire_dimension(ncid,reftimedimID, &
                            len = reftimedimlen)
-
+              call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension reftime")
               nSTAT = nf90_get_var(ncid,reftime_var_id,tstring2(:reftimedimlen))
+              call MR_NC_check_status(nSTAT,0,"nf90_get_var reftime")
               if(nSTAT.ne.0)then
                 write(MR_global_error,*)"MR ERROR:  Could not read reftime"
                 write(MR_global_error,*)"        Windfile start time is not defined."
@@ -1986,22 +1675,13 @@
 
             ! Now get time data
             ! Check if we need to read into an int, float or a double
-            !nSTAT = nf90_inquire_variable(ncid, time_var_id, invar, xtype = var_xtype)
             nSTAT = nf90_inquire_variable(ncid, time_var_id, name = invar, xtype = var_xtype)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable reftime")
             if(var_xtype.eq.NF90_FLOAT)then
               allocate(dum1d_sp(nt_fullmet))
               nSTAT = nf90_get_var(ncid,time_var_id,dum1d_sp, &
                      start = (/1/),count = (/nt_fullmet/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_get_var reftime flt")
               ! copy to local variable
               MR_windfile_stephour(iw,1:nt_fullmet) = dum1d_sp(1:nt_fullmet)* &
                                                            Met_dim_fac(1)
@@ -2010,11 +1690,7 @@
               allocate(dum1d_dp(nt_fullmet))
               nSTAT = nf90_get_var(ncid,time_var_id,dum1d_dp, &
                      start = (/1/),count = (/nt_fullmet/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_get_var reftime dbl")
               ! copy to local variable
               MR_windfile_stephour(iw,1:nt_fullmet) = real(dum1d_dp(1:nt_fullmet),kind=4)* &
                                                            Met_dim_fac(1)
@@ -2023,11 +1699,7 @@
               allocate(dum1d_int4(nt_fullmet))
               nSTAT = nf90_get_var(ncid,time_var_id,dum1d_int4, &
                      start = (/1/),count = (/nt_fullmet/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var ',Met_dim_names(1),nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,1,"nf90_get_var reftime int")
               ! copy to local variable
               MR_windfile_stephour(iw,1:nt_fullmet) = real(dum1d_int4(1:nt_fullmet),kind=4)* &
                                                            Met_dim_fac(1)
@@ -2038,11 +1710,7 @@
             endif
 
             nSTAT = nf90_close(ncid)
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: Could not close file',nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: Could not close file:',nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,1,"nf90_close")
 
             MR_windfiles_nt_fullmet(iw) = nt_fullmet
             MR_windfile_starthour(iw) =  real(HS_hours_since_baseyear(itstart_year,itstart_month, &
@@ -2070,6 +1738,7 @@
       endif
 
       end subroutine MR_Read_Met_Times_netcdf
+
 !##############################################################################
 
 
@@ -2340,7 +2009,6 @@
 
       use MetReader
       use netcdf
-
       use projection
 
       implicit none
@@ -2377,6 +2045,7 @@
       iw = 1
       write(MR_global_info,*)"Opening ",iw,trim(ADJUSTL(MR_windfiles(iw)))
       nSTAT = nf90_open(trim(ADJUSTL(MR_windfiles(iw))),NF90_NOWRITE,ncid)
+      call MR_NC_check_status(nSTAT,0,"nf90_open")
       if(nSTAT.ne.NF90_NOERR)then
         write(MR_global_error,*)'MR ERROR: nf90_open to read header:', nf90_strerror(nSTAT)
         write(MR_global_error,*)'Could not open ',trim(ADJUSTL(MR_windfiles(iw)))
@@ -2407,17 +2076,9 @@
         stop 1
       endif
       nSTAT = nf90_inq_dimid(ncid,Met_dim_names(i),t_dim_id)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_dimid ',Met_dim_names(i),nf90_strerror(nSTAT)
-        stop 1
-      endif
+      call MR_NC_check_status(nSTAT,1,"nf90_inq_dimid Time")
       nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,name=name_dum,len=nt_fullmet)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: Inquire_Dimension ',Met_dim_names(i),nf90_strerror(nSTAT)
-        stop 1
-      endif
+      call MR_NC_check_status(nSTAT,1,"nf90_Inquire_Dimension Time")
 
       ! Need to get fill_value.  If we can't find it, fill_value will remain as initialized
       ! according to the MR_iwindformat (probably -9999.0_sp)
@@ -2426,16 +2087,14 @@
       FoundFillVAttr = .false.
       do ivar=1,3
         nSTAT = nf90_inq_varid(ncid,Met_var_NC_names(ivar),var_id)
-        if(nSTAT.ne.NF90_NOERR)then
-          write(MR_global_error,*)'MR ERROR: inq_varid: ',invar,nf90_strerror(nSTAT)
-          write(MR_global_log  ,*)'MR ERROR: inq_varid: ',invar,nf90_strerror(nSTAT)
-          stop 1
-        endif
+        call MR_NC_check_status(nSTAT,1,"nf90_inq_varid")
         nSTAT = nf90_Inquire_Attribute(ncid, var_id,&
                                        "_FillValue",xtype, length, attnum)
+        call MR_NC_check_status(nSTAT,0,"nf90_Inquire_Attribute")
         if(nSTAT.eq.0)then
           FoundFillVAttr = .true.
           nSTAT = nf90_get_att(ncid, var_id,"_FillValue",dum_sp)
+          call MR_NC_check_status(nSTAT,1,"nf90_get_att _FillValue")
           fill_value_sp = dum_sp
           write(MR_global_info,*)"    Found fill value",fill_value_sp
           exit
@@ -2443,11 +2102,7 @@
       enddo
 
       nSTAT = nf90_close(ncid)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: Could not close file',nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: Could not close file:',nf90_strerror(nSTAT)
-        stop 1
-      endif
+      call MR_NC_check_status(nSTAT,0,"nf90_close")
 
       end subroutine MR_Set_Met_Dims_Template_netcdf
 
@@ -2603,7 +2258,7 @@
       write(MR_global_info,*)"Reading ",trim(adjustl(invar))," from file : ",&
                 trim(adjustl(infile)),fileposstr
       nSTAT = nf90_open(trim(adjustl(infile)),NF90_NOWRITE,ncid)
-
+      call MR_NC_check_status(nSTAT,0,"nf90_open")
       if(nSTAT.ne.NF90_NOERR)then
         write(MR_global_error,*)'MR ERROR open file:',infile,nf90_strerror(nSTAT)
         write(MR_global_log  ,*)'MR ERROR open file:',infile,nf90_strerror(nSTAT)
@@ -2630,18 +2285,10 @@
       endif
 
       nSTAT = nf90_inq_varid(ncid,invar,in_var_id)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_varid: ',invar,nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_varid: ',invar,nf90_strerror(nSTAT)
-        stop 1
-      endif
+      call MR_NC_check_status(nSTAT,0,"nf90_inq_varid")
       nSTAT = nf90_inquire_variable(ncid, in_var_id, invar, &
                 xtype = var_xtype)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: inq_variable: ',invar,nf90_strerror(nSTAT)
-        stop 1
-      endif
+      call MR_NC_check_status(nSTAT,0,"nf90_inquire_variable")
 
       ! Test for version 3 vs 4 NCEP files
       if(var_xtype.eq.NF90_FLOAT)then
@@ -2698,11 +2345,7 @@
             nSTAT = nf90_get_var(ncid,in_var_id,temp3d_short(ileft(i):iright(i),:,:,:), &
                      start = (/iistart(i),jstart,1,iwstep/),       &
                      count = (/iicount(i),ny_submet,np_met_loc,1/))
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: get_var: ',nf90_strerror(nSTAT)
-              write(MR_global_log  ,*)'MR ERROR: get_var: ',nf90_strerror(nSTAT)
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,0,"nf90_get_var iw5 wf25 short")
           elseif(MR_iwind.eq.5.and.(MR_iwindformat.eq.25.or.&
                                     MR_iwindformat.eq.26.or.&
                                     MR_iwindformat.eq.27.or.&
@@ -2711,11 +2354,7 @@
             nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
                      start = (/iistart(i),jstart,1,iwstep/),       &
                      count = (/iicount(i),ny_submet,np_met_loc,1/))
-            if(nSTAT.ne.NF90_NOERR)then
-              write(MR_global_error,*)'MR ERROR: get_var: ',nf90_strerror(nSTAT),iicount(i),ny_submet,np_met_loc
-              write(MR_global_log  ,*)'MR ERROR: get_var: ',nf90_strerror(nSTAT),iicount(i),ny_submet,np_met_loc
-              stop 1
-            endif
+            call MR_NC_check_status(nSTAT,0,"nf90_get_var iw5")
           elseif(MR_iwindformat.eq.50)then
             ! Now read the data and convert if necessary
             if(ivar.eq.1)then
@@ -2724,26 +2363,14 @@
               nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
                        start = (/iistart(i),jstart,1,iwstep/),       &
                        count = (/iicount(i),ny_submet,np_met_loc+1,1/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var: PHB',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var: PHB',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_get_var PHB")
               write(MR_global_info,*)istep,"Reading ","PH"," from file : ",trim(adjustl(infile))
               nSTAT = nf90_inq_varid(ncid,"PH",in_var_id2)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_var: PH',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_var: PH',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_inq_varid PH")
               nSTAT = nf90_get_var(ncid,in_var_id,dum3d_metP_aux(ileft(i):iright(i),:,:,:), &
                        start = (/iistart(i),jstart,1,iwstep/),       &
                        count = (/iicount(i),ny_submet,np_met_loc+1,1/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var: PH',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var: PH',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_get_var PH")
               temp3d_sp(:,:,:,:) = temp3d_sp(:,:,:,:) + dum3d_metP_aux(:,:,:,:)
               do kk=1,np_met_loc
                 MR_dum3d_metP(:,:,kk) = 0.5_sp*(temp3d_sp(:,:,kk  ,1) + &
@@ -2755,11 +2382,7 @@
               nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i)+1,:,:,:), &
                        start = (/iistart(i),jstart,1,iwstep/),       &
                        count = (/iicount(i)+1,ny_submet,np_met_loc,1/))
-              if(nSTAT.ne.NF90_NOERR)then 
-                write(MR_global_error,*)'MR ERROR: get_var: U',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var: U',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_get_var U")
               do ii=1,iicount(i)
                 MR_dum3d_metP(ii,:,:) = 0.5_sp*(temp3d_sp(ii  ,:,:,1) + &
                                           temp3d_sp(ii+1,:,:,1))
@@ -2769,11 +2392,7 @@
               nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
                        start = (/iistart(i),jstart,1,iwstep/),       &
                        count = (/iicount(i),ny_submet+1,np_met_loc,1/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var: V',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var: V',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_get_var V")
               do jj=1,ny_submet
                 MR_dum3d_metP(:,jj,:) = 0.5_sp*(temp3d_sp(:,jj,:,1) + &
                                           temp3d_sp(:,jj,:,1))
@@ -2783,11 +2402,7 @@
               nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
                        start = (/iistart(i),jstart,1,iwstep/),       &
                        count = (/iicount(i),ny_submet,np_met_loc+1,1/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var: W',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var: W',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_get_var W")
               do kk=1,np_met_loc
                 MR_dum3d_metP(:,:,kk) = 0.5_sp*(temp3d_sp(:,:,kk  ,1) + &
                                           temp3d_sp(:,:,kk+1,1))
@@ -2804,35 +2419,19 @@
                 ! First get PB (base pressure)
               write(MR_global_info,*)istep,"Reading ","PB"," from file : ",trim(adjustl(infile))
               nSTAT = nf90_inq_varid(ncid,"PB",in_var_id1)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_var: PB',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_var: PB',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_inq_varid PB")
               nSTAT = nf90_get_var(ncid,in_var_id1,temp3d_sp(ileft(i):iright(i),:,:,:), &
                        start = (/iistart(i),jstart,1,iwstep/),       &
                        count = (/iicount(i),ny_submet,np_met_loc,1/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var: PB',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var: PB',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_get_var PB")
                 ! Now get P (perturbation pressure)
               write(MR_global_info,*)istep,"Reading ","P"," from file : ",trim(adjustl(infile))
               nSTAT = nf90_inq_varid(ncid,"P",in_var_id2)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_var: P',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_var: P',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_inq_varid P")
               nSTAT = nf90_get_var(ncid,in_var_id,dum3d_metP_aux(ileft(i):iright(i),:,:,:), &
                        start = (/iistart(i),jstart,1,iwstep/),       &
                        count = (/iicount(i),ny_submet,np_met_loc,1/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var: P',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var: P',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_get_var P")
                 ! Now get total pressure in Pa
               MR_dum3d_metP(:,:,:) = temp3d_sp(:,:,:,1) + dum3d_metP_aux(:,:,:,1)
 
@@ -2840,11 +2439,7 @@
               nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
                        start = (/iistart(i),jstart,1,iwstep/),       &
                        count = (/iicount(i),ny_submet,np_met_loc,1/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var: T',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var: T',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_get_var T")
               do ii=1,iicount(i)
                 do jj=1,ny_submet
                   do kk=1,np_met_loc
@@ -2861,26 +2456,14 @@
               nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
                        start = (/iistart(i),jstart,1,iwstep/),       &
                        count = (/iicount(i),ny_submet,np_met_loc,1/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var: PB',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var: PB',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_get_var PB")
                 ! Get P (perturbation pressure)
               nSTAT = nf90_inq_varid(ncid,"P",in_var_id2)
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: inq_var: P',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: inq_var: P',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_inq_varid P")
               nSTAT = nf90_get_var(ncid,in_var_id,dum3d_metP_aux(ileft(i):iright(i),:,:,:), &
                        start = (/iistart(i),jstart,1,iwstep/),       &
                        count = (/iicount(i),ny_submet,np_met_loc,1/))
-              if(nSTAT.ne.NF90_NOERR)then
-                write(MR_global_error,*)'MR ERROR: get_var: P',nf90_strerror(nSTAT)
-                write(MR_global_log  ,*)'MR ERROR: get_var: P',nf90_strerror(nSTAT)
-                stop 1
-              endif
+              call MR_NC_check_status(nSTAT,0,"nf90_get_var P")
                 ! Now get total pressure in Pa
               temp3d_sp(:,:,:,:) = temp3d_sp(:,:,:,:) + dum3d_metP_aux(:,:,:,:)
               MR_dum3d_metP(:,:,:) = temp3d_sp(:,:,:,1)
@@ -2895,6 +2478,7 @@
             nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
                      start = (/iistart(i),jstart,1,iwstep/),       &
                      count = (/iicount(i),ny_submet,np_met_loc,1/))
+            call MR_NC_check_status(nSTAT,0,"nf90_get_var")
             if(nSTAT.ne.NF90_NOERR)then
               write(MR_global_error,*)'MR ERROR: get_var: ',nf90_strerror(nSTAT)
               write(MR_global_error,*)i
@@ -2959,6 +2543,7 @@
               nSTAT = nf90_get_var(ncid,in_var_id,temp2d_int(ileft(i):iright(i),:,:), &
                          start = (/iistart(i),jstart,iwstep/),       &
                          count = (/iicount(i),ny_submet,1/))
+              call MR_NC_check_status(nSTAT,0,"nf90_get_var categorical")
               do j=1,ny_submet
                 itmp = ny_submet-j+1
                 if(y_inverted)then
@@ -2968,14 +2553,9 @@
                 endif
               enddo
             endif
-            if(nSTAT.ne.NF90_NOERR)then
-               write(MR_global_error,*)'MR ERROR: get_var:Vx ',invar,nf90_strerror(nSTAT)
-               write(MR_global_log  ,*)'MR ERROR: get_var:Vx ',invar,nf90_strerror(nSTAT)
-               stop 1
-             endif
           enddo
           deallocate(temp2d_int)
-        else
+        else ! non-categorical 2-d variable
           allocate(temp2d_sp(nx_submet,ny_submet,1));temp2d_sp(:,:,:)=0.0_sp
           if(ivar.eq.11.or.ivar.eq.12)then
               ! Surface winds usually have a z coordinate as well
@@ -2989,13 +2569,7 @@
                 nSTAT = nf90_get_var(ncid,in_var_id,temp2d_sp(:,:,1), &
                          start = (/1,1,iwstep/),       &
                          count = (/192,94,1/))
-                if(nSTAT.ne.NF90_NOERR)then
-                   write(MR_global_error,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
-                   write(MR_global_log  ,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
-                   stop 1
-                endif
-                write(MR_global_info,*)"Need to write interp_iwf25_grid for float"
-                stop 1
+                call MR_NC_check_status(nSTAT,0,"nf90_get_var NCEP 2d non-cat ncv4")
                 call MR_interp_iwf25_grid(nx_submet,ny_submet,tmpsurf2d_short,temp2d_sp,&
                                     iwf25_scale_facs(ivar),iwf25_offsets(ivar))
                 MR_dum2d_met(1:nx_submet,:) = temp2d_sp(1:nx_submet,:,1)
@@ -3003,27 +2577,19 @@
                 nSTAT = nf90_get_var(ncid,in_var_id,tmpsurf2d_short(:,:,1), &
                          start = (/1,1,iwstep/),       &
                          count = (/192,94,1/))
-                if(nSTAT.ne.NF90_NOERR)then
-                   write(MR_global_error,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
-                   write(MR_global_log  ,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
-                   stop 1
-                endif
+                call MR_NC_check_status(nSTAT,0,"nf90_get_var NCEP 2d non-cat ncv3")
                 call MR_interp_iwf25_grid(nx_submet,ny_submet,tmpsurf2d_short,temp2d_sp,&
                                     iwf25_scale_facs(ivar),iwf25_offsets(ivar))
                 MR_dum2d_met(1:nx_submet,:) = temp2d_sp(1:nx_submet,:,1)
               endif
-            else
+            else  ! Not MR_iwindformat.eq.25
               ! 2d variables for iwf .ne. 25
               if(ivar.eq.11.or.ivar.eq.12)then
                 ! Surface velocities do have a z dimension
                 nSTAT = nf90_get_var(ncid,in_var_id,temp3d_sp(ileft(i):iright(i),:,:,:), &
                          start = (/iistart(i),jstart,1,iwstep/),       &
                          count = (/iicount(i),ny_submet,1,1/))
-                if(nSTAT.ne.NF90_NOERR)then
-                   write(MR_global_error,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
-                   write(MR_global_log  ,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
-                   stop 1
-                endif
+                call MR_NC_check_status(nSTAT,0,"nf90_get_var surface_vel")
                 do j=1,ny_submet
                   itmp = ny_submet-j+1
                   if(y_inverted)then
@@ -3032,15 +2598,11 @@
                     MR_dum2d_met(1:nx_submet,j)  = temp3d_sp(1:nx_submet,j,1,1)
                   endif
                 enddo
-              else
+              else  ! not MR_iwindformat.eq.25 and not ivar.eq.11.or.ivar.eq.12
                 nSTAT = nf90_get_var(ncid,in_var_id,temp2d_sp(ileft(i):iright(i),:,:), &
                          start = (/iistart(i),jstart,iwstep/),       &
                          count = (/iicount(i),ny_submet,1/))
-                if(nSTAT.ne.NF90_NOERR)then
-                   write(MR_global_error,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
-                   write(MR_global_log  ,*)'MR ERROR: get_var: ',invar,nf90_strerror(nSTAT)
-                   stop 1
-                endif
+                call MR_NC_check_status(nSTAT,0,"nf90_get_var non-surface_vel")
                 do j=1,ny_submet
                   itmp = ny_submet-j+1
                   if(y_inverted)then
@@ -3057,7 +2619,6 @@
           if(MR_iwindformat.eq.25) deallocate(tmpsurf2d_short)
         endif ! IsCategorical
       endif ! Dimension_of_Variable.eq.2
-
 
       ! Quality control checks
       if(ivar.eq.1)then
@@ -3195,11 +2756,7 @@
 
       ! Close file
       nSTAT = nf90_close(ncid)
-      if(nSTAT.ne.NF90_NOERR)then
-        write(MR_global_error,*)'MR ERROR: close file: ',nf90_strerror(nSTAT)
-        write(MR_global_log  ,*)'MR ERROR: close file: ',nf90_strerror(nSTAT)
-        stop 1
-      endif
+      call MR_NC_check_status(nSTAT,0,"nf90_close")
 
       MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_met_loc) =  &
       MR_dum3d_metP(1:nx_submet,1:ny_submet,1:np_met_loc) * Met_var_conversion_factor(ivar)
@@ -3256,5 +2813,49 @@
       enddo
 
       end subroutine MR_interp_iwf25_grid
+
+!##############################################################################
+!
+!    MR_NC_check_status
+!
+!    nSTAT   = error code returned from netcdf call
+!    errcode = user-supplied return value on stopping of code
+!    operation = string descriptor of function call causing error
+!
+!    Error-checking routine for NetCDF function calls.
+!    Modeled after a subroutine posted at:
+!    https://climate-cms.org/2018/10/12/create-netcdf.html
+!
+!##############################################################################
+
+      subroutine MR_NC_check_status(nSTAT, errcode, operation)
+
+      use MetReader
+      use netcdf
+
+      implicit none
+
+      integer, intent(in) :: nSTAT
+      integer, intent(in) :: errcode
+      character(len=*), intent(in) :: operation
+
+      character(len=9) :: severity
+
+      if (errcode.eq.0)then
+        severity = "WARNING: "
+       else
+        severity = "ERROR:   "
+      endif
+
+      if (nSTAT == nf90_noerr) return
+      !write(MR_global_essential ,*)severity,errcode,operation,nf90_strerror(nSTAT)
+      write(MR_global_log ,*)severity,errcode,operation,nf90_strerror(nSTAT)
+      write(MR_global_error ,*)severity,errcode,operation,nf90_strerror(nSTAT)
+
+      ! If user-supplied error code is 0, then consider this a warning,
+      ! otherwise do a hard stop
+      if (errcode.ne.0) stop
+
+      end subroutine MR_NC_check_status
 
 

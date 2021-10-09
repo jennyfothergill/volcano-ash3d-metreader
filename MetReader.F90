@@ -84,6 +84,8 @@
       character(len=42)                             ,public :: MR_iw5_prefix
       character(len=24)                             ,public :: MR_iw5_suffix1  ! e.g. 1912060100_1912063021.nc
       character(len=24)                             ,public :: MR_iw5_suffix2
+      real(kind=dp)                                 ,public :: MR_iw5_hours_per_file
+
 #if USEPOINTERS      
       real(kind=dp)     , pointer,dimension(:)  ,    public :: MR_windfile_starthour
       real(kind=dp)     , pointer,dimension(:,:),    public :: MR_windfile_stephour
@@ -175,7 +177,7 @@
       !    Native grid of Met file using Height as vertical coordinate
       !    (resampled onto z-gridpoints of computational grid)
 #ifdef USEPOINTERS
-      real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d_metH => null()
+      real(kind=sp),dimension(:,:,:),    pointer, public :: MR_dum3d_metH => null()
 #else
       real(kind=sp),dimension(:,:,:),allocatable, public :: MR_dum3d_metH
 #endif
@@ -1739,6 +1741,7 @@
           fill_value_sp = -9999.0_sp
 
         elseif(MR_iwind.eq.5)then
+          MR_iw5_hours_per_file = 8760.0_dp
 
           Met_dim_IsAvailable(1)=.true.; Met_dim_names(1) = "time"
           Met_dim_IsAvailable(2)=.true.; Met_dim_names(2) = "level"
@@ -1779,6 +1782,7 @@
         MR_iGridCode = 45
         call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
+        MR_iw5_hours_per_file = 672.0_dp
 
         Met_var_GRIB1_Table(1:MR_MAXVARS) = 200
 
@@ -1809,6 +1813,7 @@
         MR_iGridCode = 1027
         call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
+        MR_iw5_hours_per_file = 8760.0_dp
 
         Met_var_GRIB1_Table(1:MR_MAXVARS) = 2
 
@@ -1896,6 +1901,7 @@
         MR_iGridCode = 1029
         call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
+        MR_iw5_hours_per_file = 24.0_dp
 
         Met_var_GRIB1_Table(1:MR_MAXVARS) = 128
 
@@ -1948,6 +1954,7 @@
         MR_iGridCode = 1030
         call MR_Set_Met_NCEPGeoGrid(MR_iGridCode)
         MR_Reannalysis = .true.
+        MR_iw5_hours_per_file = 672.0_dp
 
         Met_var_GRIB1_Table(1:MR_MAXVARS) = 128
 
@@ -2168,16 +2175,16 @@
         ! but we need this to be 2 to accommodate runs that might span two years/months
         ! For ERA5 files, data is provided in daily files so MR_iwindfiles might be > 2
         if(MR_Comp_Time_in_hours.gt.0.0)then
-          if(MR_iwindformat.eq.25)then
-            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/8760.0_dp) + 1 ! These are yearly files
-          elseif(MR_iwindformat.eq.26)then
-            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/627.0_dp) + 1  ! Monthly files
+          if(MR_iwindformat.eq.25)then  ! NCEP 2.5 degree
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/MR_iw5_hours_per_file) +1  ! These are yearly files
+          elseif(MR_iwindformat.eq.26)then ! 
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/MR_iw5_hours_per_file) +1 ! Monthly files
           elseif(MR_iwindformat.eq.27)then
-            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/8760.0_dp) + 1 ! yearly files
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/MR_iw5_hours_per_file) +1 ! yearly files
           elseif(MR_iwindformat.eq.29)then
-            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/24.0_dp) + 1   ! daily files
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/MR_iw5_hours_per_file) +1 ! daily files
           elseif(MR_iwindformat.eq.30)then
-            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/672.0_dp) + 1  ! monthly
+            MR_iwindfiles = ceiling(MR_Comp_Time_in_hours/MR_iw5_hours_per_file) +1 ! monthly
           endif
         else
           MR_iwindfiles = 2
@@ -2281,6 +2288,9 @@
       integer      :: i
       logical      :: IsThere
       character(len=130) :: tmp_str
+      character(len=130) :: infile
+      integer            :: ivar
+      real(kind=8)       :: inhour
 
       if(MR_VERB.ge.1)then
         write(MR_global_production,*)"--------------------------------------------------------------------------------"
@@ -2309,9 +2319,11 @@
 
       if(MR_iwind.eq.5)then
         ! For iwind=5 files (NCEP 2.5 degree reanalysis, NOAA, etc. ), only the directory
-        ! was read into slot 1 of MR_windfiles(:).  We need to copy to slot 2
+        ! was read into slot 1 of MR_windfiles(:).  We need to copy to all other slots
         ! to make sure we don't throw an error
-        MR_windfiles(2)   = MR_windfiles(1)
+        do i=1,MR_iwindfiles
+          MR_windfiles(i)   = MR_windfiles(1)
+        enddo
         if(present(iy)) then
           ! This is needed at this point for allocating the number
           ! of steps per file (this depends on the year), but this
@@ -2345,18 +2357,39 @@
         stop 1
       endif
 
-
       ! Check the existance of the wind files
       write(MR_global_info,*)"  Verifying existance of windfiles:"
-      do i=1,MR_iwindfiles
-        inquire( file=adjustl(trim(MR_windfiles(i))), exist=IsThere )
-        write(MR_global_info,*)"     ",i,adjustl(trim(MR_windfiles(i))),IsThere
-        if(.not.IsThere)then
-          write(MR_global_error,*)"MR ERROR: Could not find windfile ",i
-          write(MR_global_error,*)"          ",adjustl(trim(MR_windfiles(i)))
-          stop 1
-        endif
-      enddo
+      ! Note iwf=5 cases have the number of windfiles (MR_iwindfiles)
+      ! modified in MR_Allocate_FullMetFileList to be the number of
+      ! anticipated files based on the length of the simulation and the number
+      ! of steps per file.
+      if(MR_iwind.ne.5)then
+        do i=1,MR_iwindfiles
+          inquire( file=adjustl(trim(MR_windfiles(i))), exist=IsThere )
+          write(MR_global_info,*)"     ",i,adjustl(trim(MR_windfiles(i))),IsThere
+          if(.not.IsThere)then
+            write(MR_global_error,*)"MR ERROR: Could not find windfile ",i
+            write(MR_global_error,*)"          ",adjustl(trim(MR_windfiles(i)))
+            stop 1
+          endif
+        enddo
+      else
+        MR_iw5_root = MR_windfiles(1)
+        write(*,*)MR_iw5_root,MR_iwindfiles
+        do i = 1,MR_iwindfiles-1
+          inhour = MR_Comp_StartHour + (i-1)*MR_iw5_hours_per_file
+          do ivar = 1,5
+            call MR_Set_iwind5_filenames(inhour,ivar,infile)
+            inquire( file=adjustl(trim(infile)), exist=IsThere )
+            write(MR_global_info,*)" ",i,trim(adjustl(trim(infile))),IsThere
+            if(.not.IsThere)then
+              write(MR_global_error,*)"MR ERROR: Could not find windfile ",i
+              write(MR_global_error,*)"          ",adjustl(trim(infile))
+              stop 1
+            endif
+          enddo
+        enddo
+      endif
 
       ! Now set up the full spatial and temporal grids
       select case (MR_iwind)

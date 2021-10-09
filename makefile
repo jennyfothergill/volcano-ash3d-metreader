@@ -36,7 +36,9 @@ SYSTEM = gfortran
 #      PROF  : includes profiling flags with some optimization
 #      OPT   : includes optimizations flags for fastest runtime
 #    This variable cannot be left blank
-RUN =OPT
+#RUN=DEBUG
+#RUN=PROF
+RUN=OPT
 #
 INSTALLDIR=/opt/USGS
 #
@@ -100,8 +102,8 @@ ifeq ($(SYSTEM), gfortran)
     #COMPINC = -I$(FCHOME)/local/include -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules -I$(INSTALLDIR)/include
     #COMPLIBS = -L$(FCHOME)/local/lib -L$(FCHOME)/lib64 -L${INSTALLDIR}/lib 
 
-    COMPINC = -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules -I$(INSTALLDIR)/include
-    COMPLIBS = -L$(FCHOME)/lib64 -L${INSTALLDIR}/lib
+    COMPINC = -I./ -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules -I$(INSTALLDIR)/include
+    COMPLIBS = -L./ -L$(FCHOME)/lib64 -L${INSTALLDIR}/lib
 
     LIBS = $(COMPLIBS) $(COMPINC)
     # -lefence 
@@ -152,8 +154,8 @@ AUTOSCRIPTS = \
  autorun_scripts/get_NCEP_50YearReanalysis.sh     \
  autorun_scripts/grib2nc.sh \
  autorun_scripts/prune_windfiles.sh \
- autorun_scripts/get_gmao.sh
-
+ autorun_scripts/get_gmao.sh \
+ autorun_scripts/probe_volc.sh
 ###############################################################################
 # TARGETS
 ###############################################################################
@@ -230,6 +232,7 @@ uninstall:
 	rm -f $(INSTALLDIR)/bin/MetCheck
 	rm -f $(INSTALLDIR)/bin/makegfsncml
 	rm -f $(INSTALLDIR)/bin/gen_GRIB_index
+	rm -f $(INSTALLDIR)/bin/probe_Met
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/autorun_gfs.sh
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/autorun_nam.sh
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/autorun_NCEP_50YearReanalysis.sh
@@ -240,4 +243,5 @@ uninstall:
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/grib2nc.sh
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/prune_windfiles.sh
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/get_gmao.sh
+	rm -f $(INSTALLDIR)/bin/autorun_scripts/probe_volc.sh
 
