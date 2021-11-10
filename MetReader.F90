@@ -2801,6 +2801,12 @@
           integer               :: byear
           logical               :: useLeaps
         end function HS_DayOfYear
+        character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
+          real(kind=8)          :: HoursSince
+          integer               :: byear
+          logical               :: useLeaps
+        end function HS_yyyymmddhhmm_since
+
       END INTERFACE
 
       if(MR_VERB.ge.1)then
@@ -2926,10 +2932,14 @@
         else
           write(MR_global_error,*)"MR ERROR: End time is after the last available data and"
           write(MR_global_error,*)"       cannot be extrapolated."
-          write(MR_global_error,*)"  MR_Comp_StartHour    = ",MR_Comp_StartHour
-          write(MR_global_error,*)"  MR_Comp_Time_in_hours= ",MR_Comp_Time_in_hours
-          write(MR_global_error,*)"  met_t1               = ",met_t1
-          write(MR_global_error,*)"  met_dt1              = ",met_dt1
+          write(MR_global_error,*)"  MR_Comp_StartHour    = ",real(MR_Comp_StartHour,kind=4),&
+                                  HS_yyyymmddhhmm_since(MR_Comp_StartHour,MR_BaseYear,MR_useLeap)
+          write(MR_global_error,*)"  MR_Comp_Time_in_hours= ",real(MR_Comp_Time_in_hours,kind=4),&
+                                  HS_yyyymmddhhmm_since(MR_Comp_Time_in_hours,MR_BaseYear,MR_useLeap)
+          write(MR_global_error,*)"  met_t1               = ",real(met_t1,kind=4),&
+                                  HS_yyyymmddhhmm_since(met_t1,MR_BaseYear,MR_useLeap)
+          write(MR_global_error,*)"  met_dt1              = ",real(met_dt1,kind=4),&
+                                  HS_yyyymmddhhmm_since(met_dt1,MR_BaseYear,MR_useLeap)
           stop 1
         endif
       else

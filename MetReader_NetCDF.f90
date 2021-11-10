@@ -913,10 +913,14 @@
 
       integer :: Map_Proj
       real(kind=sp) :: WRF_dx,WRF_dy
-      real(kind=sp) :: Cen_lat,Stand_Lon,Truelat1,Truelat2
+      real(kind=sp) :: Cen_Lat,Cen_Lon
+      real(kind=sp) :: Moad_Cen_Lat
+      real(kind=sp) :: Stand_Lon
+      real(kind=sp) :: Truelat1,Truelat2
+      real(kind=sp) :: Pole_Lat, Pole_Lon
       real(kind=sp),dimension(:,:,:)  ,allocatable :: dum3d_sp
       real(kind=sp),dimension(:,:,:,:),allocatable :: dum4d_sp
-      integer :: i
+      integer :: i,j
 
       real(kind=dp) :: x_start,y_start
 
@@ -963,19 +967,28 @@
       call MR_NC_check_status(nSTAT,1,"nf90_get_att MAP_PROJ")
       if(Map_Proj.eq.1)then
          ! Lambert
-         !   truelat1
-         !   truelat2 (optional)
-         !   stand_lon
+         !  Mandatory parameters are given in module_map_utils.F line 297:
+         !      ' truelat1, truelat2, lat1, lon1, knowni, knownj, stdlon, dx'
+         !   TRUELAT1            = lat_1 # Cone intersects with the sphere
+         !   TRUELAT2 (optional) = lat_2 # Cone intersects with the sphere
+         !   STAND_LON           = lon_0 # Center Point
+         !  Other global attributes:
+         !   MOAD_CEN_LAT        = lat_0 # Center Point
+         !   CEN_LAT
+         !   CEN_LON
+         !   POLE_LAT
+         !   POLE_LON
          !proj +proj=lcc +lon_0=-175.0 +lat_0=55.0 +lat_1=50.0 +lat_2=60.0 +R=6371.229
 
         write(MR_global_info,*)"  WRF projection detected: Lambert Conformal"
 
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "DX", WRF_dx)
         call MR_NC_check_status(nSTAT,1,"nf90_get_att DX")
+        ! Note: DY might not be present, in which case DY=DX
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "DY", WRF_dy)
         call MR_NC_check_status(nSTAT,1,"nf90_get_att DY")
-        nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "CEN_LAT", Cen_Lat)
-        call MR_NC_check_status(nSTAT,1,"nf90_get_att CEN_LAT")
+        nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "MOAD_CEN_LAT", Moad_Cen_Lat)
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att MOAD_CEN_LAT")
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "STAND_LON", Stand_Lon)
         call MR_NC_check_status(nSTAT,1,"nf90_get_att STAND_LON")
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "TRUELAT1", Truelat1)
@@ -1023,11 +1036,11 @@
           ! Setting the projection parameters as libprojection.a expects
         Met_iprojflag = 4  
         Met_lam0   = real(Stand_Lon,kind=8)
-        Met_phi0   = real(Cen_Lat,kind=8)
+        Met_phi0   = real(Moad_Cen_Lat,kind=8)
         Met_phi1   = real(Truelat1,kind=8)
         Met_phi2   = real(Truelat2,kind=8)
         Met_k0     = real(1.0,kind=8)
-        Met_Re     = PJ_radius_earth
+        Met_Re     = 6370.0_8
         call PJ_proj_for(lon_in,lat_in, &
                        Met_iprojflag,Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re, &
                        x_start,y_start)
@@ -1048,24 +1061,122 @@
 
       elseif(Map_Proj.eq.2)then
         ! Polar Stereographic
-        !   truelat1
-        !   stand_lon
+         !  Mandatory parameters are given in module_map_utils.F line 308:
+         !      ' truelat1, lat1, lon1, knowni, knownj, stdlon, dx'
+         !      and in suroutine set_ps on line 661
+         !   TRUELAT1            = lat_1 # Cone intersects with the sphere
+         !   STAND_LON           = lon_0 # Center Point
+         !  Other global attributes:
+         !   MOAD_CEN_LAT        = lat_0 # Center Point
+         !   CEN_LAT
+         !   CEN_LON
+         !   POLE_LAT
+         !   POLE_LON
+         !   TRUELAT2 (optional) = lat_2 # Cone intersects with the sphere
+         !proj +proj=lcc +lon_0=-175.0 +lat_0=55.0 +lat_1=50.0 +lat_2=60.0 +R=6371.229
 
         write(MR_global_info,*)"  WRF projection detected: Polar Stereographic"
 
-        write(MR_global_info,*)&
-         "WRF: MAP_PROJ=2 : Polar Stereographic : Not implemented"
-        stop 1
+        nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "DX", WRF_dx)
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att DX")
+        ! Note: DY might not be present, in which case DY=DX
+        nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "DY", WRF_dy)
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att DY")
+        nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "MOAD_CEN_LAT", Moad_Cen_Lat)
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att MOAD_CEN_LAT")
+        nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "STAND_LON", Stand_Lon)
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att STAND_LON")
+        nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "TRUELAT1", Truelat1)
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att TRUELAT1")
+        nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "POLE_LAT", Pole_Lat)
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att POLE_LAT")
+        nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "POLE_LON", Pole_Lon)
+        call MR_NC_check_status(nSTAT,1,"nf90_get_att POLE_LON")
+
+          ! convert dx, dy to km
+        IsLatLon_MetGrid  = .false.
+        IsRegular_MetGrid = .true.
+        dx_met_const = WRF_dx*1.0e-3_4
+        dy_met_const = WRF_dy*1.0e-3_4
+
+        ! Projected grids have Lon and Lat provided as 2d fields
+        allocate(Met_Proj_lat(nx_fullmet,ny_fullmet))
+        allocate(Met_Proj_lon(nx_fullmet,ny_fullmet))
+        allocate(dum3d_sp(nx_fullmet,ny_fullmet,1))
+
+        nSTAT = nf90_inq_varid(ncid,"XLONG",lon_var_id)
+        call MR_NC_check_status(nSTAT,1,"nf90_inq_varid XLONG")
+        nSTAT = nf90_inq_varid(ncid,"XLAT",lat_var_id)
+        call MR_NC_check_status(nSTAT,1,"nf90_inq_varid XLAT")
+
+        nSTAT = nf90_get_var(ncid,lon_var_id,dum3d_sp, &
+               start = (/1,1,1/),count = (/nx_fullmet,ny_fullmet,1/))
+        call MR_NC_check_status(nSTAT,1,"nf90_get_var XLONG")
+        Met_Proj_lon(:,:) = dum3d_sp(:,:,1)
+
+        nSTAT = nf90_get_var(ncid,lat_var_id,dum3d_sp, &
+               start = (/1,1,1/),count = (/nx_fullmet,ny_fullmet,1/))
+        call MR_NC_check_status(nSTAT,1,"nf90_get_var XLAT")
+        Met_Proj_lat(:,:) = dum3d_sp(:,:,1)
+
+        ! In the example WRF files, x and y projected values are not actually
+        ! provided, so we recreate them here using the coordinates if the LL
+        ! point of the Lon/Lat grid
+        allocate(x_fullmet_sp(0:nx_fullmet+1))
+        allocate(y_fullmet_sp(ny_fullmet))
+        allocate(MR_dx_met(nx_fullmet))
+        allocate(MR_dy_met(ny_fullmet))
+
+        lon_in = real(Met_Proj_lon(1,1),kind=8)
+        lat_in = real(Met_Proj_lat(1,1),kind=8)
+
+          ! Setting the projection parameters as libprojection.a expects
+        Met_iprojflag = 1
+        Met_lam0   = real(Stand_Lon,kind=8)
+        Met_phi0   = real(-Pole_Lat,kind=8) ! phi0 is the lat of projection origin
+        Met_phi1   = real(Truelat1,kind=8)
+        Met_phi2   = real(Truelat2,kind=8)
+        !Met_k0     = real(0.972759,kind=8)
+        Met_k0     = real(1.0,kind=8)
+        Met_Re     = 6370.0_8
+        call PJ_proj_for(lon_in,lat_in, &
+                       Met_iprojflag,Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re, &
+                       x_start,y_start)
+        do i = 0,nx_fullmet+1
+          x_fullmet_sp(i) = real(x_start + (i-1)*dx_met_const,kind=4)
+        enddo
+        do i = 1,ny_fullmet
+          y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=4)
+        enddo
+        do i = 1,nx_fullmet-1
+          MR_dx_met(i) = x_fullmet_sp(i+1)-x_fullmet_sp(i)
+        enddo
+        MR_dx_met(nx_fullmet)    = MR_dx_met(nx_fullmet-1)
+        do i = 1,ny_fullmet-1
+          MR_dy_met(i) = y_fullmet_sp(i+1)-y_fullmet_sp(i)
+        enddo
+        MR_dy_met(ny_fullmet)    = MR_dy_met(ny_fullmet-1)
+
       elseif(Map_Proj.eq.3)then
         ! Mercator
-        !  truelat1
-         ! stand_lon
+         !   TRUELAT1            = lat_1 # Cone intersects with the sphere
+         !  Other global attributes:
+         !   MOAD_CEN_LAT        = lat_0 # Center Point
+         !   STAND_LON           = lon_0 # Center Point
+         !   CEN_LAT
+         !   CEN_LON
+         !   POLE_LAT
+         !   POLE_LON
+         !   TRUELAT2 (optional) = lat_2 # Cone intersects with the sphere
+
+
          !proj +proj=merc 
 
         write(MR_global_info,*)"  WRF projection detected: Mercator"
 
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "DX", WRF_dx)
         call MR_NC_check_status(nSTAT,1,"nf90_get_att DX")
+        ! Note: DY might not be present, in which case DY=DX
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "DY", WRF_dy)
         call MR_NC_check_status(nSTAT,1,"nf90_get_att DY")
         nSTAT = nf90_get_att(ncid, NF90_GLOBAL, "CEN_LAT", Cen_Lat)
@@ -1120,7 +1231,7 @@
         Met_phi1   = real(Truelat1,kind=8)
         Met_phi2   = real(Truelat2,kind=8)
         Met_k0     = real(1.0,kind=8)
-        Met_Re     = PJ_radius_earth
+        Met_Re     = 6370.0_8
         call PJ_proj_for(lon_in,lat_in, &
                        Met_iprojflag,Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re, &
                        x_start,y_start)
