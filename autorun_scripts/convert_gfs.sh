@@ -19,13 +19,23 @@
 #      technical support to users of this software.
 
 # Script that converts the gfs grib files to netcdf using netcdf-java.
-# This script is called from autorun_gfs0.5deg.sh and takes three command-line arguments
+# This script is called from autorun_gfs.sh and takes three command-line arguments
 #   convert_gfs.sh GFSres YYYYMMDD HR
 
 # Please edit these variables to match your system and location of netcdf-java
 #JAVA="/usr/bin/java"
 #NCJv="${HOME}/ncj/netcdfAll-4.5.jar"
 rc=0
+if [ $# -eq 0 ]
+  then
+  echo "No arguments supplied"
+  echo "Usage: convert_gfs.sh Resolution YYYYMMDD FCpackage"
+  echo "       where Resolution = 1p00, 0p50, or 0p25"
+  echo "             YYYYMMDD   = year, month, day"
+  echo "             FCpackage  = 00, 06, 12, 18 or 24"
+  exit
+fi
+
 echo "Looking for latest netcdfAll in ~/ncj/"
 ls -1r ~/ncj/netcdfAll*.jar
 rc=$((rc + $?))
@@ -55,6 +65,22 @@ INSTALLDIR="/opt/USGS"
 GFS=$1
 yearmonthday=$2
 FChour=$3
+
+case ${GFS} in
+ 0p25)
+  echo "GFS 0.25 degree"
+  ;;
+ 0p50)
+  echo "GFS 0.50 degree"
+  ;;
+ 1p00)
+  echo "GFS 1.00 degree"
+  ;;
+ *)
+  echo "GFS product not recognized"
+  echo "Valid values: 0p25, 0p50, 1p00"
+  exit
+esac
 
 echo "------------------------------------------------------------"
 echo "running convert_gfs.sh ${GFS} ${yearmonthday} ${FChour}"
@@ -148,12 +174,10 @@ do
        cat MetCheck_log.txt >> ${GFSDATAHOME}/${FC_day}/${validlist}
        vcount=$((vcount+1))
      fi
-
-     t=$((t+${HourStep}))
    else
-     echo "error: ${gfsfile} does not exist."
-     exit 1
+     echo "Warning: ${gfsfile} does not exist. Skipping."
    fi
+   t=$((t+${HourStep}))
 done
 
 #Make sure the netcdf files all exist
