@@ -70,7 +70,6 @@ fi
 #   echo "all done copying files"
 #fi
 
-mkdir -p ${NCEPDATAHOME}/dbuffer
 #if test -r ${NCEPDATAHOME}/dbuffer
 #then
 #    echo "moving to ${NCEPDATAHOME}/dbuffer"
