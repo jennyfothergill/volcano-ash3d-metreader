@@ -22,6 +22,10 @@
 # This script is called from autorun_gfs.sh and takes three command-line arguments
 #   convert_gfs.sh GFSres YYYYMMDD HR
 
+# Select the netcdf version to write
+#NCv=3
+NCv=4
+
 # Please edit these variables to match your system and location of netcdf-java
 #JAVA="/usr/bin/java"
 #NCJv="${HOME}/ncj/netcdfAll-4.5.jar"
@@ -99,6 +103,7 @@ case ${GFS} in
  0p50)
   # GFS 0.50 degree
   HourMax=198
+  HourMax=99
   HourStep=3
   #        gfs.t00z.pgrb2.0p50.f$000
   FilePre="gfs.t${FChour}z.pgrb2.0p50.f"
@@ -154,6 +159,7 @@ do
   gfsfile=${FilePre}${hour}
   ncmlfile="gfs.t${FChour}z.f${hour}.ncml"
   netcdffile="${yearmonthday}${FChour}.f${hour}.nc"
+  netcdf4file="${yearmonthday}${FChour}.f${hour}.nc4"
   if test -r ${gfsfile}
   then
      echo "making ${ncmlfile}"
@@ -162,8 +168,17 @@ do
           exit 1
      fi
      echo "Converting ${gfsfile} to ${netcdffile}"
+     # Note: nc4 is significantly smaller, but the direct conversion to nc4 from netcdf-java via the flag -netcdf4
+     #       results in incompatible files.  Here, we use netcdf-java to product a temporary file, then convert
+     #       to nc4 with nccopy
      echo "java -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out ${netcdffile} -IsLargeFile"
-     ${JAVA} -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out ${netcdffile} -IsLargeFile
+     if [ $NCv -eq 4 ]
+       ${JAVA} -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out tmp.nc -IsLargeFile
+       nccopy -k 4 -d 5 tmp.nc ${netcdffile}
+       rm tmp.nc
+     else
+       ${JAVA} -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out ${netcdffile} -IsLargeFile
+     fi
      if [[ $? -ne 0 ]]; then
           exit 1
      fi
@@ -182,7 +197,8 @@ done
 
 #Make sure the netcdf files all exist
 echo "making sure all netcdf files exist"
-t=0
+t=0        # time index
+numfiles=0 # file index
 while [ "$t" -le ${HourMax} ]
 do
   if [ "$t" -le 9 ]; then
@@ -197,6 +213,7 @@ do
   then
      echo "${netcdffile} exists"
      t=$((t+${HourStep}))
+     numfiles=$((numfiles+1))
    else
      echo "error: ${netcdffile} does not exist."
      exit 1
@@ -205,12 +222,13 @@ done
 
 #set soft links in "latest" directory
 echo "creating soft links in latest directory"
+mkdir -p ${GFSDATAHOME}/latest
 echo "rm ${GFSDATAHOME}/latest/*"
 rm ${GFSDATAHOME}/latest/*
 echo "rm ${GFSDATAHOME}/gfslist.txt"
 rm ${GFSDATAHOME}/gfslist.txt
 echo "4" > ${GFSDATAHOME}/gfslist.txt
-echo "67" >> ${GFSDATAHOME}/gfslist.txt
+echo "$numfiles" >> ${GFSDATAHOME}/gfslist.txt
 t=0
 while [ "$t" -le ${HourMax} ]
 do
