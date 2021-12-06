@@ -103,7 +103,7 @@ case ${GFS} in
  0p50)
   # GFS 0.50 degree
   HourMax=198
-  HourMax=99
+  #HourMax=99
   HourStep=3
   #        gfs.t00z.pgrb2.0p50.f$000
   FilePre="gfs.t${FChour}z.pgrb2.0p50.f"
@@ -173,6 +173,7 @@ do
      #       to nc4 with nccopy
      echo "java -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out ${netcdffile} -IsLargeFile"
      if [ $NCv -eq 4 ]
+     then
        ${JAVA} -Xmx2048m -classpath ${NCJv} ucar.nc2.dataset.NetcdfDataset -in ${gfsfile} -out tmp.nc -IsLargeFile
        nccopy -k 4 -d 5 tmp.nc ${netcdffile}
        rm tmp.nc
