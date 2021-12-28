@@ -66,6 +66,7 @@
       character(len=20) :: dum_str
       real(kind=dp) :: x_start,y_start
       real(kind=dp) :: Lon_start,Lat_start
+      real(kind=dp) :: Lon_end,Lat_end
       !real(kind=dp),dimension(:),allocatable     :: lats,lons,values
       real(kind=dp),dimension(:),allocatable     :: values
       real(kind=dp), parameter :: tol = 1.0e-3_dp
@@ -95,20 +96,10 @@
       integer :: iz
 
       if(MR_VERB.ge.1)then
-        write(MR_global_production,*)&
-         "----------------------------------------",&
-         "----------------------------------------"
-        write(MR_global_production,*)&
-         "----------                ",&
-         "MR_Read_Met_DimVars_GRIB                    ----------"
-        write(MR_global_production,*)&
-         "----------------------------------------",&
-         "----------------------------------------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+        write(MR_global_production,*)"----------                MR_Read_Met_DimVars_GRIB                    ----------"
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
       endif
-
-        !---------------------------------------------------------------------------------
-        ! Checking for dimension length and values for x,y,t,p
-        !   Assume all files have the same format
 
       if(MR_iwind.eq.5)then
         write(MR_global_error,*)&
@@ -118,6 +109,14 @@
           "         iwind=5 files are all multi-step"
         stop 1
       else
+          !---------------------------------------------------------------------------------
+          ! Start of block for all non-iwind=5 and non-iwf=50
+          ! This is where the the Netcdf and Grib subroutines can be compared
+          !
+          ! Checking for dimension length and values for x,y,t,p
+          !   Assume all files have the same format
+          ! Note: you can inspect the grib header using grib_dump tmp.grib2 > header.txt
+
         write(MR_global_production,*)&
           "Opening grib file to find version number"
         iw = 1
@@ -150,6 +149,7 @@
         count1=count1+1
         if (count1.gt.MAXGRIBREC) then
           write(MR_global_error,*)"ERROR: too many grib messages"
+          write(MR_global_error,*)"       current limit set to ",MAXGRIBREC
           stop 1
         endif
         call codes_new_from_file(ifile,igribv(count1),CODES_PRODUCT_GRIB,iret)
@@ -170,10 +170,23 @@
 
           call codes_get(igribv(ir),'gridType',dum_str)
           call codes_get(igribv(ir),'latitudeOfFirstGridPointInDegrees',dum_dp)
-
           Lat_start = dum_dp
           call codes_get(igribv(ir),'longitudeOfFirstGridPointInDegrees',dum_dp)
           Lon_start = dum_dp
+          call codes_get(igribv(ir),'latitudeOfLastGridPointInDegrees',dum_dp)
+          Lat_end = dum_dp
+          call codes_get(igribv(ir),'longitudeOfLastGridPointInDegrees',dum_dp)
+          Lon_end = dum_dp
+          if(Lon_start.gt.Lon_end)then
+            x_inverted = .true.
+          else
+            x_inverted = .false.
+          endif
+          if(Lat_start.gt.Lat_end)then
+            y_inverted = .true.
+          else
+            y_inverted = .false.
+          endif
 
           dum_int = 0
           Met_Re =  6371.229_8
@@ -211,45 +224,58 @@
 
           if(index(dum_str,'regular_ll').ne.0)then
             IsLatLon_MetGrid = .true.
-            Lat_start = y_start
-            Lon_start = x_start
+            !Lat_start = y_start
+            !Lon_start = x_start
+            y_start = Lat_start
+            x_start = Lon_start
 
             call codes_get(igribv(ir),'numberOfPoints',numberOfPoints)
             allocate(values(numberOfPoints))
             call codes_get(igribv(ir),'values',values)
             ReadGrid = .true.
             deallocate(values)
-            call codes_get(igribv(ir),'latitudeOfLastGridPointInDegrees',dum_dp)
-            if(Lat_start.gt.dum_dp)then
-              y_inverted = .true.
-            else
-              y_inverted = .false.
-            endif
-            call codes_get(igribv(ir),&
-                  'longitudeOfLastGridPointInDegrees',dum_dp)
-            if(Lon_start.gt.dum_dp)then
-              x_inverted = .true.
-            else
-              x_inverted = .false.
-            endif
+            !call codes_get(igribv(ir),'latitudeOfLastGridPointInDegrees',dum_dp)
+            !if(Lat_start.gt.dum_dp)then
+            !  y_inverted = .true.
+            !else
+            !  y_inverted = .false.
+            !endif
+            !call codes_get(igribv(ir),&
+            !      'longitudeOfLastGridPointInDegrees',dum_dp)
+            !if(Lon_start.gt.dum_dp)then
+            !  x_inverted = .true.
+            !else
+            !  x_inverted = .false.
+            !endif
             call codes_get(igribv(ir),'iDirectionIncrementInDegrees',dum_dp)
             dx_met_const = real(dum_dp,kind=4)
             call codes_get(igribv(ir),'jDirectionIncrementInDegrees',dum_dp)
             dy_met_const = real(dum_dp,kind=4)
             do i=1,nx_fullmet
-              x_fullmet_sp(i) = real(Lat_start,kind=sp)+ &
+              x_fullmet_sp(i) = real(Lon_start,kind=sp)+ &
                                  (i-1)* dx_met_const
             enddo
-            do j=1,ny_fullmet
-              y_fullmet_sp(j) = real(Lon_start,kind=sp)+ &
-                                 (j-1)* dy_met_const
-            enddo
+            if(y_inverted)then
+              do j = 1,ny_fullmet
+                y_fullmet_sp(j) = real(y_start - (j-1)*dy_met_const,kind=sp)
+              enddo
+            else
+              do j = 1,ny_fullmet
+                y_fullmet_sp(j) = real(y_start + (j-1)*dy_met_const,kind=sp)
+              enddo
+            endif
+            !do j=1,ny_fullmet
+            !  y_fullmet_sp(j) = real(Lat_start,kind=sp)+ &
+            !                     (j-1)* dy_met_const
+            !enddo
             x_fullmet_sp(0) = x_fullmet_sp(1)-dx_met_const
             x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(nx_fullmet)+dx_met_const
           elseif(index(dum_str,'regular_gg').ne.0)then
             IsLatLon_MetGrid = .true.
-            Lat_start = y_start
-            Lon_start = x_start
+            !Lat_start = y_start
+            !Lon_start = x_start
+            y_start = Lat_start 
+            x_start = Lon_start 
 
             call codes_get(igribv(ir),'numberOfPoints',numberOfPoints)
             allocate(values(numberOfPoints))
@@ -259,19 +285,19 @@
             stop 1
             ReadGrid = .true.
             deallocate(values)
-            call codes_get(igribv(ir),'latitudeOfLastGridPointInDegrees',dum_dp)
-            if(Lat_start.gt.dum_dp)then
-              y_inverted = .true.
-            else
-              y_inverted = .false.
-            endif
-            call codes_get(igribv(ir),&
-                  'longitudeOfLastGridPointInDegrees',dum_dp)
-            if(Lon_start.gt.dum_dp)then
-              x_inverted = .true.
-            else
-              x_inverted = .false.
-            endif
+            !call codes_get(igribv(ir),'latitudeOfLastGridPointInDegrees',dum_dp)
+            !if(Lat_start.gt.dum_dp)then
+            !  y_inverted = .true.
+            !else
+            !  y_inverted = .false.
+            !endif
+            !call codes_get(igribv(ir),&
+            !      'longitudeOfLastGridPointInDegrees',dum_dp)
+            !if(Lon_start.gt.dum_dp)then
+            !  x_inverted = .true.
+            !else
+            !  x_inverted = .false.
+            !endif
             x_fullmet_sp(0) = x_fullmet_sp(nx_fullmet)-360.0_sp
             x_fullmet_sp(nx_fullmet+1) = x_fullmet_sp(1)+360.0_sp
 
@@ -347,7 +373,7 @@
             enddo
             if(y_inverted)then
               do i = 1,ny_fullmet
-                y_fullmet_sp(i) = real(y_start + (i-1)*dy_met_const,kind=sp)
+                y_fullmet_sp(i) = real(y_start - (i-1)*dy_met_const,kind=sp)
               enddo
             else
               do i = 1,ny_fullmet
@@ -811,18 +837,19 @@
       ! Finished setting up the start time of each wind file in HoursSince : MR_windfile_starthour(iw)
       !  and the forecast (offset from start of file) for each step        : MR_windfile_stephour(iw,iwstep)
 
-      write(MR_global_info,*)"File, step, Ref, Offset, HoursSince"
+      write(MR_global_info,*)"  File,  step,        Ref,     Offset,  HoursSince"
       do iw = 1,MR_iwindfiles
         do iws = 1,nt_fullmet
-          write(MR_global_info,*)iw,iws,real(MR_windfile_starthour(iw),kind=4),&
+          write(MR_global_info,800)iw,iws,real(MR_windfile_starthour(iw),kind=4),&
                            real(MR_windfile_stephour(iw,iws),kind=4),&
                            real(MR_windfile_starthour(iw)+MR_windfile_stephour(iw,iws),kind=4)
         enddo
       enddo
+ 800  format(i7,i7,3f12.2)
 
-      write(MR_global_production,*)&
-       "--------------------------------------",&
-       "------------------------------------------"
+      if(iR_VERB.ge.2)then
+        write(MR_global_production,*)"--------------------------------------------------------------------------------"
+      endif
 
       end subroutine MR_Read_Met_Times_GRIB
 !##############################################################################
@@ -840,7 +867,7 @@
       subroutine MR_Read_MetP_Variable_GRIB(ivar,istep)
 
       use MetReader
-      use eccodes
+      ise eccodes
 
       implicit none
 
@@ -1160,9 +1187,9 @@
             p_met_loc(1:np_met_loc)  = &
               int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx))/100.0_sp)
           else
-            write(MR_global_info,*)"np_met_loc",np_met_loc
-            write(MR_global_info,*)idx
-            write(MR_global_info,*)nlevs_fullmet
+            !write(MR_global_info,*)"np_met_loc",np_met_loc
+            !write(MR_global_info,*)idx
+            !write(MR_global_info,*)nlevs_fullmet
             p_met_loc(1:np_met_loc)  = &
               int(levs_fullmet_sp(idx,1:nlevs_fullmet(idx)))
           endif
@@ -1293,8 +1320,15 @@
 
           ! We don't have/(can't make) the index file so scan all messages of the
           ! grib1 file
-          write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
-                    trim(adjustl(grib_file_path))!,nx_submet,ny_submet,np_met_loc
+          write(fileposstr,'(a9,i4,a9,i4,a10,i4)')"  step = ",istep,&
+                         ", file = ",iw,&
+                         ", slice = ",iwstep
+          !write(MR_global_info,*)"Reading ",trim(adjustl(invar))," from file : ",&
+          !          trim(adjustl(grib_file_path))!,nx_submet,ny_submet,np_met_loc
+          write(MR_global_info,*)"Reading ",trim(adjustl(invar)),&
+                " from file : ",&
+                trim(adjustl(grib_file_path)),fileposstr
+
           ifile=5
           call codes_open_file(ifile,grib_file_path,'R')
 
@@ -1363,8 +1397,13 @@
 
       elseif(MR_GRIB_Version.eq.2)then
         if(Use_GRIB_Index)then
-          write(MR_global_info,*)istep,ivar,"Reading ",trim(adjustl(invar))," from file : ",&
-                    trim(adjustl(index_file))
+          write(fileposstr,'(a9,i4,a9,i4,a10,i4)')"  step = ",istep,&
+                         ", file = ",iw,&
+                         ", slice = ",iwstep
+          write(MR_global_info,*)"Reading ",trim(adjustl(invar))," from file : ",&
+                    trim(adjustl(index_file)),&
+                fileposstr
+
           call codes_index_read(idx,index_file)
           call codes_grib_multi_support_on()
 

@@ -349,6 +349,8 @@
         p_fullmet_sp(1:nlevs_fullmet(idx)) = levs_fullmet_sp(idx,1:nlevs_fullmet(idx))
 
       else  ! MR_iwind not equal to 5
+        !-----------------------------------------------------------------------------------
+        !  Start of all non-iwind=5 cases
         if(MR_iwindformat.eq.50)then
           ! WRF files have a special reader, but we still need to set up 
 
@@ -356,8 +358,12 @@
 
         else  ! MR_iwindformat .ne. 50
           !---------------------------------------------------------------------------------
+          ! Start of block for all non-iwind=5 and non-iwf=50
+          ! This is where the the Netcdf and Grib subroutines can be compared
+          !
           ! Checking for dimension length and values for x,y,t,p
           !   Assume all files have the same format
+
           maxdimlen = 0
           infile = adjustl(trim(MR_windfiles(1)))
           nSTAT=nf90_open(adjustl(trim(infile)),NF90_NOWRITE, ncid)
@@ -570,6 +576,7 @@
               endif
   
             endif ! ivar.eq.1
+
             ! Dimension variables for x,y,time were read while reading GPH, but
             ! we need the level information for all variables.
             ! Now checking level coordinates (pressure, height, depth);
