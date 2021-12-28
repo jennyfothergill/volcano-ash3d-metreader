@@ -18,7 +18,7 @@
 #      and its documentation for any purpose.  We assume no responsibility to provide
 #      technical support to users of this software.
 
-# Shell script that manages the download of the nam AK 2.95 km data files for the
+# Shell script that manages the download of the nam data files (AK 2.95 km or HI 2.5 km) for the
 # current date.
 # This script expects a command line argument indicating which forecast package to download.
 #   autorun_nam.sh 091 0   for the AK HiRes 00 forecast package

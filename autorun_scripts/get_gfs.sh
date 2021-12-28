@@ -18,13 +18,18 @@
 #      and its documentation for any purpose.  We assume no responsibility to provide
 #      technical support to users of this software.
 
-# Shell script that downloads gfs 0.5degree data files for the current date.
-# This script is called from autorun_gfs0.5deg.sh and takes two command-line arguments
-#   get_gfs0.5deg.sh YYYYMMDD HR
+# Shell script that downloads gfs data files (1, 0.5, or 0,25 deg.) for the date supplied
+# on the command line.
+# This script is called from autorun_gfs.sh and takes two command-line arguments
+#   get_gfs.sh YYYYMMDD HR
+
+# This is the location where metreader will be installed
+INSTALLDIR="/opt/USGS"
 
 # This is the location where the downloaded windfiles will be placed.
 # Please edit this to suit your system.
-INSTALLDIR="/opt/USGS"
+WINDROOT="/data/WindFiles"
+GFSDATAHOME="${WINDROOT}/gfs"
 
 if [ $# -eq 0 ]
   then

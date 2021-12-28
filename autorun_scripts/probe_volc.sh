@@ -18,10 +18,10 @@
 #      and its documentation for any purpose.  We assume no responsibility to provide
 #      technical support to users of this software.
 
-# Shell script that manages the download of the gfs 0.5 degree data files for the
-# current date, and converts the file to NetCDF.
+# Shell script that manages the probing of gfs data at volcano locations in volc.txt.
+# 
 # This script expects a command line argument indicating which forecast package to download.
-#   autorun_gfs.sh 0p25 0   for the 0.25 degree 00 forecast package
+#   probe_volc.sh gfs0p50 0   for the 0.5 degree 00 forecast package
 
 # Please edit the line below to be consistant with the install directory specified in
 # the makefile

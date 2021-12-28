@@ -1058,8 +1058,8 @@
         if(IsPeriodic_CompGrid)then
           x_submet_sp(0)           = x_fullmet_sp(nx_submet  ) - 360.0_sp
           x_submet_sp(nx_submet+1) = x_fullmet_sp(nx_submet+1) + 360.0_sp
-          MR_dx_submet(0)           = MR_dx_met(nx_submet  ) - 360.0_sp
-          MR_dx_submet(nx_submet+1) = MR_dx_met(nx_submet+1) + 360.0_sp
+          MR_dx_submet(0)           = MR_dx_met(nx_submet  )
+          MR_dx_submet(nx_submet+1) = MR_dx_met(nx_submet+1)
         endif
       else
         x_submet_sp(1:nx_submet) = x_fullmet_sp(istart:iend)
@@ -1067,11 +1067,10 @@
         if(IsPeriodic_CompGrid)then
           x_submet_sp(0)           = x_fullmet_sp(nx_submet) - 360.0_sp
           x_submet_sp(nx_submet+1) = x_fullmet_sp(1     ) + 360.0_sp
-          MR_dx_submet(0)           = MR_dx_met(nx_submet) - 360.0_sp
-          MR_dx_submet(nx_submet+1) = MR_dx_met(1     ) + 360.0_sp
+          MR_dx_submet(0)           = MR_dx_met(nx_submet)
+          MR_dx_submet(nx_submet+1) = MR_dx_met(1     )
         endif
       endif
-
       do j=jstart,jend
         if(y_inverted)then
           y_submet_sp(jend-j+1) = y_fullmet_sp(j)
@@ -1217,7 +1216,7 @@
             write(MR_global_error,*)"Comp point : ",i,j,x_comp_sp(i),y_comp_sp(j)
             write(MR_global_error,*)"Coord on Met: ",CompPoint_X_on_Met_sp(i,j),CompPoint_Y_on_Met_sp(i,j)
             write(MR_global_error,*)"Index on subMet: ",isubmet,jsubmet
-            write(MR_global_error,*)MR_dx_submet(:)
+            !write(MR_global_error,*)MR_dx_submet(:)
             write(MR_global_error,*)"fractional pos.: ",xfrac,yfrac
             stop 1
           endif

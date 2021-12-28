@@ -18,7 +18,7 @@
 #      and its documentation for any purpose.  We assume no responsibility to provide
 #      technical support to users of this software.
 
-# Shell script that manages the download of the gfs 0.5 degree data files for the
+# Shell script that manages the download of the gfs data files for the
 # current date, and converts the file to NetCDF.
 # This script expects a command line argument indicating which forecast package to download.
 #   autorun_gfs.sh 0p25 0   for the 0.25 degree 00 forecast package
