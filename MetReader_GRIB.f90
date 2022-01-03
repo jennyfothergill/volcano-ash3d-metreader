@@ -847,7 +847,7 @@
       enddo
  800  format(i7,i7,3f12.2)
 
-      if(iR_VERB.ge.2)then
+      if(MR_VERB.ge.2)then
         write(MR_global_production,*)"--------------------------------------------------------------------------------"
       endif
 
