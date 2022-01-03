@@ -867,7 +867,7 @@
       subroutine MR_Read_MetP_Variable_GRIB(ivar,istep)
 
       use MetReader
-      ise eccodes
+      use eccodes
 
       implicit none
 
