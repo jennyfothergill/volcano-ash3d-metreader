@@ -218,10 +218,12 @@ install:
 	install -d $(INSTALLDIR)/include/
 	install -d $(INSTALLDIR)/bin/
 	install -d $(INSTALLDIR)/bin/autorun_scripts
+	install -d $(INSTALLDIR)/share
 	install -m 644 $(LIB) $(INSTALLDIR)/lib/
 	install -m 644 *.mod $(INSTALLDIR)/include/
 	install -m 755 $(EXEC) $(INSTALLDIR)/bin/
 	install -m 755 $(AUTOSCRIPTS) $(INSTALLDIR)/bin/autorun_scripts/
+	install -m 644 share/volc_NOVAC.txt $(INSTALLDIR)/share/volc_NOVAC.txt
 
 uninstall:
 	rm -f $(INSTALLDIR)/lib/$(LIB)
@@ -244,4 +246,5 @@ uninstall:
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/prune_windfiles.sh
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/get_gmao.sh
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/probe_volc.sh
+	rm -f $(INSTALLDIR)/share/volc_NOVAC.txt
 
