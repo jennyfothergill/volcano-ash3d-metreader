@@ -1562,8 +1562,10 @@
         !Met_var_IsAvailable(11)=.true.
         !Met_var_IsAvailable(12)=.true.
         ! Moisture
-        !Met_var_IsAvailable(30)=.true.
-        !Met_var_IsAvailable(32)=.true.
+        Met_var_IsAvailable(30)=.true.
+        Met_var_IsAvailable(31)=.true.
+        Met_var_IsAvailable(32)=.true.
+        Met_var_IsAvailable(33)=.true.
         ! Precipitation
         !Met_var_IsAvailable(40)=.true.; Met_var_NC_names(40)="Categorical_Rain"
         !Met_var_IsAvailable(41)=.true.; Met_var_NC_names(41)="Categorical_Snow"
