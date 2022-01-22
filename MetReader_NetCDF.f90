@@ -2849,7 +2849,7 @@
                   ! otherwise, two-sided calculation
                   !del_P = p_fullmet_Vz_sp(k+1)-p_fullmet_Vz_sp(k-1)
                   del_p = levs_fullmet_sp(idx,k+1) - &
-                          levs_fullmet_sp(idx,k)
+                          levs_fullmet_sp(idx,k-1)
                   if(istep.eq.MR_iMetStep_Now)then
                     del_H = MR_geoH_metP_last(i,j,k+1) - MR_geoH_metP_last(i,j,k-1)
                   else

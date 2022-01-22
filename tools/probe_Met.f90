@@ -158,7 +158,6 @@
         write(6,*)"                        3 = V (m/s)"
         write(6,*)"                        4 = W (m/s)"
         write(6,*)"                        5 = T (K)"
-        !write(6,*)"                        1 = GPH"
         write(6,*)"       iw           : integer : windfile format code (3,4,5)"
         write(6,*)"       iwf          : integer : windfile product code"
         write(6,*)"       idf          : integer : igrid (2 for nc, 3 for grib)"
