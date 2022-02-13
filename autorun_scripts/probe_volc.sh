@@ -38,7 +38,7 @@ if [ $# -eq 0 ]
   echo "No arguments supplied"
   echo "Usage: probe_volc.sh product FCpackage"
   echo "       where Resolution = gfs1p00, gfs0p50, gfs0p25, or nam091"
-  echo "             FCpackage  = 0, 6, 12, 18 or 24"
+  echo "             FCpackage  = 0, 6, 12, or 18"
   exit
 fi
 
@@ -86,13 +86,9 @@ case ${FC} in
   FChour="18"
   FChourR="18.0"
   ;;
- 24)
-  FChour="24"
-  FChourR="24.0"
-  ;;
  *)
   echo "Forecast package not recognized"
-  echo "Valid values: 0, 6, 12, 18, 24"
+  echo "Valid values: 0, 6, 12, 18"
   exit
 esac
 

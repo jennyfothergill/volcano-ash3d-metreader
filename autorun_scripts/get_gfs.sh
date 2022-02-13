@@ -37,7 +37,7 @@ if [ $# -eq 0 ]
   echo "Usage: get_gfs.sh Resolution YYYYMMDD FCpackage"
   echo "       where Resolution = 1p00, 0p50, or 0p25"
   echo "             YYYYMMDD   = date"
-  echo "             FCpackage  = 0, 6, 12, 18 or 24"
+  echo "             FCpackage  = 0, 6, 12, or 18"
   exit
 fi
 

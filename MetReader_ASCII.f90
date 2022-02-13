@@ -360,12 +360,13 @@
                   Met_var_IsAvailable(3) = .true.  ! V
                 elseif (SndColReadOrder(iv).eq.4)then  
                   Met_var_IsAvailable(4) = .true.  ! W
+                  Met_var_IsAvailable(7) = .true.  ! VVP
                 elseif (SndColReadOrder(iv).eq.5)then
                   Met_var_IsAvailable(5) = .true.  ! T
-                elseif (SndColReadOrder(iv).eq.6)then
-                  Met_var_IsAvailable(6) = .true.  ! Wsp
-                elseif (SndColReadOrder(iv).eq.7)then
-                  Met_var_IsAvailable(7) = .true.  ! Wdr
+                elseif (SndColReadOrder(iv).eq.8)then
+                  Met_var_IsAvailable(8) = .true.  ! Wsp
+                elseif (SndColReadOrder(iv).eq.9)then
+                  Met_var_IsAvailable(9) = .true.  ! Wdr
                 endif
               enddo
               ! Now checking how velocities are provided.  If coordinates are given, they take
@@ -373,7 +374,7 @@
               ! direction and speed.
               if(Met_var_IsAvailable(2).and.Met_var_IsAvailable(3))then
                 IsWindDirectSpeed = .false.
-                if(Met_var_IsAvailable(6).and.Met_var_IsAvailable(7))then
+                if(Met_var_IsAvailable(2).and.Met_var_IsAvailable(8))then
                   write(MR_global_error,*)"MR WARNING: Both U/V and Speed/Direction provided."
                   write(MR_global_error,*)"            Ignoring Speed/Direction"
                 endif
@@ -384,11 +385,11 @@
                 write(MR_global_error,*)"MR ERROR:  No height variable given"
                 stop 1
               elseif(.not.(Met_var_IsAvailable(2).and.Met_var_IsAvailable(3)).and. &
-                     .not.(Met_var_IsAvailable(6).and.Met_var_IsAvailable(7)))then
+                     .not.(Met_var_IsAvailable(8).and.Met_var_IsAvailable(9)))then
                 write(MR_global_error,*)"MR ERROR:  No U/V or Wsp/Wdr variable given"
                 stop 1
               endif
-            else
+            else ! end of branch where 3 values are read in
               ! If no list of variables is provided, we will still need a list up to 5
               if(iw_idx.eq.1)then
                 MR_Snd_nvars = 5
@@ -419,11 +420,11 @@
             x_fullmet_sp(iloc) = rvalue1
             y_fullmet_sp(iloc) = rvalue2
             ! Try for three values
-            read(linebuffer,*,iostat=ioerr) rvalue1,ivalue1, ivalue2
+            read(linebuffer,*,iostat=ioerr) rvalue1,rvalue2, ivalue1
             if(ioerr.eq.0)then
               ! A third parameter is present: first value of projection line
               Snd_Have_Coord = .true.
-              Met_iprojflag = ivalue2
+              Met_iprojflag = ivalue1
             endif
             if(Snd_Have_Coord)then
               if(Met_iprojflag.eq.1)then
@@ -443,13 +444,14 @@
               else
                 ! Grid in not Lon/Lat
                 ! First try to read the projection code
-                read(linebuffer,*,iostat=ioerr) rvalue1,ivalue1, &
-                                                ivalue2, ivalue3
+                read(linebuffer,*,iostat=ioerr) rvalue1,rvalue2, &
+                                                ivalue1, ivalue2
                 if(ioerr.eq.0)then
-                  Met_iprojflag = ivalue3
+                  Met_iprojflag = ivalue2
                   if(Met_iprojflag.ne.0)then
                     ! we have a geographic projection
                     ! Try to read the full projection line
+                    !  This assumes that neither of the coordinates is zero
                     indx1 = index(linebuffer,' 0 ')
                     indx2 = index(linebuffer,'#')
                     if(indx2.gt.0)then
@@ -625,6 +627,17 @@
                   real(WindVelocity(il)*sin(pi + DEG2RAD*WindDirection(il)),kind=sp)
                 MR_SndVars_metP(iloc,itime,4,il) = &
                   real(WindVelocity(il)*cos(pi + DEG2RAD*WindDirection(il)),kind=sp)
+              else
+                  ! Otherwise, calculate direction and speed from the components
+          
+                MR_SndVars_metP(iloc,itime,6,il) = &
+                  MR_SndVars_metP(iloc,itime,3,il)*MR_SndVars_metP(iloc,itime,3,il) + &
+                  MR_SndVars_metP(iloc,itime,4,il)*MR_SndVars_metP(iloc,itime,4,il)
+                MR_SndVars_metP(iloc,itime,6,il) = sqrt(MR_SndVars_metP(iloc,itime,6,il))
+                MR_SndVars_metP(iloc,itime,7,il) = &
+                  -atan2(MR_SndVars_metP(iloc,itime,4,il),MR_SndVars_metP(iloc,itime,3,il))/DEG2RAD + &
+                  90.0_sp
+
               endif
               !Met_dim_IsAvailable(1) = .true.  ! Time
               Met_dim_IsAvailable(2) = .true.  ! P
@@ -635,7 +648,10 @@
               Met_var_IsAvailable(2) = .true.  ! U
               Met_var_IsAvailable(3) = .true.  ! V
               Met_var_IsAvailable(5) = .true.  ! T
+
+              write(MR_global_info,*)il,real(MR_SndVars_metP(iloc,itime,1:7,il),kind=4)
             enddo ! il=1,nlev
+
             close(fid)
             ! Finished reading all the data for this file
 
@@ -1183,8 +1199,8 @@
         Met_var_IsAvailable(2) = .true.  ! U
         Met_var_IsAvailable(3) = .true.  ! V
         Met_var_IsAvailable(5) = .true.  ! T
-        Met_var_IsAvailable(6) = .true.  ! Wsp
-        Met_var_IsAvailable(7) = .true.  ! Wdr
+        Met_var_IsAvailable(8) = .true.  ! Wsp
+        Met_var_IsAvailable(9) = .true.  ! Wdr
 
         ! Here we look for the highest pressure value (lowest altitude) of all the pressure
         ! values to be used for setting the master pressure array (p_fullmet_sp)

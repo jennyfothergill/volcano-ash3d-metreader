@@ -121,8 +121,8 @@
 #ifdef USEPOINTERS
       integer      ,dimension(:,:)  ,pointer, public :: MR_dum2d_met_int   => null() ! Used for categorical variables
       real(kind=sp),dimension(:,:)  ,pointer, public :: MR_dum2d_met       => null() ! Used for surface variables
-      real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d_metP      => null() 
-      real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d2_metP     => null() 
+      real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d_metP      => null()
+      real(kind=sp),dimension(:,:,:),pointer, public :: MR_dum3d2_metP     => null()
       real(kind=sp),dimension(:,:,:),pointer, public :: MR_geoH_metP_last  => null() ! These are needed for compH interpolation
       real(kind=sp),dimension(:,:,:),pointer, public :: MR_geoH_metP_next  => null() 
 
@@ -368,10 +368,12 @@
       ! space for 50 variable names
         ! Mechanical / State variables
         !   1 = Geopotential Height
-        !   2 = Vx
-        !   3 = Vy
-        !   4 = Vz
-        !   5 = Temperature
+        !   2 = Vx                               : m/s
+        !   3 = Vy                               : m/s
+        !   4 = Vz                               : m/s
+        !   5 = Temperature                      : K
+        !   6 = pressure (when 3d for eta grids) : Pa
+        !   7 = PVV (Pressure Vertical Vel.)     : Pa/s
         ! Surface
         !  10 = Planetary Boundary Layer Height
         !  11 = U @ 10m
@@ -727,6 +729,7 @@
       Met_var_GRIB1_St(3)          = "pl"
       Met_var_ndim(3)              = 4
         ! Velocity component in z direction  (Pa/s)
+        !  This actually returns Vz with VPP*dp/dz with a FD approx of dp/dz
       Met_var_NC_names(4)          = "Vertical_velocity_pressure_isobaric"
       Met_var_GRIB_names(4)        = "w"
       Met_var_WMO_names(4)         = "VVEL"
@@ -742,6 +745,16 @@
       Met_var_GRIB1_Param(5)       = 11
       Met_var_GRIB1_St(5)          = "pl"
       Met_var_ndim(5)              = 4
+        ! Velocity component in z direction  (Pa/s)
+        !  This returns the true vert. vel. pres.
+      Met_var_NC_names(7)          = "Vertical_velocity_pressure_isobaric"
+      Met_var_GRIB_names(7)        = "w"
+      Met_var_WMO_names(7)         = "VVEL"
+      Met_var_GRIB2_DPcPnSt(7,1:4) = (/0, 2, 8, 100/)
+      Met_var_GRIB1_Param(7)       = 39
+      Met_var_GRIB1_St(7)          = "pl"
+      Met_var_ndim(7)              = 4
+
       !--------------------------------
       ! Surface
       !--------------------------------
@@ -998,6 +1011,7 @@
         Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="v_wind_isobaric"
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="Pressure_vertical_velocity_isobaric"
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="Temp_isobaric"
+        Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="Pressure_vertical_velocity_isobaric"
         ! Surface
         Met_var_IsAvailable(10)=.true.; Met_var_NC_names(10)="Planetary_boundary_layer_height_surface"
         Met_var_IsAvailable(11)=.true.; Met_var_NC_names(11)="u_wind_height_above_ground"
@@ -1042,6 +1056,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         Met_var_IsAvailable(10)=.true.
         Met_var_IsAvailable(11)=.true.
@@ -1086,6 +1101,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         Met_var_IsAvailable(10)=.true.; Met_var_NC_names(10)="Planetary_Boundary_Layer_Height"
         Met_var_IsAvailable(11)=.true.
@@ -1131,6 +1147,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         Met_var_IsAvailable(11)=.true.
         Met_var_IsAvailable(12)=.true.
@@ -1176,6 +1193,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         Met_var_IsAvailable(10)=.true.
         Met_var_IsAvailable(11)=.true.
@@ -1222,6 +1240,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         Met_var_IsAvailable(10)=.true.
         Met_var_IsAvailable(11)=.true.
@@ -1257,6 +1276,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         Met_var_IsAvailable(10)=.true.
         Met_var_IsAvailable(11)=.true.
@@ -1307,6 +1327,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         Met_var_IsAvailable(10)=.true.
         Met_var_IsAvailable(11)=.true.
@@ -1348,7 +1369,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
-
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         Met_var_IsAvailable(10)=.true.
         Met_var_IsAvailable(11)=.true.
@@ -1398,6 +1419,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         Met_var_IsAvailable(10)=.true.
         Met_var_IsAvailable(11)=.true.
@@ -1456,6 +1478,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         Met_var_IsAvailable(10)=.true.
         Met_var_IsAvailable(11)=.true.
@@ -1506,6 +1529,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         Met_var_IsAvailable(10)=.true.
         Met_var_IsAvailable(11)=.true.
@@ -1557,6 +1581,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         !Met_var_IsAvailable(10)=.true.; Met_var_GRIB2_DPcPnSt(10,1:4)=(/0, 3, 18, 1/)
         !Met_var_IsAvailable(11)=.true.
@@ -1598,6 +1623,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         Met_var_IsAvailable(10)=.true.; Met_var_GRIB2_DPcPnSt(10,1:4)=(/0, 3, 18, 1/)
         ! Moisture
@@ -1630,6 +1656,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Surface
         Met_var_IsAvailable(10)=.true.; Met_var_GRIB2_DPcPnSt(10,1:4)=(/0, 3, 18, 1/)
         Met_var_IsAvailable(11)=.true.
@@ -1671,6 +1698,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="Vertical_velocity_isobaric"
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="Vertical_velocity_isobaric"
         ! Moisture
         Met_var_IsAvailable(30)=.true.
         ! Precipitation
@@ -1703,6 +1731,7 @@
         Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V"
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="OMEGA"
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T"
+        Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="OMEGA"
         ! Moisture
         !   Available in MERRA2_400.inst3_3d_asm_Np.YYYYMMDD.nc4
         !    from https://goldsmr5.gesdisc.eosdis.nasa.gov/data/MERRA2/M2I3NPASM.5.12.4
@@ -1737,6 +1766,7 @@
           Met_var_IsAvailable(3)=.true.
           Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="Pressure_vertical_velocity_isobaric"
           Met_var_IsAvailable(5)=.true.
+          Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="Pressure_vertical_velocity_isobaric"
           ! Moisture
           !Met_var_IsAvailable(30)=.true.
   
@@ -1756,6 +1786,7 @@
           Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="vwnd"       ! short m/s (202.66f,0.01f)
           Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="omega"      ! short Pa/s (29.765f,0.001f)
           Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="air"        ! short K (477.66f,0.01f)
+          Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="omega"      ! short Pa/s (29.765f,0.001f)
           ! Atmospheric Structure
           !Met_var_IsAvailable(20)=.true.
           !Met_var_IsAvailable(21)=.true.
@@ -1799,6 +1830,7 @@
         Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="VGRD_GDS0_ISBL"
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="VVEL_GDS0_ISBL"
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="TMP_GDS0_ISBL"
+        Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="VVEL_GDS0_ISBL"
         ! Moisture
         Met_var_IsAvailable(31)=.true.; Met_var_GRIB_names(31)= "SPFH_GDS0_ISBL"
 
@@ -1836,6 +1868,7 @@
           Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_GRD_GDS0_ISBL"
           Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="V_VEL_GDS0_ISBL"
           Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="TMP_GDS0_ISBL"
+          Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="V_VEL_GDS0_ISBL"
         else 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! Version 2c (https://www.esrl.noaa.gov/psd/data/gridded/data.20thC_ReanV2c.pressure.html)
@@ -1850,9 +1883,8 @@
           Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="vwnd"
           Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="omega"
           Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="air"
+          Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="omega"
         endif
-
-
         fill_value_sp = 1.0e+20_sp
 
       elseif (MR_iwindformat.eq.28)then
@@ -1884,6 +1916,8 @@
                                        Met_var_GRIB1_Param(4)=135
         Met_var_IsAvailable(5)=.true.
                                        Met_var_GRIB1_Param(5)=130
+        Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="Vertical_velocity_isobaric"
+                                       Met_var_GRIB1_Param(7)=135
         Met_var_IsAvailable(30)=.true.
                                        Met_var_GRIB1_Param(30)=157
         Met_var_IsAvailable(31)=.true.
@@ -1926,6 +1960,7 @@
         Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_GDS0_ISBL" ! e5.oper.an.pl.128_129_v.ll025uv.1991061500_1991061523.nc
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W_GDS0_ISBL" ! e5.oper.an.pl.128_129_w.ll025sc.1991061500_1991061523.nc
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T_GDS0_ISBL" ! e5.oper.an.pl.128_129_t.ll025sc.1991061500_1991061523.nc
+        Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="W_GDS0_ISBL" ! e5.oper.an.pl.128_129_w.ll025sc.19910
         !Met_var_IsAvailable(1)=.true.; Met_var_NC_names(1)="Z" ! e5.oper.an.pl.128_129_z.regn320sc.2018062000_2018062023.nc
         !Met_var_IsAvailable(2)=.true.; Met_var_NC_names(2)="U" ! e5.oper.an.pl.128_131_u.regn320uv.2018062000_2018062023.nc
         !Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V" ! e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
@@ -1972,6 +2007,7 @@
         Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V_GDS4_ISBL" ! e5.oper.an.pl.128_132_v.regn320uv.2018062000_2018062023.nc
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W_GDS4_ISBL" ! e5.oper.an.pl.128_135_w.regn320sc.2018062000_2018062023.nc
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T_GDS4_ISBL" ! e5.oper.an.pl.128_130_t.regn320sc.2018062000_2018062023.nc
+        Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="W_GDS4_ISBL" ! e5.oper.an.pl.128_135_w.regn320sc.201
 
         fill_value_sp = -9999.0_sp
 
@@ -1999,6 +2035,7 @@
         Met_var_IsAvailable(3)=.true.
         Met_var_IsAvailable(4)=.true.
         Met_var_IsAvailable(5)=.true.
+        Met_var_IsAvailable(7)=.true.
         ! Moisture
         Met_var_IsAvailable(30)=.true.
 
@@ -2029,6 +2066,7 @@
         Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V"
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="OMEGA"
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T"
+        Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="OMEGA"
         ! Moisture
         Met_var_IsAvailable(30)=.true.; Met_var_NC_names(30)="RELHUM"
         Met_var_IsAvailable(31)=.true.; Met_var_NC_names(31)="Q"
@@ -2058,6 +2096,7 @@
         Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V"
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="OMEGA"
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T"
+        Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="OMEGA"
 
         fill_value_sp = 1.0e15_sp
 
@@ -2084,6 +2123,7 @@
         Met_var_IsAvailable(3)=.true.; Met_var_NC_names(3)="V"
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="OMEGA"
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T"
+        Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="OMEGA"
 
         fill_value_sp = 1.0e15_sp
 
@@ -2114,6 +2154,7 @@
         Met_var_IsAvailable(4)=.true.; Met_var_NC_names(4)="W"
         Met_var_IsAvailable(5)=.true.; Met_var_NC_names(5)="T"      ! float K perturbation potential temperature (theta-t0)
         Met_var_IsAvailable(6)=.true.; Met_var_NC_names(6)="PB"
+        Met_var_IsAvailable(7)=.true.; Met_var_NC_names(7)="W"
 
         ! Surface
         Met_var_IsAvailable(10)=.true.; Met_var_NC_names(10)="PBLH"

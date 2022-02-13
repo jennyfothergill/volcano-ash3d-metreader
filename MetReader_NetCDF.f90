@@ -2308,6 +2308,7 @@
       if(ivar.eq.4 ) Dimension_of_Variable = 3 ! Vz
       if(ivar.eq.5 ) Dimension_of_Variable = 3 ! Temperature
       if(ivar.eq.6 ) Dimension_of_Variable = 3 ! Pressure (only for WRF or other eta-level files)
+      if(ivar.eq.7 ) Dimension_of_Variable = 3 ! PVV
 
       if(ivar.eq.10) Dimension_of_Variable = 2 ! Planetary Boundary Layer Height
       if(ivar.eq.11) Dimension_of_Variable = 2 ! U @ 10m
@@ -2777,7 +2778,7 @@
         MR_dum3d_metP = MR_dum3d_metP / 1000.0_sp
       elseif(Dimension_of_Variable.eq.3)then
         ! Do QC checking of all other 3d variables
-        if(ivar.eq.2.or.ivar.eq.3.or.ivar.eq.4)then
+        if(ivar.eq.2.or.ivar.eq.3.or.ivar.eq.4.or.ivar.eq.7)then
           ! taper winds (vx,vy,vz) to zero at ground surface
           if(istep.eq.MR_iMetStep_Now)then
             call MR_QC_3dvar(ivar,nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,       &
@@ -2817,8 +2818,12 @@
 
       if(ivar.eq.4)then
         if(MR_iwindformat.ne.50)then
-            ! For pressure vertical velocity, convert from Pa s to m/s by dividing
-            ! by pressure gradient
+            ! For vertical velocity, we convert from pressure vertical velocity
+            ! Pa s to m/s by dividing by pressure gradient.
+            !  Note:  This seems problematic in the stratosphere where pressure
+            !         levels are further apart.  It might be better to read PVV
+            !         directly, and use dp/dz = -rho g where we get rho from the
+            !         ideal gas law
           idx = Met_var_zdim_idx(ivar)
           do k=1,np_met_loc
             do i=1,nx_submet
