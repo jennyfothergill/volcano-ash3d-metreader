@@ -125,7 +125,7 @@
       real(kind=sp) :: SurfPres,SurfTemp,SurfDewPoint,SurfWindDir,SurfWindSpeed
       integer :: SurfTemp_int
       logical :: In_hPa = .true.
-      integer :: indx1,indx2
+      integer :: indx1,indx2,indx3
       integer :: ncols
       logical :: IsWindDirectSpeed
       logical :: IsCustVarOrder
@@ -164,7 +164,7 @@
 
       if(MR_VERB.ge.1)then
         write(MR_global_production,*)"--------------------------------------------------------------------------------"
-        write(MR_global_production,*)"----------                MR_Read_Met_DimVars_ASCII_1d                  ----------"
+        write(MR_global_production,*)"----------                MR_Read_Met_DimVars_ASCII_1d                ----------"
         write(MR_global_production,*)"--------------------------------------------------------------------------------"
       endif
 
@@ -268,6 +268,11 @@
 !              1000 hPa to 500 hPa thickness: 5289.00
 !Precipitable water [mm] for entire sounding: 11.68
 !</PRE>
+
+      write(linebuffer ,'(a80)') repeat(' ',80)
+      write(linebuffer2,'(a80)') repeat(' ',80)
+      write(linebuffer3,'(a80)') repeat(' ',80)
+      write(linebuffer4,'(a80)') repeat(' ',80)
 
       MR_SndVarsName(:) = "   "
       MR_SndVarsName( 0) = "P  "
@@ -451,14 +456,18 @@
                   if(Met_iprojflag.ne.0)then
                     ! we have a geographic projection
                     ! Try to read the full projection line
-                    !  This assumes that neither of the coordinates is zero
+                    ! We know the projection flag will be 0 since this is the branch for
+                    ! that so we know ' 0 ' will be in the string, but the first or
+                    ! second coordinate could have this string too.  Need a better way.
                     indx1 = index(linebuffer,' 0 ')
-                    indx2 = index(linebuffer,'#')
+                    indx2 = index(linebuffer,'#')   ! Check for the comment marker
+                    indx3 = len_trim(linebuffer)    ! get length of string
                     if(indx2.gt.0)then
-                      call PJ_Set_Proj_Params(linebuffer(indx1:indx2-1))
+                      linebuffer2(1:indx1+indx2) = linebuffer(indx1+1:indx2-1)
                     else
-                      call PJ_Set_Proj_Params(linebuffer(indx1:))
+                      linebuffer2(1:indx1+1+indx3) = linebuffer(indx1+1:indx3)
                     endif
+                    call PJ_Set_Proj_Params(linebuffer2)
                     IsLatLon_MetGrid  = .false.
                     IsGlobal_MetGrid  = .false.
                     IsRegular_MetGrid = .false.
@@ -629,15 +638,13 @@
                   real(WindVelocity(il)*cos(pi + DEG2RAD*WindDirection(il)),kind=sp)
               else
                   ! Otherwise, calculate direction and speed from the components
-          
-                MR_SndVars_metP(iloc,itime,6,il) = &
+                WindVelocity(il) = &
                   MR_SndVars_metP(iloc,itime,3,il)*MR_SndVars_metP(iloc,itime,3,il) + &
                   MR_SndVars_metP(iloc,itime,4,il)*MR_SndVars_metP(iloc,itime,4,il)
-                MR_SndVars_metP(iloc,itime,6,il) = sqrt(MR_SndVars_metP(iloc,itime,6,il))
-                MR_SndVars_metP(iloc,itime,7,il) = &
+                WindVelocity(il) = sqrt(WindVelocity(il))
+                WindDirection(il) = &
                   -atan2(MR_SndVars_metP(iloc,itime,4,il),MR_SndVars_metP(iloc,itime,3,il))/DEG2RAD + &
                   90.0_sp
-
               endif
               !Met_dim_IsAvailable(1) = .true.  ! Time
               Met_dim_IsAvailable(2) = .true.  ! P
@@ -649,7 +656,8 @@
               Met_var_IsAvailable(3) = .true.  ! V
               Met_var_IsAvailable(5) = .true.  ! T
 
-              write(MR_global_info,*)il,real(MR_SndVars_metP(iloc,itime,1:7,il),kind=4)
+              write(MR_global_info,*)il,real(MR_SndVars_metP(iloc,itime,1:5,il),kind=4),&
+                                        WindVelocity(il),WindDirection(il)
             enddo ! il=1,nlev
 
             close(fid)
@@ -1324,9 +1332,9 @@
         allocate(MR_dum2d_comp_int(nx_comp,ny_comp))
         allocate(MR_dum2d_comp(nx_comp,ny_comp))
         allocate(MR_dum3d_compH(nx_comp,ny_comp,nz_comp))
+        allocate(MR_dum3d_compP(nx_comp,ny_comp,np_fullmet))
         allocate(MR_geoH_metP_last(nx_submet,ny_submet,np_fullmet)) ! This will hold elevation
         allocate(MR_geoH_metP_next(nx_submet,ny_submet,np_fullmet)) ! Copy of geoH_metP_last
-
         allocate(MR_Snd2Comp_tri_map_wgt(nx_comp,ny_comp,3))
         allocate(MR_Snd2Comp_tri_map_idx(nx_comp,ny_comp,3))
         if(MR_nSnd_Locs.eq.1)then

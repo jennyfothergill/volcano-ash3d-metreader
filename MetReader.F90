@@ -1,5 +1,13 @@
       module MetReader
 
+      ! This file is the output of the simple script
+!get_version.sh 
+!  echo -n "      character(len=40),parameter,public :: MR_GitComID ='" > version.h
+!  git log -n 1 | grep commit | cut -f 2 -d' ' | tr -d $'\n' >> version.h
+!  echo -n "'" >> version.h
+!    which set the variable containing the git commit ID : MR_GitComID
+#include "version.h"
+
       integer, parameter,private :: sp        = 4 ! single precision
       integer, parameter,private :: dp        = 8 ! double precision
 
@@ -4165,18 +4173,16 @@
         !  Since MR_dum3d_metH and MR_dum3d_compH have the same z-coordinate, we only
         !  need to do 2d regridding on each k-slice or each p-slice
       allocate(tmp_regrid2d_sp(nx_comp,ny_comp));tmp_regrid2d_sp(:,:)=0.0_sp
-
       if(MR_useCompH)then
         ! Regridding to CompH
         do k=1,nz_comp
           if(MR_iwindformat.eq.1.or.MR_iwindformat.eq.2)then
             !NOTE: This will not work for multi-site sonde data
-            MR_dum3d_compH(:,:,k) = MR_dum3d_metH(1,1,k)
+            MR_dum3d_compH(1:nx_comp,1:ny_comp,k) = MR_dum3d_metH(1,1,k)
             cycle
           endif
           call MR_Regrid_Met2Comp(nx_submet,ny_submet, MR_dum3d_metH(1:nx_submet,1:ny_submet,k),       &
                                   nx_comp,  ny_comp,   tmp_regrid2d_sp(1:nx_comp,1:ny_comp))
-  
           do i = 1,nx_comp
             do j = 1,ny_comp
               if(isnan(tmp_regrid2d_sp(i,j)))tmp_regrid2d_sp(i,j)=0.0_sp

@@ -170,6 +170,7 @@ libMetReader.a: MetReader.F90 MetReader.o $(ncOBJS) $(grbOBJS) MetReader_Grids.o
 	ar rcs libMetReader.a MetReader.o $(ncOBJS) $(grbOBJS) MetReader_Grids.o MetReader_ASCII.o
 
 MetReader.o: MetReader.F90 makefile
+	./get_version.sh
 	$(FC) $(FPPFLAGS) $(EXFLAGS) -c MetReader.F90
 MetReader_Grids.o: MetReader_Grids.f90 MetReader.o makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(USGSLIB) -c MetReader_Grids.f90

@@ -80,6 +80,7 @@
           Met_var_zdim_idx( 3) = 1
           Met_var_zdim_idx( 4) = 2
           Met_var_zdim_idx( 5) = 1
+          Met_var_zdim_idx( 7) = 2
           Met_var_zdim_idx(30) = 3
 
           IsLatLon_MetGrid  = .true.
@@ -161,6 +162,7 @@
           Met_var_zdim_idx( 3) = 1
           Met_var_zdim_idx( 4) = 1
           Met_var_zdim_idx( 5) = 1
+          Met_var_zdim_idx( 7) = 1
           Met_var_zdim_idx(30) = 2
 
           IsLatLon_MetGrid  = .true.
@@ -227,6 +229,7 @@
           Met_var_zdim_idx( 3) = 1
           Met_var_zdim_idx( 4) = 2
           Met_var_zdim_idx( 5) = 1
+          Met_var_zdim_idx( 7) = 2
 
           IsLatLon_MetGrid  = .true.
           IsGlobal_MetGrid  = .true.
@@ -285,6 +288,7 @@
           Met_var_zdim_idx( 3) = 1
           Met_var_zdim_idx( 4) = 1
           Met_var_zdim_idx( 5) = 1
+          Met_var_zdim_idx( 7) = 1
 
           IsLatLon_MetGrid  = .true.
           IsGlobal_MetGrid  = .true.
@@ -327,6 +331,7 @@
           Met_var_zdim_idx( 3) = 1
           Met_var_zdim_idx( 4) = 1
           Met_var_zdim_idx( 5) = 1
+          Met_var_zdim_idx( 7) = 1
 
           IsLatLon_MetGrid  = .true.
           IsGlobal_MetGrid  = .true.
@@ -1919,13 +1924,15 @@
          ivar.ne.2.and. &
          ivar.ne.3.and. &
          ivar.ne.4.and. &
-         ivar.ne.5)then
+         ivar.ne.5.and. &
+         ivar.ne.7)then
         write(MR_global_error,*)"MR ERROR: iwind=5 only compatible with the following variables:"
         write(MR_global_error,*)"  ivar = 1 :: ",Met_var_NC_names(1)
         write(MR_global_error,*)"  ivar = 2 :: ",Met_var_NC_names(2)
         write(MR_global_error,*)"  ivar = 3 :: ",Met_var_NC_names(3)
         write(MR_global_error,*)"  ivar = 4 :: ",Met_var_NC_names(4)
         write(MR_global_error,*)"  ivar = 5 :: ",Met_var_NC_names(5)
+        write(MR_global_error,*)"  ivar = 7 :: ",Met_var_NC_names(4)
       endif
 
       thisYear        = HS_YearOfEvent( inhour,MR_BaseYear,MR_useLeap)
@@ -1952,6 +1959,8 @@
           write(MR_iw5_prefix ,254)'omega.'
         elseif(ivar.eq.5)then
           write(MR_iw5_prefix ,255)'air.'
+        elseif(ivar.eq.7)then
+          write(MR_iw5_prefix ,254)'omega.'
         endif
         write(MR_iw5_suffix1,325)thisYear,'.nc'
         write(MR_iw5_suffix2,325)thisYear+1,'.nc'   ! Next file for iwf=25 is next year
@@ -1980,6 +1989,8 @@
           write(MR_iw5_prefix ,264)'anl_p125.039_vvel.'
         elseif(ivar.eq.5)then
           write(MR_iw5_prefix ,265)'anl_p125.011_tmp.'
+        elseif(ivar.eq.7)then
+          write(MR_iw5_prefix ,264)'anl_p125.039_vvel.'
         endif
         write(MR_iw5_suffix1,326)thisYear,thisMonth,dum_i1,'00_',&
                                  thisYear,thisMonth,dum_i2,dum_i3,'.nc'
@@ -2011,6 +2022,8 @@
             write(MR_iw5_prefix ,271)'pgrbanl_mean_',thisYear,'_VVEL'
           elseif(ivar.eq.5)then
             write(MR_iw5_prefix ,271)'pgrbanl_mean_',thisYear,'_TMP'
+          elseif(ivar.eq.7)then
+            write(MR_iw5_prefix ,271)'pgrbanl_mean_',thisYear,'_VVEL'
           endif
           write(MR_iw5_suffix1,272)'_pres.nc'
         else
@@ -2025,6 +2038,8 @@
             write(MR_iw5_prefix ,254)'omega.'
           elseif(ivar.eq.5)then
             write(MR_iw5_prefix ,255)'air.'
+          elseif(ivar.eq.7)then
+            write(MR_iw5_prefix ,254)'omega.'
           endif
           write(MR_iw5_suffix1,327)thisYear,'.nc'
         endif
@@ -2054,6 +2069,8 @@
             write(MR_iw5_prefix,291)'e5.oper.an.pl.128_135_w.regn320sc.'
           elseif(ivar.eq.5)then
             write(MR_iw5_prefix,291)'e5.oper.an.pl.128_130_t.regn320sc.'
+          elseif(ivar.eq.7)then
+            write(MR_iw5_prefix,291)'e5.oper.an.pl.128_135_w.regn320sc.'
           endif
         else
           !  whereas https://rda.ucar.edu/datasets/ds633.0
@@ -2069,6 +2086,8 @@
             write(MR_iw5_prefix ,292)'e5.oper.an.pl.128_135_w.ll025sc.'
           elseif(ivar.eq.5)then
             write(MR_iw5_prefix ,292)'e5.oper.an.pl.128_130_t.ll025sc.'
+          elseif(ivar.eq.7)then
+            write(MR_iw5_prefix ,292)'e5.oper.an.pl.128_135_w.ll025sc.'
           endif
         endif
         write(MR_iw5_suffix1,329)thisYear,thisMonth,dum_i1,'00_',&
@@ -2095,6 +2114,8 @@
           write(MR_iw5_prefix ,230)'e20c.oper.an.pl.3hr.128_135_w.regn80sc.'
         elseif(ivar.eq.5)then
           write(MR_iw5_prefix ,230)'e20c.oper.an.pl.3hr.128_130_t.regn80sc.'
+        elseif(ivar.eq.7)then
+          write(MR_iw5_prefix ,230)'e20c.oper.an.pl.3hr.128_135_w.regn80sc.'
         endif
         write(MR_iw5_suffix1,330)thisYear,thisMonth,dum_i1,'00_',&
                                  thisYear,thisMonth,dum_i2,dum_i3,'.nc'
