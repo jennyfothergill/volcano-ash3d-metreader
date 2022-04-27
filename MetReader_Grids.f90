@@ -1001,8 +1001,10 @@
             y_pad_North = .true.
           else
             write(MR_global_info,*)"MR ERROR: yLL < y_fullmet_sp(1)"
-            write(MR_global_info,*)"y_fullmet_sp(1),yLL",y_fullmet_sp(1),yLL,&
-                      y_fullmet_sp(1).lt.yLL,y_fullmet_sp(1)-yLL
+            write(MR_global_info,*)"y_fullmet_sp(1) ",y_fullmet_sp(1)
+            write(MR_global_info,*)"yLL",yLL
+            write(MR_global_info,*)"y_fullmet_sp(1).lt.yLL",y_fullmet_sp(1).lt.yLL
+            write(MR_global_info,*)"y_fullmet_sp(1)-yLL",y_fullmet_sp(1)-yLL
             stop 1
           endif
           if(y_fullmet_sp(ny_fullmet).ge.yUR)then
@@ -1019,7 +1021,8 @@
             y_pad_South = .true.
           else
             write(MR_global_info,*)"MR ERROR: yUR > y_fullmet_sp(ny_fullmet)"
-            write(MR_global_info,*)"y_fullmet_sp(my_fullmet),yUR",y_fullmet_sp(ny_fullmet),yUr
+            write(MR_global_info,*)"y_fullmet_sp(my_fullmet)",y_fullmet_sp(ny_fullmet)
+            write(MR_global_info,*)"yUr",yUr
             stop 1
           endif
         endif

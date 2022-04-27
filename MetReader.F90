@@ -960,7 +960,7 @@
       Met_var_NC_names(45)          = "Precip.rate convective  (liquid)"
       Met_var_WMO_names(45)         = "CPRAT"
       Met_var_GRIB1_Param(45)       = 0
-      Met_var_GRIB1_St(45)          = ""
+      Met_var_GRIB1_St(45)          = "cprat"
       Met_var_ndim(45)              = 3
         ! Large-scale precipitation rate at surface  (kg/m2/s)
       Met_var_NC_names(46)          = "Precip.rate large-scale (ice)"
@@ -2529,6 +2529,7 @@
           ! Polar stereographic
           Comp_lam0    = lam0
           Comp_phi0    = phi0
+          Comp_phi1    = phi1
           Comp_k0      = ko
           Comp_Re      = Re
         elseif(Comp_iprojflag.eq.2)then
@@ -3101,7 +3102,7 @@
       ! the lists just allocated
       if(prestep)then
         Found_First_Step = .true.
-        istep = 1
+        istep = 1                                                         ! pre-step is one interval back
         stephour = MR_windfile_starthour(1) + MR_windfile_stephour(1,1) - StepInterval
         MR_MetStep_File(istep)            = trim(adjustl(MR_windfiles(1)))
         MR_MetStep_findex(istep)          = 1
@@ -3156,7 +3157,7 @@
       enddo
       if(.not.Found_Last_Step)then
         if(poststep)then
-          istep = istep+1
+          istep = istep+1                                      ! post-step is one interval later
           stephour = MR_MetStep_Hour_since_baseyear(istep-1) + StepInterval
           MR_MetStep_File(istep)            = MR_MetStep_File(istep-1)
           MR_MetStep_findex(istep)          = MR_MetStep_findex(istep-1)

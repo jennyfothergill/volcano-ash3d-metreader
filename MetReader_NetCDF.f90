@@ -1,4 +1,27 @@
 !##############################################################################
+!##############################################################################
+!##############################################################################
+
+
+!##############################################################################
+!
+!     MR_Read_Met_DimVars_netcdf
+!
+!     Called once from MR_Read_Met_DimVars 
+!
+!     This subroutine reads the variable and dimension IDs, and fills the
+!     coordinate dimension variables
+!
+!     After this subroutine completes, the following variables will be set:
+!       All the projection parameters of NWP grid
+!       Met_dim_names, Met_var_GRIB_names, Met_var_conversion_factor,
+!       Met_var_IsAvailable
+!       The lengths of all the dimensions of the file
+!       p_fullmet_sp (converted to Pa)
+!       x_fullmet_sp, y_fullmet_sp
+!       IsLatLon_MetGrid, IsGlobal_MetGrid, IsRegular_MetGrid 
+!
+!##############################################################################
 
       subroutine MR_Read_Met_DimVars_netcdf
 
