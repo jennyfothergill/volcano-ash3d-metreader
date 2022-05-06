@@ -32,7 +32,7 @@ if [ $# -eq 0 ]
   echo "No arguments supplied"
   echo "Usage: autorun_gfs.sh Resolution FCpackage"
   echo "       where Resolution = 1p00, 0p50, or 0p25"
-  echo "             FCpackage  = 0, 6, 12, or 18"
+  echo "             FCpackage  = 0, 6, 12, 18 or 24"
   exit
 fi
 
@@ -72,9 +72,13 @@ case ${FC} in
   FChour="18"
   FChourR="18.0"
   ;;
+ 24)
+  FChour="24"
+  FChourR="24.0"
+  ;;
  *)
   echo "GFS forecast package not recognized"
-  echo "Valid values: 0, 6, 12, 18"
+  echo "Valid values: 0, 6, 12, 18, 24"
   exit
 esac
 

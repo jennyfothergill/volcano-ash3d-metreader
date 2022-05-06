@@ -1,1 +1,11 @@
 *.o
+*.mod
+libMetReader.a
+tools/gen_GRIB_index
+tools/makegfsncml
+tools/MetCheck
+tools/MetSonde
+tools/MetTraj_B
+tools/MetTraj_F
+tools/probe_Met
+
