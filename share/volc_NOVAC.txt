@@ -41,6 +41,8 @@ purace:283.6:2.32
 rabaul:152.2091:-4.2381
 rainier:238.24:46.853
 redoubt:207.237:60.488
+rincon_de_la_vieja:274.664:10.831
+ruapehu:175.564:-39.281
 sabancaya:288.1441:-15.788
 san_cristobal:272.9987:12.7049
 san_miguel:271.7281:13.4319

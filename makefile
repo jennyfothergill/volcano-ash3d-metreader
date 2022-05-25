@@ -195,15 +195,15 @@ tools/MetSonde: tools/MetSonde.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) -L./ -lMetReader $(LIBS) $(nclib) $(grblib) -c tools/MetSonde.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) MetSonde.o  -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB) -o tools/MetSonde
 tools/MetTraj_F: tools/MetTraj.F90 makefile libMetReader.a
-	$(FC) $(FPPFLAGS) -DFORWARD  $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_F $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
+	$(FC) $(FPPFLAGS) -DFORWARD  $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_F -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB)
 tools/MetTraj_B: tools/MetTraj.F90 makefile libMetReader.a
-	$(FC) $(FPPFLAGS) -DBACKWARD $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_B $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
+	$(FC) $(FPPFLAGS) -DBACKWARD $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_B -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB)
 tools/MetCheck: tools/MetCheck.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/MetCheck.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) MetCheck.o $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB) -o tools/MetCheck
+	$(FC) $(FFLAGS) $(EXFLAGS) MetCheck.o -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB) -o tools/MetCheck
 tools/probe_Met: tools/probe_Met.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/probe_Met.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) probe_Met.o $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB) -o tools/probe_Met
+	$(FC) $(FFLAGS) $(EXFLAGS) probe_Met.o -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB) -o tools/probe_Met
 tools/makegfsncml: tools/makegfsncml.f90 makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) -c tools/makegfsncml.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) makegfsncml.o  $(LIBS) $(nclib) -o tools/makegfsncml
