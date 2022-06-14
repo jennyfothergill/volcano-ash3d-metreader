@@ -46,7 +46,7 @@
       Met_var_MinMax(1,1:2) = (/ -1000.0_4, 80000.0_4 /)  ! GPH
       Met_var_MinMax(2,1:2) = (/  -200.0_4,   200.0_4 /)  ! U
       Met_var_MinMax(3,1:2) = (/  -200.0_4,   200.0_4 /)  ! V
-      Met_var_MinMax(4,1:2) = (/   -20.0_4,    20.0_4 /)  ! W
+      Met_var_MinMax(4,1:2) = (/   -40.0_4,    40.0_4 /)  ! W
       Met_var_MinMax(5,1:2) = (/   130.0_4,   350.0_4 /)  ! T
 
       ! Make user MetReader is using the same calendar

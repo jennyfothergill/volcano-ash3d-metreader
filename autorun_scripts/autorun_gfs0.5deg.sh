@@ -53,13 +53,9 @@ case ${FC} in
   FChour="18"
   FChourR="18.0"
   ;;
- 24)
-  FChour="24"
-  FChourR="24.0"
-  ;;
  *)
   echo "GFS forecast package not recognized"
-  echo "Valid values: 0, 6, 12, 18, 24"
+  echo "Valid values: 0, 6, 12, 18"
   exit
 esac
 

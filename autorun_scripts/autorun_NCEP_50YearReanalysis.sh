@@ -81,10 +81,12 @@ then
     echo "moving to ${NCEPDATAHOME}/dbuffer"
     cd ${NCEPDATAHOME}/dbuffer
   else
-    echo "error: ${NCEPDATAHOME}/dbuffer does not exist."
-    exit 1
+    mkdir ${NCEPDATAHOME}/dbuffer
+    echo "moving to ${NCEPDATAHOME}/dbuffer"
+    cd ${NCEPDATAHOME}/dbuffer
 fi
 
+echo "Calling ${SCRIPTDIR}/get_NCEP_50YearReanalysis.sh $y"
 ${SCRIPTDIR}/get_NCEP_50YearReanalysis.sh $y
 
 yearmonthday=`date -u +%Y%m%d`       #current year, month & day (e.g. 20110119)

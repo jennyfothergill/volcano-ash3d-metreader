@@ -36,7 +36,9 @@ SYSTEM = gfortran
 #      PROF  : includes profiling flags with some optimization
 #      OPT   : includes optimizations flags for fastest runtime
 #    This variable cannot be left blank
-RUN =OPT
+#RUN=DEBUG
+#RUN=PROF
+RUN=OPT
 #
 INSTALLDIR=/opt/USGS
 #
@@ -100,8 +102,8 @@ ifeq ($(SYSTEM), gfortran)
     #COMPINC = -I$(FCHOME)/local/include -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules -I$(INSTALLDIR)/include
     #COMPLIBS = -L$(FCHOME)/local/lib -L$(FCHOME)/lib64 -L${INSTALLDIR}/lib 
 
-    COMPINC = -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules -I$(INSTALLDIR)/include
-    COMPLIBS = -L$(FCHOME)/lib64 -L${INSTALLDIR}/lib
+    COMPINC = -I./ -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules -I$(INSTALLDIR)/include
+    COMPLIBS = -L./ -L$(FCHOME)/lib64 -L${INSTALLDIR}/lib
 
     LIBS = $(COMPLIBS) $(COMPINC)
     # -lefence 
@@ -152,8 +154,8 @@ AUTOSCRIPTS = \
  autorun_scripts/get_NCEP_50YearReanalysis.sh     \
  autorun_scripts/grib2nc.sh \
  autorun_scripts/prune_windfiles.sh \
- autorun_scripts/get_gmao.sh
-
+ autorun_scripts/get_gmao.sh \
+ autorun_scripts/probe_volc.sh
 ###############################################################################
 # TARGETS
 ###############################################################################
@@ -168,6 +170,7 @@ libMetReader.a: MetReader.F90 MetReader.o $(ncOBJS) $(grbOBJS) MetReader_Grids.o
 	ar rcs libMetReader.a MetReader.o $(ncOBJS) $(grbOBJS) MetReader_Grids.o MetReader_ASCII.o
 
 MetReader.o: MetReader.F90 makefile
+	./get_version.sh
 	$(FC) $(FPPFLAGS) $(EXFLAGS) -c MetReader.F90
 MetReader_Grids.o: MetReader_Grids.f90 MetReader.o makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(USGSLIB) -c MetReader_Grids.f90
@@ -192,15 +195,15 @@ tools/MetSonde: tools/MetSonde.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) -L./ -lMetReader $(LIBS) $(nclib) $(grblib) -c tools/MetSonde.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) MetSonde.o  -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB) -o tools/MetSonde
 tools/MetTraj_F: tools/MetTraj.F90 makefile libMetReader.a
-	$(FC) $(FPPFLAGS) -DFORWARD  $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_F $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
+	$(FC) $(FPPFLAGS) -DFORWARD  $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_F -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB)
 tools/MetTraj_B: tools/MetTraj.F90 makefile libMetReader.a
-	$(FC) $(FPPFLAGS) -DBACKWARD $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_B $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB)
+	$(FC) $(FPPFLAGS) -DBACKWARD $(FFLAGS) $(EXFLAGS) tools/MetTraj.F90 -o tools/MetTraj_B -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB)
 tools/MetCheck: tools/MetCheck.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/MetCheck.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) MetCheck.o $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB) -o tools/MetCheck
+	$(FC) $(FFLAGS) $(EXFLAGS) MetCheck.o -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB) -o tools/MetCheck
 tools/probe_Met: tools/probe_Met.f90 makefile libMetReader.a
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) $(grblib) -c tools/probe_Met.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) probe_Met.o $(LIBS) $(nclib) $(grblib) -L./ -lMetReader $(USGSLIB) -o tools/probe_Met
+	$(FC) $(FFLAGS) $(EXFLAGS) probe_Met.o -L./ -lMetReader $(LIBS) $(nclib) $(grblib) $(USGSLIB) -o tools/probe_Met
 tools/makegfsncml: tools/makegfsncml.f90 makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(nclib) -c tools/makegfsncml.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) makegfsncml.o  $(LIBS) $(nclib) -o tools/makegfsncml
@@ -216,10 +219,12 @@ install:
 	install -d $(INSTALLDIR)/include/
 	install -d $(INSTALLDIR)/bin/
 	install -d $(INSTALLDIR)/bin/autorun_scripts
+	install -d $(INSTALLDIR)/share
 	install -m 644 $(LIB) $(INSTALLDIR)/lib/
 	install -m 644 *.mod $(INSTALLDIR)/include/
 	install -m 755 $(EXEC) $(INSTALLDIR)/bin/
 	install -m 755 $(AUTOSCRIPTS) $(INSTALLDIR)/bin/autorun_scripts/
+	install -m 644 share/volc_NOVAC.txt $(INSTALLDIR)/share/volc_NOVAC.txt
 
 uninstall:
 	rm -f $(INSTALLDIR)/lib/$(LIB)
@@ -230,6 +235,7 @@ uninstall:
 	rm -f $(INSTALLDIR)/bin/MetCheck
 	rm -f $(INSTALLDIR)/bin/makegfsncml
 	rm -f $(INSTALLDIR)/bin/gen_GRIB_index
+	rm -f $(INSTALLDIR)/bin/probe_Met
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/autorun_gfs.sh
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/autorun_nam.sh
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/autorun_NCEP_50YearReanalysis.sh
@@ -240,4 +246,6 @@ uninstall:
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/grib2nc.sh
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/prune_windfiles.sh
 	rm -f $(INSTALLDIR)/bin/autorun_scripts/get_gmao.sh
+	rm -f $(INSTALLDIR)/bin/autorun_scripts/probe_volc.sh
+	rm -f $(INSTALLDIR)/share/volc_NOVAC.txt
 

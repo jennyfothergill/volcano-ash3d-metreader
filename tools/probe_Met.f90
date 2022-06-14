@@ -140,8 +140,45 @@
       nargs = command_argument_count()
       if (nargs.lt.9) then
         write(6,*)"ERROR: insufficient command-line arguments"
-        write(6,*)"Usage: probe_Met filename tstep lon lat trunc nvars ",&
+        write(6,*)"Usage: probe_Met filename tstep llflag lon lat trunc nvars ",&
                   "vars(nvars) iw iwf (inyear inmonth inday inhour)"
+        write(6,*)"       file         : string  : name of input file"
+        write(6,*)"       timestep     : integer : step in file"
+        write(6,*)"       llflag       : integer : 0 for using windfile grid; 1 for"
+        write(6,*)"                                  forcing Lat/Lon"
+        write(6,*)"       lon/x        : real    : longitude (or x) of sonde point"
+        write(6,*)"       lat/y        : real    : latitude (or y) of sonde point"
+        write(6,*)"       trunc flag   : char    : truncation flag (T or F)"
+        write(6,*)"                                  T = coordinates truncated to nearest met node"
+        write(6,*)"                                  F = values interpolated onto given coordinate"
+        write(6,*)"       nvars        : integer : number of pressure variables to export"
+        write(6,*)"       varID(nvars) : integers: variable ID's to read and export"
+        write(6,*)"                        1 = GPH (km)"
+        write(6,*)"                        2 = U (m/s)"
+        write(6,*)"                        3 = V (m/s)"
+        write(6,*)"                        4 = W (m/s)"
+        write(6,*)"                        5 = T (K)"
+        write(6,*)"       iw           : integer : windfile format code (3,4,5)"
+        write(6,*)"       iwf          : integer : windfile product code"
+        write(6,*)"       idf          : integer : igrid (2 for nc, 3 for grib)"
+        write(6,*)"       year         : integer : only needed for iw = 5 files"
+        write(6,*)"       month        : integer : "
+        write(6,*)"       day          : integer : "
+        write(6,*)"       hour         : real    : "
+        write(6,*)"  "
+        write(6,*)"     To probe a 0.5-degree GFS file in nc format for GPH only, use:"
+        write(6,*)"       probe_Met 2020061000_5.f006.nc 1 0 190.055 52.8222 T 1 1 4 20 2"
+        write(6,*)"      same, but adding u,v,t"
+        write(6,*)"       probe_Met 2020061000_5.f006.nc 1 0 190.055 52.8222 T 4 1 2 3 5 4 20 2"
+        write(6,*)"     To probe a NAM 91 grid over AK in nc format with a LL coordinate, use:"
+        write(6,*)"       probe_Met nam.tm06.grib2 1 1 190.055 52.8222 F 4 1 2 3 5 4 13 3"
+        write(6,*)"      with a projected coordinate:"
+        write(6,*)"       probe_Met nam.tm06.grib2 1 0 -1363.94 -3758.61 F 4 1 2 3 5 4 13 3"
+        write(6,*)"     To  probe the NCEP 2.5-degree data (or other iw=5), we need the"
+        write(6,*)"     full date"
+        write(6,*)"       probe_Met 2020061000_5.f006.nc 1 1 190.055 52.8222 T 1 1 4 20 2 2018 1 1 0.0"
+        write(6,*)"     Output is written to the file NWP_prof.dat"
+
         stop 1
       else
         ! Get file name or windroot for iw=5
@@ -195,7 +232,12 @@
         else
           Truncate = .false.
         endif
-        write(*,*)"Truncate = ",Truncate
+        if(Truncate)then
+          write(*,*)"Truncate = ",Truncate, "output will be on met node"
+        else
+          write(*,*)"Truncate = ",Truncate, &
+                    "output will be on interpolated point"
+        endif
 
         ! Get number of variables to read/export
         call get_command_argument(7, arg, status)
@@ -256,7 +298,7 @@
       endif
 
       if(Truncate)then
-        write(6,*)"Interpolating profile onto ",inlon,inlat
+        write(6,*)"Truncating profile onto ",inlon,inlat
       else
         write(6,*)"Interpolating profile onto ",inlon,inlat
       endif
@@ -355,6 +397,10 @@
       steptime = MR_windfile_starthour(1) + MR_windfile_stephour(1,intstep)
 
       call MR_Set_Met_Times(steptime,0.0_8)
+
+      do i=1,50
+        write(*,*)i,Met_var_NC_names(i),Met_var_IsAvailable(i)
+      enddo
       
       call GetMetProfile(invars,invarlist)
 

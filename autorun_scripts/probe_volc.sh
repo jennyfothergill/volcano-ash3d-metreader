@@ -18,21 +18,27 @@
 #      and its documentation for any purpose.  We assume no responsibility to provide
 #      technical support to users of this software.
 
-# Shell script that manages the download of the gfs 0.5 degree data files for the
-# current date, and converts the file to NetCDF.
-# This script expects a command line argument indicating which forecast package to download.
-#   autorun_gfs.sh 0p25 0   for the 0.25 degree 00 forecast package
+# Shell script that manages the probing of gfs data at volcano locations in volc_NOVAC.txt.
+#
+# Requires that the following be installed:
+#  ncks
+# 
+# This script expects a command line argument indicating which forecast package to probe.
+# The date of the forecast package is determined at run-time by the UTC time, but can be
+# overridden by setting the variable 'yearmonthday'
+#   probe_volc.sh gfs0p50 0   for the 0.5 degree 00 forecast package
 
 # Please edit the line below to be consistant with the install directory specified in
 # the makefile
 INSTALLDIR="/opt/USGS"
+VOLCFILE="${INSTALLDIR}/share/volc_NOVAC.txt"
 
 if [ $# -eq 0 ]
   then
   echo "No arguments supplied"
   echo "Usage: probe_volc.sh product FCpackage"
   echo "       where Resolution = gfs1p00, gfs0p50, gfs0p25, or nam091"
-  echo "             FCpackage  = 0, 6, 12, 18 or 24"
+  echo "             FCpackage  = 0, 6, 12, or 18"
   exit
 fi
 
@@ -80,13 +86,9 @@ case ${FC} in
   FChour="18"
   FChourR="18.0"
   ;;
- 24)
-  FChour="24"
-  FChourR="24.0"
-  ;;
  *)
   echo "Forecast package not recognized"
-  echo "Valid values: 0, 6, 12, 18, 24"
+  echo "Valid values: 0, 6, 12, 18"
   exit
 esac
 
@@ -100,9 +102,14 @@ echo "------------------------------------------------------------"
 
 SCRIPTDIR="${INSTALLDIR}/bin/autorun_scripts"
 
+#####  This is where the output files will be written
 SONDEDIR="/data/WindFiles/sonde"
 SONDEDIR="/data/www/vsc-ash.wr.usgs.gov/sonde"
+mkdir -p ${SONDEDIR}
+# First, we copy the master list from /opt/USGS/share/ to the sonde directory
 vfile=${SONDEDIR}/volcs.dat
+# all further parsing of the volcano list will apply to this new file.
+cp ${VOLCFILE} ${vfile}
 nvolc=`wc -l ${vfile} | cut -d' ' -f1`
 echo $nvolc
 
@@ -111,15 +118,12 @@ do
   volc=`head -n ${iv} ${vfile} | tail -1 | cut -f1 -d':'`
   lon=`head -n ${iv} ${vfile} | tail -1 | cut -f2 -d':'`
   lat=`head -n ${iv} ${vfile} | tail -1 | cut -f3 -d':'`
-
-  #volc=`cat ${SONDEDIR}/volc.dat | cut -d' ' -f1`
-  #lon=`cat  ${SONDEDIR}/volc.dat | cut -d' ' -f2`
-  #lat=`cat  ${SONDEDIR}/volc.dat | cut -d' ' -f3`
   echo "$volc $lon $lat"
-  #mkdir -p ${SONDEDIR}/${volc}/${yearmonthday}
-  #cd ${SONDEDIR}/${volc}/${yearmonthday}
-  mkdir -p ${SONDEDIR}/${volc}/temp
-  cd ${SONDEDIR}/${volc}/temp
+
+  mkdir -p ${SONDEDIR}/${volc}/${yearmonthday}
+  cd ${SONDEDIR}/${volc}/${yearmonthday}
+  #mkdir -p ${SONDEDIR}/${volc}/temp
+  #cd ${SONDEDIR}/${volc}/temp
   
   rm -f probe.log
   touch probe.log
@@ -164,7 +168,6 @@ do
     mkdir -p ${SONDEDIR}/${volc}/${NewYYYYMMDD}
     mv NWP_prof.dat ${SONDEDIR}/${volc}/${NewYYYYMMDD}/${volc}_${PROD}_phuvt_${NewYYYYMMDD}_${Newhour}.dat
     ncks -C -d lon,${lon} -d lat,${lat} -H -Q -s '%f ' -v Total_cloud_cover_isobaric ${WINDFILE} > Cloud.dat
-    #${CLOUD}
     mv Cloud.dat ${SONDEDIR}/${volc}/${NewYYYYMMDD}/${volc}_${PROD}_cloud_${NewYYYYMMDD}_${Newhour}.dat
     rm ${WINDFILE}
     #echo "$t : Mapping ${WINDFILE} to ${volc}_gfs_phuvt_${NewYYYYMMDD}_${Newhour}.dat" >> probe.log
