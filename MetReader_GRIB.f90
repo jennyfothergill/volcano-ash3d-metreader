@@ -418,7 +418,6 @@
             call PJ_proj_for(Lon_start,Lat_start, Met_iprojflag, &
                      Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re, &
                      x_start,y_start)
-            write(*,*)Met_iprojflag,Met_lam0,Met_phi0,Met_phi1,Met_phi2,Met_k0,Met_Re
             write(MR_global_production,*)"Getting start coordinate for ",Lon_start,Lat_start
             write(MR_global_production,*)" Projected coordinate = ",x_start,y_start
           endif

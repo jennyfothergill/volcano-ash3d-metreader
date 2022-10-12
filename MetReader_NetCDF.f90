@@ -998,14 +998,14 @@
 
       integer :: Map_Proj
       real(kind=sp) :: WRF_dx,WRF_dy
-      real(kind=sp) :: Cen_Lat,Cen_Lon
+      real(kind=sp) :: Cen_Lat
       real(kind=sp) :: Moad_Cen_Lat
       real(kind=sp) :: Stand_Lon
       real(kind=sp) :: Truelat1,Truelat2
       real(kind=sp) :: Pole_Lat, Pole_Lon
       real(kind=sp),dimension(:,:,:)  ,allocatable :: dum3d_sp
       real(kind=sp),dimension(:,:,:,:),allocatable :: dum4d_sp
-      integer :: i,j
+      integer :: i
 
       real(kind=dp) :: x_start,y_start
 
@@ -2264,11 +2264,9 @@
       integer :: nSTAT
       integer :: ncid
 
-      !integer            :: var_xtype
       integer            :: xtype
       integer            :: length
       integer            :: attnum
-      character(len=40)  :: invar
       character(len=nf90_max_name) :: name_dum
       integer :: t_dim_id
       integer :: var_id

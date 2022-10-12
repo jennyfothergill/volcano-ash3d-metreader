@@ -643,7 +643,7 @@
                   MR_SndVars_metP(iloc,itime,4,il)*MR_SndVars_metP(iloc,itime,4,il)
                 WindVelocity(il) = sqrt(WindVelocity(il))
                 WindDirection(il) = &
-                  -atan2(MR_SndVars_metP(iloc,itime,4,il),MR_SndVars_metP(iloc,itime,3,il))/DEG2RAD + &
+                  -real(atan2(MR_SndVars_metP(iloc,itime,4,il),MR_SndVars_metP(iloc,itime,3,il))/DEG2RAD,kind=sp) + &
                   90.0_sp
               endif
               !Met_dim_IsAvailable(1) = .true.  ! Time

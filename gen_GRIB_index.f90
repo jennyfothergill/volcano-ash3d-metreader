@@ -1,6 +1,7 @@
       program gen_grib_index
 
       use MetReader
+
       use grib_api
 
       implicit none
