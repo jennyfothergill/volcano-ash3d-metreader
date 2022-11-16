@@ -16,7 +16,7 @@ else
   echo "Downloading file: ${filename}"
 fi
 
-WINDROOT="/data/WindFiles"
+WINDROOT="/bsuscratch/${USER}/WindFiles"
 NASADATAHOME="${WINDROOT}/NASA/GEOS"
 #name of directory containing current files
 FC_day=${NASADATAHOME}/${yearmonthday}

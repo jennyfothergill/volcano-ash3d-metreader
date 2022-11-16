@@ -32,7 +32,7 @@ NAM091_retain=0
 MetProf_retain=30
 Hysplit_retain=7
 
-WINDROOT="/data/WindFiles"
+WINDROOT="/bsuscratch/${USER}/WindFiles"
 GFSDATAHOME="${WINDROOT}/gfs"
 PUFFDATAHOME="${WINDROOT}/puff/gfs"
 NAM196DATAHOME="${WINDROOT}/nam/196"

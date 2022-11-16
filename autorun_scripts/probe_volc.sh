@@ -30,7 +30,7 @@
 
 # Please edit the line below to be consistant with the install directory specified in
 # the makefile
-INSTALLDIR="/opt/USGS"
+INSTALLDIR="/cm/shared/apps/metreader/gcc/12.1.0/5f23d0b"
 VOLCFILE="${INSTALLDIR}/share/volc_NOVAC.txt"
 
 if [ $# -eq 0 ]

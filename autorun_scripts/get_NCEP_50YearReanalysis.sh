@@ -27,8 +27,8 @@
 
 # This is the location where the downloaded windfiles will be placed.
 # Please edit this to suit your system.
-WINDROOT="/data/WindFiles"
-INSTALLDIR="/opt/USGS/"
+WINDROOT="/bsuscratch/${USER}/WindFiles"
+INSTALLDIR="/cm/shared/apps/metreader/gcc/12.1.0/5f23d0b"
 validlist="valid_files.txt"
 
 echo "------------------------------------------------------------"

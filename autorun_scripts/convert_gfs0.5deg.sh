@@ -49,7 +49,7 @@ fi
 JAVA=`which java`
 echo "Found ${JAVA}"
 
-WINDROOT="/data/WindFiles"
+WINDROOT="/bsuscratch/${USER}/WindFiles"
 
 yearmonthday=$1
 FChour=$2

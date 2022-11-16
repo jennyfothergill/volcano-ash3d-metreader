@@ -685,7 +685,8 @@
       real(kind=8) :: FC_Package_StartHour
       real(kind=8) :: FC_Archive_StartHour
 
-      character(len=100) :: WINDROOT = '/data/WindFiles'
+      character(len=100) :: user
+      character(len=100) :: WINDROOT
       character(len=47) :: string1,string2
 
       integer :: i,ii
@@ -706,6 +707,10 @@
       character (len=100):: infile
       character(len=80 ) :: linebuffer080
       character(len=130) :: linebuffer130
+
+      ! JF Added user based WINDROOT
+      call get_environment_variable('USER', user)
+      WINDROOT='/bsuscratch/' // trim(user) // '/WindFiles'
 
        ! Get the UTC time for program execution
        !   This will be used to determine if gfs or NCEP winds are to be used

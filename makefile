@@ -40,7 +40,7 @@ SYSTEM = gfortran
 #RUN=PROF
 RUN=OPT
 #
-INSTALLDIR=/opt/USGS
+INSTALLDIR=/cm/shared/apps/metreader/gcc/12.1.0/5f23d0b
 #
 # DATA FORMATS
 #  For each data format you want to include in the library, set the corresponding
@@ -52,6 +52,9 @@ USEGRIB   = T
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'
 USEPOINTERS = F
 
+NETCDFF=/cm/shared/software/opt/linux-centos7-x86_64/gcc-12.1.0/netcdf-fortran-4.5.4-linqncy47jrxwzmaixn4x2o6pao3abo3
+NETCDFC=/cm/shared/software/opt/linux-centos7-x86_64/gcc-12.1.0/netcdf-c-4.8.1-5gcsyog4wp3bczjnygfik4467orabcsm
+ECCODES=/cm/shared/apps/eccodes/openmpi/4.1.3/gcc/12.1.0/2.27.0
 ###############################################################################
 #####  END OF USER SPECIFIED FLAGS  ###########################################
 ###############################################################################
@@ -60,7 +63,8 @@ FPPFLAGS =
 ifeq ($(USENETCDF), T)
  ncFPPFLAG = -DUSENETCDF
  ncOBJS = MetReader_NetCDF.o
- nclib = -lnetcdf -lnetcdff
+ nclib = -L$(NETCDFC)/lib -lnetcdf -L$(NETCDFF)/lib -lnetcdff -I$(NETCDFC)/include -I$(NETCDFF)/include
+ #nclib = -I$(NETCDFC)/include -I$(NETCDFF)/include
 else
  ncFPPFLAG =
  ncOBJS =
@@ -72,7 +76,8 @@ ifeq ($(USEGRIB), T)
  # These are the libraries for grib_api
  #grblib = -lgrib_api_f90 -lgrib_api
  # These are the libraries for ecCodes
- grblib = -leccodes -leccodes_f90
+ grblib = -L$(ECCODES)/lib64 -leccodes -L$(ECCODES)/lib64 -leccodes_f90 -I$(ECCODES)/include
+ #grblib = -I$(ECCODES)/include
 else
  grbFPPFLAG =
  grbOBJS =
@@ -96,13 +101,10 @@ USGSLIB = $(USGSLIBDIR) $(USGSINC) -lhourssince -lprojection
 ###############################################################################
 ##########  GNU Fortran Compiler  #############################################
 ifeq ($(SYSTEM), gfortran)
-    FCHOME=/usr
-    FC = /usr/bin/gfortran
+    FCHOME=/cm/shared/software/opt/linux-centos7-x86_64/gcc-4.8.5/gcc-12.1.0-yztxqq4nafv7dyxkohfycsibetgfvrna
+    FC = $(FCHOME)/bin/gfortran
 
-    #COMPINC = -I$(FCHOME)/local/include -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules -I$(INSTALLDIR)/include
-    #COMPLIBS = -L$(FCHOME)/local/lib -L$(FCHOME)/lib64 -L${INSTALLDIR}/lib 
-
-    COMPINC = -I./ -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules -I$(INSTALLDIR)/include
+    COMPINC = -I./ -I$(FCHOME)/include -I$(INSTALLDIR)/include
     COMPLIBS = -L./ -L$(FCHOME)/lib64 -L${INSTALLDIR}/lib
 
     LIBS = $(COMPLIBS) $(COMPINC)

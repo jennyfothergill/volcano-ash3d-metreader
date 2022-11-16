@@ -18,7 +18,7 @@
 #      and its documentation for any purpose.  We assume no responsibility to provide
 #      technical support to users of this software.
 
-INSTALLDIR="/opt/USGS"
+INSTALLDIR="/cm/shared/apps/metreader/gcc/12.1.0/5f23d0b"
 
 yearmonthday=$1
 FChour=$2
@@ -34,7 +34,7 @@ t0=`date`
 HourMax=36
 HourStep=1
 
-WINDROOT="/data/WindFiles"
+WINDROOT="/bsuscratch/${USER}/WindFiles"
 NAMDATAHOME="${WINDROOT}/nam/091"
 
 #name of directory containing current files

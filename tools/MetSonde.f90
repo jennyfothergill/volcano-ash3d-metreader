@@ -153,6 +153,7 @@
       integer             :: nargs
       integer             :: status
       character (len=100) :: arg
+      character(len=100)  :: user
 
       integer :: iprojflag
       real(kind=8) :: lambda0,phi0,phi1,phi2,k0,radius_earth
@@ -194,7 +195,9 @@
           call get_command_argument(7, arg, status)
           WINDROOT = TRIM(arg)
         else
-          WINDROOT='/data/WindFiles'
+          ! JF Added user based WINDROOT
+          call get_environment_variable('USER', user)
+          WINDROOT='/bsuscratch/' // trim(user) // '/WindFiles'
         endif
       endif
 

@@ -24,7 +24,7 @@
 
 # This is the location where the downloaded windfiles will be placed.
 # Please edit this to suit your system.
-WINDROOT="/data/WindFiles"
+WINDROOT="/bsuscratch/${USER}/WindFiles"
 
 yearmonthday=$1
 FChour=$2

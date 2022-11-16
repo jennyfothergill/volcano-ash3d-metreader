@@ -24,11 +24,11 @@
 #   get_gfs.sh YYYYMMDD HR
 
 # This is the location where metreader will be installed
-INSTALLDIR="/opt/USGS"
+INSTALLDIR="/cm/shared/apps/metreader/gcc/12.1.0/5f23d0b"
 
 # This is the location where the downloaded windfiles will be placed.
 # Please edit this to suit your system.
-WINDROOT="/data/WindFiles"
+WINDROOT="/bsuscratch/${USER}/WindFiles"
 GFSDATAHOME="${WINDROOT}/gfs"
 
 if [ $# -eq 0 ]
@@ -85,7 +85,7 @@ esac
 
 
 rc=0
-WINDROOT="/data/WindFiles"
+WINDROOT="/bsuscratch/${USER}/WindFiles"
 GFSDATAHOME="${WINDROOT}/gfs"
 install -d ${GFSDATAHOME}
 if [[ $? -ne 0 ]] ; then

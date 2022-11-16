@@ -22,10 +22,10 @@
 
 # Please edit the line below to be consistant with the install directory specified in
 # the makefile
-INSTALLDIR="/opt/USGS"
+INSTALLDIR="/cm/shared/apps/metreader/gcc/12.1.0/5f23d0b"
 # This is the location where the downloaded windfiles will be placed.
 # Please edit this to suit your system.
-WINDROOT="/data/WindFiles"
+WINDROOT="/bsuscratch/${USER}/WindFiles"
 
 echo "------------------------------------------------------------"
 echo "running NCEP_50year_Reanalysis.sh"

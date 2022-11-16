@@ -63,8 +63,8 @@ fi
 JAVA=`which java`
 echo "Found ${JAVA}"
 
-WINDROOT="/data/WindFiles"
-INSTALLDIR="/opt/USGS"
+WINDROOT="/bsuscratch/${USER}/WindFiles"
+INSTALLDIR="/cm/shared/apps/metreader/gcc/12.1.0/5f23d0b"
 
 GFS=$1
 yearmonthday=$2

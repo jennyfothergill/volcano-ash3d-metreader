@@ -25,7 +25,7 @@
 
 # Please edit the line below to be consistant with the install directory specified in
 # the makefile
-INSTALLDIR="/opt/USGS"
+INSTALLDIR="/cm/shared/apps/metreader/gcc/12.1.0/5f23d0b"
 ABRIDGED="0"            # Default is to get the whole file
 
 if [ $# -eq 0 ]

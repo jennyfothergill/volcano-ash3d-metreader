@@ -54,7 +54,7 @@ case ${NAM} in
 esac
 
 rc=0
-WINDROOT="/data/WindFiles"
+WINDROOT="/bsuscratch/${USER}/WindFiles"
 NAMDATAHOME="${WINDROOT}/nam/${NAM}"
 install -d ${NAMDATAHOME}
 if [[ $? -ne 0 ]] ; then
